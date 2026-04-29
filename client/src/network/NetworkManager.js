@@ -33,4 +33,8 @@ export class NetworkManager {
   sendShoot(payload) {
     this.room?.send(MESSAGES.SHOOT, payload);
   }
+
+  onShoot(cb) {
+    this.room?.onMessage(MESSAGES.SHOOT, cb);
+  }
 }

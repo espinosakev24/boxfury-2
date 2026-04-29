@@ -1,4 +1,5 @@
 import { Schema, defineTypes } from '@colyseus/schema';
+import { BOW } from '@boxfury/shared';
 
 export class Player extends Schema {
   constructor(color = 0) {
@@ -9,6 +10,7 @@ export class Player extends Schema {
     this.vy = 0;
     this.facing = 1;
     this.color = color;
+    this.bowAngle = BOW.MIN_ANGLE;
   }
 }
 
@@ -19,4 +21,5 @@ defineTypes(Player, {
   vy: 'number',
   facing: 'number',
   color: 'number',
+  bowAngle: 'number',
 });

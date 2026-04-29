@@ -1,14 +1,14 @@
 import { Room } from 'colyseus';
-import { COLORS } from '@boxfury/shared';
+import { COLORS, MESSAGES, NETWORK } from '@boxfury/shared';
 import { GameState } from '../schemas/GameState.js';
 import { Player } from '../schemas/Player.js';
-import { MESSAGES } from '@boxfury/shared';
 
 export class GameRoom extends Room {
   maxClients = 16;
+  patchRate = 1000 / NETWORK.PATCH_RATE;
+  state = new GameState();
 
   onCreate() {
-    this.setState(new GameState());
     this.joinCount = 0;
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
@@ -19,6 +19,7 @@ export class GameRoom extends Room {
       if (typeof payload.vx === 'number') player.vx = payload.vx;
       if (typeof payload.vy === 'number') player.vy = payload.vy;
       if (typeof payload.facing === 'number') player.facing = payload.facing;
+      if (typeof payload.bowAngle === 'number') player.bowAngle = payload.bowAngle;
     });
 
     this.onMessage(MESSAGES.SHOOT, (client, payload) => {

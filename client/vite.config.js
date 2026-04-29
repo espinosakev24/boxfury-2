@@ -4,6 +4,9 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  optimizeDeps: {
+    exclude: ['@boxfury/shared'],
+  },
   build: {
     target: 'es2022',
   },
