@@ -10,6 +10,9 @@ export class RemotePlayer {
     this.facing = facing;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     this.sprite.setStrokeStyle(2, 0xffffff, 0.4);
+    scene.physics.add.existing(this.sprite);
+    this.sprite.body.setAllowGravity(false);
+    this.sprite.body.setImmovable(true);
     this.bow = new Bow(scene, this);
     this.bow.setAngle(bowAngle);
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];

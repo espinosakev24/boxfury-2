@@ -2,8 +2,9 @@ import { ARROW, BOW, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
 
 export class Player {
-  constructor(scene, { x, y, color = 0x4ade80 }) {
+  constructor(scene, { id, x, y, color = 0x4ade80 }) {
     this.scene = scene;
+    this.id = id;
     this.facing = 1;
     this.charging = false;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);

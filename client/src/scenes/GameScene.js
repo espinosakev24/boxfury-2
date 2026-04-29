@@ -23,7 +23,7 @@ export class GameScene extends Phaser.Scene {
 
     $(room.state).players.onAdd((player, sessionId) => {
       if (sessionId === room.sessionId) {
-        this.spawnLocalPlayer(player.color);
+        this.spawnLocalPlayer(sessionId, player.color);
         return;
       }
       const remote = new RemotePlayer(this, {
@@ -50,11 +50,14 @@ export class GameScene extends Phaser.Scene {
       this.remotes.delete(sessionId);
     });
 
-    this.network.onShoot((shot) => this.spawnArrow(shot));
+    this.network.onShoot(({ id, x, y, vx, vy }) => {
+      this.spawnArrow({ x, y, vx, vy, shooterId: id });
+    });
   }
 
-  spawnLocalPlayer(color) {
+  spawnLocalPlayer(id, color) {
     this.player = new Player(this, {
+      id,
       x: WORLD.WIDTH / 2,
       y: WORLD.HEIGHT / 2 - 100,
       color,
@@ -64,8 +67,18 @@ export class GameScene extends Phaser.Scene {
 
   spawnArrow(shot) {
     const arrow = new Arrow(this, shot);
-    this.physics.add.collider(arrow.sprite, this.level.platforms, () => arrow.destroy());
     this.arrows.push(arrow);
+
+    this.physics.add.collider(arrow.sprite, this.level.platforms, () => arrow.stickTo());
+
+    if (this.player && this.player.id !== arrow.shooterId) {
+      this.physics.add.overlap(arrow.sprite, this.player.sprite, () => arrow.stickTo(this.player));
+    }
+    for (const remote of this.remotes.values()) {
+      if (remote.id !== arrow.shooterId) {
+        this.physics.add.overlap(arrow.sprite, remote.sprite, () => arrow.stickTo(remote));
+      }
+    }
   }
 
   update(_time, delta) {
@@ -82,7 +95,7 @@ export class GameScene extends Phaser.Scene {
       } else {
         const shot = this.player.releaseBow();
         if (shot) {
-          this.spawnArrow(shot);
+          this.spawnArrow({ ...shot, shooterId: this.player.id });
           this.network.sendShoot(shot);
         }
       }
