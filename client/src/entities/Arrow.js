@@ -19,9 +19,13 @@ export class Arrow {
   stickTo(target = null) {
     if (this.stuck) return;
     this.stuck = true;
-    this.sprite.body.setVelocity(0, 0);
-    this.sprite.body.setAllowGravity(false);
-    this.sprite.body.enable = false;
+    const body = this.sprite.body;
+    // Snap visual to the body's post-step position; the sprite is one frame behind
+    // because Phaser syncs sprite.x in postUpdate, which runs after this callback.
+    this.sprite.x = body.center.x;
+    this.sprite.y = body.center.y;
+    body.setVelocity(0, 0);
+    body.setAllowGravity(false);
     if (target) {
       this.attachedTo = target;
       this.attachOffset = {
@@ -30,6 +34,7 @@ export class Arrow {
       };
     }
     this.attachRotation = this.sprite.rotation;
+    body.enable = false;
   }
 
   update() {
