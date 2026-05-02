@@ -52,6 +52,10 @@ export class NetworkManager {
     this.room?.send(MESSAGES.FLAG_TOGGLE);
   }
 
+  sendChooseTeam(team) {
+    this.room?.send(MESSAGES.CHOOSE_TEAM, { team });
+  }
+
   onHit(cb) {
     this.room?.onMessage(MESSAGES.HIT, cb);
   }

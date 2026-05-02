@@ -58,6 +58,10 @@ export const FLAG = {
   CARRY_OFFSET_Y: -41,
 };
 
+export const SCORE = {
+  CAPTURE_RADIUS: 64,
+};
+
 export const COLORS = {
   P1_JADE: 0x4ee08a,
   P2_CRIMSON: 0xff5470,

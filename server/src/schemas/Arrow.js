@@ -14,6 +14,7 @@ export class Arrow extends Schema {
     this.stuckOffsetX = 0;
     this.stuckOffsetY = 0;
     this.stuckFacing = 1;
+    this.shooterTeam = 0;
   }
 }
 
@@ -29,4 +30,5 @@ defineTypes(Arrow, {
   stuckOffsetX: 'number',
   stuckOffsetY: 'number',
   stuckFacing: 'number',
+  shooterTeam: 'number',
 });

@@ -9,6 +9,8 @@ export class GameState extends Schema {
     this.players = new MapSchema();
     this.arrows = new MapSchema();
     this.flag = new Flag();
+    this.scoreTeam1 = 0;
+    this.scoreTeam2 = 0;
   }
 }
 
@@ -16,4 +18,6 @@ defineTypes(GameState, {
   players: { map: Player },
   arrows: { map: Arrow },
   flag: Flag,
+  scoreTeam1: 'number',
+  scoreTeam2: 'number',
 });

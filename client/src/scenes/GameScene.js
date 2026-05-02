@@ -28,7 +28,12 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    this.events.once('shutdown', () => this.network?.disconnect());
+    this.events.once('shutdown', () => {
+      this.hideTeamPicker();
+      this.hideHud();
+      this.network?.disconnect();
+    });
+    this.showHud();
 
     const connectOptions = this.registry.get('connectOptions') ?? {};
     let room;
@@ -43,12 +48,7 @@ export class GameScene extends Phaser.Scene {
 
     const $ = this.network.$;
 
-    const handleAdd = (player, sessionId) => {
-      if (sessionId === room.sessionId) {
-        if (!this.player) this.spawnLocalPlayer(player.color, player.team);
-        if (room.state.flag?.carrierId === sessionId) this.player.setCarryingFlag(true);
-        return;
-      }
+    const spawnRemote = (sessionId, player) => {
       if (this.remotes.has(sessionId)) return;
       const remote = new RemotePlayer(this, {
         id: sessionId,
@@ -59,22 +59,51 @@ export class GameScene extends Phaser.Scene {
         bowAngle: player.bowAngle,
       });
       this.remotes.set(sessionId, remote);
-      if (room.state.flag?.carrierId === sessionId) remote.setCarryingFlag(true);
-      $(player).onChange(() => remote.applyState({
-        x: player.x,
-        y: player.y,
-        facing: player.facing,
-        bowAngle: player.bowAngle,
-      }));
+      if (this.flagCarrierId === sessionId) remote.setCarryingFlag(true);
+    };
+
+    const handleAdd = (player, sessionId) => {
+      const isLocal = sessionId === room.sessionId;
+      const trySpawn = () => {
+        if (player.team === 0) return;
+        if (isLocal) {
+          if (this.player) return;
+          this.hideTeamPicker();
+          this.spawnLocalPlayer(player.color, player.team);
+          if (room.state.flag?.carrierId === sessionId) this.player.setCarryingFlag(true);
+        } else {
+          spawnRemote(sessionId, player);
+        }
+      };
+
+      if (isLocal && player.team === 0) this.showTeamPicker();
+      trySpawn();
+      this.updateTeamCounts();
+
+      $(player).onChange(() => {
+        trySpawn();
+        const remote = this.remotes.get(sessionId);
+        if (remote) {
+          remote.applyState({
+            x: player.x,
+            y: player.y,
+            facing: player.facing,
+            bowAngle: player.bowAngle,
+          });
+        }
+        this.updateTeamCounts();
+      });
     };
 
     $(room.state).players.onAdd(handleAdd);
 
     $(room.state).players.onRemove((_player, sessionId) => {
       const remote = this.remotes.get(sessionId);
-      if (!remote) return;
-      remote.destroy();
-      this.remotes.delete(sessionId);
+      if (remote) {
+        remote.destroy();
+        this.remotes.delete(sessionId);
+      }
+      this.updateTeamCounts();
     });
 
     $(room.state).arrows.onAdd((arrowState, id) => {
@@ -192,6 +221,72 @@ export class GameScene extends Phaser.Scene {
     this.network.sendFlagToggle();
   }
 
+  showTeamPicker() {
+    const overlay = document.getElementById('team-picker');
+    if (!overlay || this.teamPickerOpen) return;
+    this.teamPickerOpen = true;
+    overlay.classList.remove('hidden');
+    this._teamPick1 = () => this.network.sendChooseTeam(1);
+    this._teamPick2 = () => this.network.sendChooseTeam(2);
+    document.getElementById('team-pick-1')?.addEventListener('click', this._teamPick1);
+    document.getElementById('team-pick-2')?.addEventListener('click', this._teamPick2);
+    this.updateTeamCounts();
+  }
+
+  hideTeamPicker() {
+    const overlay = document.getElementById('team-picker');
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    if (this._teamPick1) document.getElementById('team-pick-1')?.removeEventListener('click', this._teamPick1);
+    if (this._teamPick2) document.getElementById('team-pick-2')?.removeEventListener('click', this._teamPick2);
+    this._teamPick1 = null;
+    this._teamPick2 = null;
+    this.teamPickerOpen = false;
+  }
+
+  showHud() {
+    document.getElementById('hud')?.classList.remove('hidden');
+  }
+
+  hideHud() {
+    document.getElementById('hud')?.classList.add('hidden');
+  }
+
+  syncScores() {
+    const state = this.network?.room?.state;
+    if (!state) return;
+    const s1 = state.scoreTeam1 ?? 0;
+    const s2 = state.scoreTeam2 ?? 0;
+    if (s1 !== this._score1) {
+      this._score1 = s1;
+      const el = document.getElementById('score-1');
+      if (el) el.textContent = String(s1);
+    }
+    if (s2 !== this._score2) {
+      this._score2 = s2;
+      const el = document.getElementById('score-2');
+      if (el) el.textContent = String(s2);
+    }
+  }
+
+  updateTeamCounts() {
+    if (!this.teamPickerOpen) return;
+    const players = this.network?.room?.state?.players;
+    if (!players) return;
+    let t1 = 0;
+    let t2 = 0;
+    players.forEach((p) => {
+      if (p.team === 1) t1++;
+      else if (p.team === 2) t2++;
+    });
+    const set = (team, count) => {
+      const el = document.querySelector(`.team-pick__count[data-team="${team}"]`);
+      if (el) el.textContent = `${count} player${count === 1 ? '' : 's'}`;
+    };
+    set(1, t1);
+    set(2, t2);
+  }
+
   update(_time, delta) {
     const dt = delta / 1000;
     if (this.player) {
@@ -223,6 +318,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.syncFlag();
+    this.syncScores();
     for (const r of this.remotes.values()) r.update();
     for (const a of this.arrows.values()) a.update(dt);
   }

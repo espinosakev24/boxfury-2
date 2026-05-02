@@ -61,6 +61,12 @@
 
     <div id="game" class="hidden"></div>
 
+    <div id="hud" class="hud hidden">
+      <span class="hud__score hud__score--p1" id="score-1">0</span>
+      <span class="hud__sep">—</span>
+      <span class="hud__score hud__score--p2" id="score-2">0</span>
+    </div>
+
     <div id="game-menu" class="overlay hidden">
       <div class="overlay__backdrop"></div>
       <div class="overlay__panel">
@@ -89,6 +95,28 @@
           <button id="opt-leave" class="btn btn--danger" type="button">
             <span class="btn__label"><span class="btn__index">05</span><span class="btn__label-text">Leave room</span></span>
             <span class="btn__key">L</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="team-picker" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel">
+        <div class="overlay__header">
+          <span class="eyebrow">◣ Choose your team</span>
+        </div>
+        <h2 class="overlay__title">PICK SIDE</h2>
+        <div class="team-pick">
+          <button id="team-pick-1" class="team-pick__btn team-pick__btn--p1" type="button">
+            <div class="team-pick__chip"></div>
+            <div class="team-pick__name">JADE</div>
+            <div class="team-pick__count" data-team="1">0 players</div>
+          </button>
+          <button id="team-pick-2" class="team-pick__btn team-pick__btn--p2" type="button">
+            <div class="team-pick__chip"></div>
+            <div class="team-pick__name">CRIMSON</div>
+            <div class="team-pick__count" data-team="2">0 players</div>
           </button>
         </div>
       </div>

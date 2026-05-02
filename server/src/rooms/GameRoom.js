@@ -10,6 +10,7 @@ import {
   PHYSICS,
   PLAYER,
   PLAYER_COLORS,
+  SCORE,
   TILE,
   WORLD,
   parseMap,
@@ -42,6 +43,10 @@ export class GameRoom extends Room {
     this.displayName = (options?.name && String(options.name).slice(0, 24)) || randomName();
     this.createdAt = Date.now();
     this.map = parseMap();
+    this.bases = {
+      1: this.map.bases.team1,
+      2: this.map.bases.team2,
+    };
     if (this.map.flag) {
       this.state.flag.x = this.map.flag.x;
       this.state.flag.y = this.map.flag.y;
@@ -61,6 +66,18 @@ export class GameRoom extends Room {
       if (typeof payload.bowAngle === 'number') player.bowAngle = payload.bowAngle;
     });
 
+    this.onMessage(MESSAGES.CHOOSE_TEAM, (client, payload) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || player.team !== 0) return;
+      const team = payload?.team;
+      if (team !== 1 && team !== 2) return;
+      player.team = team;
+      player.color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
+      player.alive = true;
+      this.updateMetadata();
+      console.log(`[room ${this.displayName}] ${player.name} chose team ${team}`);
+    });
+
     this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
       const flag = this.state.flag;
       const player = this.state.players.get(client.sessionId);
@@ -69,12 +86,27 @@ export class GameRoom extends Room {
         return;
       }
       if (flag.carrierId === client.sessionId) {
-        flag.carrierId = '';
-        flag.x = player.x;
-        flag.y = player.y;
-        flag.vx = 0;
-        flag.vy = 0;
-        console.log('[flag] dropped by', client.sessionId, 'at', player.x.toFixed(0), player.y.toFixed(0));
+        const base = this.bases?.[player.team];
+        const distToBase = base ? Math.hypot(player.x - base.x, player.y - base.y) : Infinity;
+        if (base && distToBase <= SCORE.CAPTURE_RADIUS) {
+          if (player.team === 1) this.state.scoreTeam1++;
+          else if (player.team === 2) this.state.scoreTeam2++;
+          flag.carrierId = '';
+          flag.x = flag.homeX;
+          flag.y = flag.homeY;
+          flag.vx = 0;
+          flag.vy = 0;
+          console.log(
+            `[room ${this.displayName}] SCORE team ${player.team} by ${player.name} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
+          );
+        } else {
+          flag.carrierId = '';
+          flag.x = player.x;
+          flag.y = player.y;
+          flag.vx = 0;
+          flag.vy = 0;
+          console.log('[flag] dropped by', client.sessionId, 'at', player.x.toFixed(0), player.y.toFixed(0));
+        }
       } else if (!flag.carrierId) {
         const dx = player.x - flag.x;
         const dy = player.y - flag.y;
@@ -101,6 +133,7 @@ export class GameRoom extends Room {
       arrow.vx = Number(payload.vx) || 0;
       arrow.vy = Number(payload.vy) || 0;
       arrow.shooterId = client.sessionId;
+      arrow.shooterTeam = shooter.team || 0;
       arrow.spawnedAt = Date.now();
       const id = `${client.sessionId}-${++this.arrowSeq}`;
       this.state.arrows.set(id, arrow);
@@ -152,6 +185,7 @@ export class GameRoom extends Room {
       for (const [pid, target] of this.state.players) {
         if (pid === arrow.shooterId) continue;
         if (!target.alive) continue;
+        if (arrow.shooterTeam !== 0 && target.team === arrow.shooterTeam) continue;
         if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
         if (this.hitsPlayer(arrow, target)) {
           arrow.stuckToId = pid;
@@ -269,16 +303,15 @@ export class GameRoom extends Room {
   }
 
   onJoin(client, options = {}) {
-    const team = this.pickBalancedTeam();
-    const color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
     const name = (options?.name && String(options.name).slice(0, 16)) || defaultPlayerName(client.sessionId);
-    const player = new Player(color);
+    const player = new Player(0);
     player.name = name;
-    player.team = team;
+    player.team = 0;
+    player.alive = false;
     this.state.players.set(client.sessionId, player);
     this.joinCount++;
     this.updateMetadata();
-    console.log(`[room ${this.displayName}] +${name} (team ${team}, ${this.state.players.size}/${this.maxClients})`);
+    console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size}/${this.maxClients})`);
   }
 
   onLeave(client) {
@@ -297,15 +330,6 @@ export class GameRoom extends Room {
     console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size}/${this.maxClients})`);
   }
 
-  pickBalancedTeam() {
-    let t1 = 0;
-    let t2 = 0;
-    for (const p of this.state.players.values()) {
-      if (p.team === 1) t1++;
-      else if (p.team === 2) t2++;
-    }
-    return t1 <= t2 ? 1 : 2;
-  }
 
   updateMetadata() {
     const team1 = [];
