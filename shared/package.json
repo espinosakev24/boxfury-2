@@ -7,6 +7,7 @@
   "exports": {
     ".": "./index.js",
     "./constants": "./constants.js",
-    "./events": "./events.js"
+    "./events": "./events.js",
+    "./maps": "./maps.js"
   }
 }

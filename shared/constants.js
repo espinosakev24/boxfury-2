@@ -15,10 +15,12 @@ export const NETWORK = {
 
 export const PLAYER = {
   SPEED: 320,
+  CARRY_SPEED: 200,
   JUMP_SPEED: 450,
   WIDTH: 24,
   HEIGHT: 48,
   MAX_HP: 100,
+  PICKUP_RADIUS: 36,
 };
 
 export const BOW = {
@@ -53,3 +55,9 @@ export const PLAYER_COLORS = [
   COLORS.P3_AZURE,
   COLORS.P4_AMBER,
 ];
+
+export const GAME = {
+  ZOOM_ENABLED: true,
+  ZOOM: 1.8,
+  CAMERA_LERP: 0.12,
+};

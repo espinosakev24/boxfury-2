@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { WORLD } from '@boxfury/shared';
+import { GAME, WORLD } from '@boxfury/shared';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
@@ -16,6 +16,10 @@ export class GameScene extends Phaser.Scene {
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.level = new Level(this);
+    if (this.level.flag) {
+      this.physics.add.collider(this.level.flag.pole, this.level.platforms);
+    }
+    this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
     this.network = new NetworkManager();
 
     this.statusText = this.add
@@ -24,7 +28,8 @@ export class GameScene extends Phaser.Scene {
         fontSize: '14px',
         color: '#8a8a9e',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setScrollFactor(0);
 
     this.events.once('shutdown', () => this.network?.disconnect());
 
@@ -80,13 +85,33 @@ export class GameScene extends Phaser.Scene {
   spawnLocalPlayer(color) {
     this.statusText?.destroy();
     this.statusText = null;
+    const spawn = this.level.map.bases.team1
+      ?? { x: WORLD.WIDTH / 2, y: WORLD.HEIGHT / 2 - 100 };
     this.player = new Player(this, {
       id: this.network.sessionId,
-      x: WORLD.WIDTH / 2,
-      y: WORLD.HEIGHT / 2 - 100,
+      x: spawn.x,
+      y: spawn.y,
       color,
     });
     this.physics.add.collider(this.player.sprite, this.level.platforms);
+
+    if (GAME.ZOOM_ENABLED) {
+      const cam = this.cameras.main;
+      cam.setZoom(GAME.ZOOM);
+      cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+    }
+  }
+
+  toggleFlag() {
+    const flag = this.level.flag;
+    if (!flag) return;
+    if (this.player.carryingFlag) {
+      flag.drop();
+      this.player.setCarryingFlag(false);
+    } else if (flag.canPickUp(this.player)) {
+      flag.pickUp(this.player);
+      this.player.setCarryingFlag(true);
+    }
   }
 
   spawnArrow(shot) {
@@ -114,6 +139,10 @@ export class GameScene extends Phaser.Scene {
       });
       if (this.cursors.up.isDown) this.player.jump();
 
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+        this.toggleFlag();
+      }
+
       if (this.cursors.space.isDown) {
         this.player.chargeBow();
       } else {
@@ -127,6 +156,8 @@ export class GameScene extends Phaser.Scene {
       this.player.update(dt);
       this.network.sendState(this.player.getState());
     }
+
+    this.level.flag?.update();
 
     for (const r of this.remotes.values()) r.update();
 

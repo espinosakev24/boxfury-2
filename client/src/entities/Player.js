@@ -7,6 +7,7 @@ export class Player {
     this.id = id;
     this.facing = 1;
     this.charging = false;
+    this.carryingFlag = false;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
@@ -15,8 +16,18 @@ export class Player {
 
   move({ left, right }) {
     const vx = (right ? 1 : 0) - (left ? 1 : 0);
-    this.sprite.body.setVelocityX(vx * PLAYER.SPEED);
+    const speed = this.carryingFlag ? PLAYER.CARRY_SPEED : PLAYER.SPEED;
+    this.sprite.body.setVelocityX(vx * speed);
     if (vx !== 0) this.facing = vx;
+  }
+
+  setCarryingFlag(carrying) {
+    this.carryingFlag = carrying;
+    if (carrying) {
+      this.charging = false;
+      this.bow.setAngle(BOW.MIN_ANGLE);
+    }
+    this.bow.sprite.setVisible(!carrying);
   }
 
   jump() {
@@ -26,11 +37,12 @@ export class Player {
   }
 
   chargeBow() {
+    if (this.carryingFlag) return;
     this.charging = true;
   }
 
   releaseBow() {
-    if (!this.charging) return null;
+    if (this.carryingFlag || !this.charging) return null;
     this.charging = false;
     const rot = this.bow.getRotation();
     const cos = Math.cos(rot);
