@@ -11,7 +11,7 @@ export const NETWORK = {
   INTERP_DELAY_MS: 100,
 };
 
-export const COLORS = [0x4ade80, 0xf87171, 0x60a5fa, 0xfbbf24, 0xa78bfa, 0xf472b6];
+// export const COLORS = [0x4ade80, 0xf87171, 0x60a5fa, 0xfbbf24, 0xa78bfa, 0xf472b6];
 
 export const PLAYER = {
   SPEED: 320,
@@ -36,3 +36,20 @@ export const ARROW = {
   LENGTH: 18,
   THICKNESS: 2,
 };
+
+export const COLORS = {
+  P1_JADE: 0x4ee08a,
+  P2_CRIMSON: 0xff5470,
+  P3_AZURE: 0x4eb1ff,
+  P4_AMBER: 0xffd84e,
+  DEEP: 0x15151f,
+  BONE: 0xf5f5f0,
+  ARENA: 0x1f1f2c,
+};
+
+export const PLAYER_COLORS = [
+  COLORS.P1_JADE,
+  COLORS.P2_CRIMSON,
+  COLORS.P3_AZURE,
+  COLORS.P4_AMBER,
+];

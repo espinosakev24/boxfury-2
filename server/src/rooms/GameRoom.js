@@ -1,5 +1,5 @@
 import { Room } from 'colyseus';
-import { COLORS, MESSAGES, NETWORK } from '@boxfury/shared';
+import { MESSAGES, NETWORK, PLAYER_COLORS } from '@boxfury/shared';
 import { GameState } from '../schemas/GameState.js';
 import { Player } from '../schemas/Player.js';
 
@@ -28,7 +28,7 @@ export class GameRoom extends Room {
   }
 
   onJoin(client) {
-    const color = COLORS[this.joinCount++ % COLORS.length];
+    const color = PLAYER_COLORS[this.joinCount++ % PLAYER_COLORS.length];
     this.state.players.set(client.sessionId, new Player(color));
     console.log(`[room] +${client.sessionId} (${this.state.players.size} online)`);
   }

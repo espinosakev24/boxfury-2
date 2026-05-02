@@ -1,21 +1,41 @@
+import './style.css';
 import Phaser from 'phaser';
-import { WORLD } from '@boxfury/shared';
+import { COLORS, WORLD } from '@boxfury/shared';
 import { BootScene } from './scenes/BootScene.js';
 import { PreloadScene } from './scenes/PreloadScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { setupMenu } from './menu.js';
+import { setupGameMenu } from './game-menu.js';
 
-const config = {
-  type: Phaser.AUTO,
-  parent: 'game',
-  width: WORLD.WIDTH,
-  height: WORLD.HEIGHT,
-  backgroundColor: '#1d1d2b',
-  pixelArt: true,
-  physics: {
-    default: 'arcade',
-    arcade: { gravity: { y: 900 }, debug: false },
-  },
-  scene: [BootScene, PreloadScene, GameScene],
-};
+let game = null;
 
-new Phaser.Game(config);
+function startGame() {
+  document.getElementById('game').classList.remove('hidden');
+  game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: 'game',
+    width: WORLD.WIDTH,
+    height: WORLD.HEIGHT,
+    backgroundColor: COLORS.ARENA,
+    pixelArt: true,
+    physics: {
+      default: 'arcade',
+      arcade: { gravity: { y: 900 }, debug: false },
+    },
+    scene: [BootScene, PreloadScene, GameScene],
+  });
+}
+
+async function leaveGame() {
+  if (game) {
+    const scene = game.scene.getScene('GameScene');
+    try { await scene?.network?.disconnect(); } catch {}
+    game.destroy(true);
+    game = null;
+  }
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('menu').classList.remove('hidden');
+}
+
+setupMenu(startGame);
+setupGameMenu({ onLeave: leaveGame });

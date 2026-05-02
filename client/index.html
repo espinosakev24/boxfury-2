@@ -4,13 +4,133 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Boxfury</title>
-    <style>
-      html, body { margin: 0; padding: 0; background: #111; height: 100%; overflow: hidden; }
-      #game { display: flex; justify-content: center; align-items: center; height: 100%; }
-    </style>
   </head>
   <body>
-    <div id="game"></div>
+    <main id="menu" class="menu">
+      <section class="menu__left">
+        <div>
+          <div class="eyebrow">◣ A minimal arena brawler</div>
+          <h1 class="wordmark">
+            <div>BOX</div>
+            <div><span class="wordmark__accent">FURY</span><span class="wordmark__dot">.</span></div>
+          </h1>
+          <p class="tagline">Up to four boxes. One line. Last shape standing wins.</p>
+        </div>
+
+        <div class="menu__actions">
+          <button id="btn-find" class="btn btn--primary" type="button">
+            <span class="btn__label"><span class="btn__index">01</span>Find game</span>
+            <span class="btn__key">ENTER</span>
+          </button>
+          <button id="btn-create" class="btn btn--secondary" type="button" disabled>
+            <span class="btn__label"><span class="btn__index">02</span>Create game</span>
+            <span class="btn__key">C</span>
+          </button>
+          <button id="btn-settings" class="btn btn--secondary" type="button" disabled>
+            <span class="btn__label"><span class="btn__index">03</span>Settings</span>
+            <span class="btn__key">S</span>
+          </button>
+        </div>
+
+        <div class="menu__footer">
+          <div class="eyebrow">© 2026 Boxfury</div>
+          <div class="eyebrow">v0.1</div>
+        </div>
+      </section>
+
+      <section class="menu__right">
+        <div class="arena">
+          <div class="arena__corner arena__corner--tl"></div>
+          <div class="arena__corner arena__corner--tr"></div>
+          <div class="arena__corner arena__corner--bl"></div>
+          <div class="arena__corner arena__corner--br"></div>
+          <div class="arena__line"></div>
+          <div class="arena__boxes">
+            <div class="box box--p1"></div>
+            <div class="box box--p2"></div>
+            <div class="box box--p3"></div>
+            <div class="box box--p4"></div>
+          </div>
+          <div class="arena__caption">
+            <span class="eyebrow">Arena · 1440 × 900</span>
+            <span class="eyebrow">4 players max</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="game" class="hidden"></div>
+
+    <div id="game-menu" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel">
+        <div class="overlay__header">
+          <span class="eyebrow">◣ Paused</span>
+          <span class="eyebrow">ESC to resume</span>
+        </div>
+        <h2 class="overlay__title">MENU</h2>
+        <div class="overlay__actions">
+          <button id="opt-resume" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">01</span><span class="btn__label-text">Resume</span></span>
+            <span class="btn__key">ESC</span>
+          </button>
+          <button id="opt-controls" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">02</span><span class="btn__label-text">Controls</span></span>
+            <span class="btn__key">?</span>
+          </button>
+          <button id="opt-mute" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">03</span><span class="btn__label-text">Mute audio</span></span>
+            <span class="btn__key">M</span>
+          </button>
+          <button id="opt-fullscreen" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">04</span><span class="btn__label-text">Fullscreen</span></span>
+            <span class="btn__key">F</span>
+          </button>
+          <button id="opt-leave" class="btn btn--danger" type="button">
+            <span class="btn__label"><span class="btn__index">05</span><span class="btn__label-text">Leave room</span></span>
+            <span class="btn__key">L</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="controls-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel">
+        <div class="overlay__header">
+          <span class="eyebrow">◣ Controls</span>
+          <button id="controls-close" class="btn btn--secondary btn--compact" type="button">CLOSE</button>
+        </div>
+        <ul class="controls-list">
+          <li>
+            <div class="controls-list__keys">
+              <span class="key-cap">←</span>
+              <span class="key-cap">→</span>
+            </div>
+            <span class="controls-list__label">Move</span>
+          </li>
+          <li>
+            <div class="controls-list__keys">
+              <span class="key-cap">↑</span>
+            </div>
+            <span class="controls-list__label">Jump</span>
+          </li>
+          <li>
+            <div class="controls-list__keys">
+              <span class="key-cap">Space</span>
+            </div>
+            <span class="controls-list__label">Hold to charge bow, release to shoot</span>
+          </li>
+          <li>
+            <div class="controls-list__keys">
+              <span class="key-cap">ESC</span>
+            </div>
+            <span class="controls-list__label">Open the in-game menu</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -37,4 +37,16 @@ export class NetworkManager {
   onShoot(cb) {
     this.room?.onMessage(MESSAGES.SHOOT, cb);
   }
+
+  async disconnect() {
+    if (!this.room) return;
+    const room = this.room;
+    this.room = null;
+    this.client = null;
+    try {
+      await room.leave();
+    } catch {
+      // ignore — connection may already be closed
+    }
+  }
 }

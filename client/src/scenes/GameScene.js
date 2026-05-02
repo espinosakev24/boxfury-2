@@ -18,14 +18,34 @@ export class GameScene extends Phaser.Scene {
     this.level = new Level(this);
     this.network = new NetworkManager();
 
-    const room = await this.network.connect();
+    this.statusText = this.add
+      .text(WORLD.WIDTH / 2, WORLD.HEIGHT / 2, 'Connecting…', {
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: '14px',
+        color: '#8a8a9e',
+      })
+      .setOrigin(0.5);
+
+    this.events.once('shutdown', () => this.network?.disconnect());
+
+    let room;
+    try {
+      room = await this.network.connect();
+    } catch (err) {
+      this.statusText.setText(`Connection failed: ${err.message}`);
+      this.statusText.setColor('#ff5470');
+      console.error('[scene] connect failed', err);
+      return;
+    }
+
     const $ = this.network.$;
 
-    $(room.state).players.onAdd((player, sessionId) => {
+    const handleAdd = (player, sessionId) => {
       if (sessionId === room.sessionId) {
-        this.spawnLocalPlayer(sessionId, player.color);
+        if (!this.player) this.spawnLocalPlayer(player.color);
         return;
       }
+      if (this.remotes.has(sessionId)) return;
       const remote = new RemotePlayer(this, {
         id: sessionId,
         x: player.x,
@@ -41,7 +61,9 @@ export class GameScene extends Phaser.Scene {
         facing: player.facing,
         bowAngle: player.bowAngle,
       }));
-    });
+    };
+
+    $(room.state).players.onAdd(handleAdd);
 
     $(room.state).players.onRemove((_player, sessionId) => {
       const remote = this.remotes.get(sessionId);
@@ -55,9 +77,11 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  spawnLocalPlayer(id, color) {
+  spawnLocalPlayer(color) {
+    this.statusText?.destroy();
+    this.statusText = null;
     this.player = new Player(this, {
-      id,
+      id: this.network.sessionId,
       x: WORLD.WIDTH / 2,
       y: WORLD.HEIGHT / 2 - 100,
       color,
