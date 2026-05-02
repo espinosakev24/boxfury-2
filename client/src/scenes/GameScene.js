@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, PLAYER, WORLD } from '@boxfury/shared';
+import { FLAG, GAME, PLAYER, WORLD } from '@boxfury/shared';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
@@ -99,7 +99,6 @@ export class GameScene extends Phaser.Scene {
   syncFlag() {
     const flagState = this.network?.room?.state?.flag;
     if (!flagState || !this.level.flag) return;
-    this.level.flag.applyState(flagState);
     const carrierId = flagState.carrierId || '';
     if (carrierId !== this.flagCarrierId) {
       const prev = this.flagCarrierId;
@@ -107,6 +106,17 @@ export class GameScene extends Phaser.Scene {
       if (prev) this.findPlayer(prev)?.setCarryingFlag?.(false);
       if (carrierId) this.findPlayer(carrierId)?.setCarryingFlag?.(true);
     }
+    if (carrierId) {
+      const carrier = this.findPlayer(carrierId);
+      if (carrier?.sprite) {
+        this.level.flag.applyState({
+          x: carrier.sprite.x,
+          y: carrier.sprite.y + FLAG.CARRY_OFFSET_Y,
+        });
+        return;
+      }
+    }
+    this.level.flag.applyState(flagState);
   }
 
   handleHit({ targetId, knockX, knockY }) {
