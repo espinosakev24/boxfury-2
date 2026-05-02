@@ -22,7 +22,7 @@
             <span class="btn__label"><span class="btn__index">01</span>Find game</span>
             <span class="btn__key">ENTER</span>
           </button>
-          <button id="btn-create" class="btn btn--secondary" type="button" disabled>
+          <button id="btn-create" class="btn btn--secondary" type="button">
             <span class="btn__label"><span class="btn__index">02</span>Create game</span>
             <span class="btn__key">C</span>
           </button>
@@ -91,6 +91,22 @@
             <span class="btn__key">L</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <div id="lobby-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel overlay__panel--wide">
+        <div class="overlay__header">
+          <span class="eyebrow">◣ Find game</span>
+          <button id="lobby-close" class="btn btn--secondary btn--compact" type="button">CLOSE</button>
+        </div>
+        <h2 class="overlay__title">ROOMS</h2>
+        <div class="lobby__controls">
+          <input id="lobby-search" class="lobby__search" type="text" placeholder="Search rooms…" autocomplete="off" />
+          <button id="lobby-refresh" class="btn btn--secondary btn--compact" type="button">REFRESH</button>
+        </div>
+        <div id="lobby-list" class="lobby__list"></div>
       </div>
     </div>
 

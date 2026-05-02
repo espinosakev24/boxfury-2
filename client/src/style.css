@@ -335,3 +335,110 @@ html, body {
   font-weight: 500;
   color: var(--bf-bone);
 }
+
+/* ---------- Lobby ---------- */
+.overlay__panel--wide { max-width: 640px; }
+
+.lobby__controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lobby__search {
+  flex: 1;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  color: var(--bf-bone);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-radius: var(--r-tight);
+}
+.lobby__search:focus {
+  outline: none;
+  border-color: var(--bf-bone);
+}
+.lobby__search::placeholder { color: var(--bf-mute); }
+
+.lobby__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 56vh;
+  overflow-y: auto;
+}
+.lobby__empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--bf-soft);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.room {
+  padding: 14px 16px;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 80ms ease;
+}
+.room:hover { border-color: var(--bf-bone); }
+.room:active { transform: translateY(1px); }
+.room--full {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.room--full:hover { border-color: var(--bf-line); }
+.room--full:active { transform: none; }
+
+.room__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+.room__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--bf-bone);
+}
+.room__meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bf-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.room__teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.room__team {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.room__team-head {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.room__team--p1 .room__team-head { color: var(--p1); }
+.room__team--p2 .room__team-head { color: var(--p2); }
+.room__team-members {
+  color: var(--bf-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

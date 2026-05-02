@@ -12,15 +12,26 @@ export class NetworkManager {
     this._lastSentAt = 0;
   }
 
-  async connect() {
+  async connect({ mode = 'auto', roomId = null, options = {} } = {}) {
     this.client = new Client(CLIENT_CONFIG.SERVER_URL);
-    this.room = await this.client.joinOrCreate(ROOM_NAME);
+    if (mode === 'create') {
+      this.room = await this.client.create(ROOM_NAME, options);
+    } else if (mode === 'join' && roomId) {
+      this.room = await this.client.joinById(roomId, options);
+    } else {
+      this.room = await this.client.joinOrCreate(ROOM_NAME, options);
+    }
     this.sessionId = this.room.sessionId;
     this.$ = getStateCallbacks(this.room);
-    console.log('[net] connected', this.sessionId);
+    console.log('[net] connected', this.sessionId, 'room', this.room.roomId);
 
     this.room.onLeave(() => console.log('[net] disconnected'));
     return this.room;
+  }
+
+  static async listRooms() {
+    const client = new Client(CLIENT_CONFIG.SERVER_URL);
+    return client.getAvailableRooms(ROOM_NAME);
   }
 
   sendState(state, now = performance.now()) {

@@ -11,6 +11,8 @@ export class Player extends Schema {
     this.facing = 1;
     this.color = color;
     this.bowAngle = BOW.MIN_ANGLE;
+    this.name = '';
+    this.team = 0;
   }
 }
 
@@ -22,4 +24,6 @@ defineTypes(Player, {
   facing: 'number',
   color: 'number',
   bowAngle: 'number',
+  name: 'string',
+  team: 'number',
 });

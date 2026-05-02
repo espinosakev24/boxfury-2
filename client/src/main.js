@@ -9,7 +9,7 @@ import { setupGameMenu } from './game-menu.js';
 
 let game = null;
 
-function startGame() {
+function startGame(connectOptions = {}) {
   document.getElementById('game').classList.remove('hidden');
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -24,6 +24,7 @@ function startGame() {
     },
     scene: [BootScene, PreloadScene, GameScene],
   });
+  game.registry.set('connectOptions', connectOptions);
 }
 
 async function leaveGame() {
@@ -37,5 +38,8 @@ async function leaveGame() {
   document.getElementById('menu').classList.remove('hidden');
 }
 
-setupMenu(startGame);
+setupMenu({
+  onJoin: (roomId) => startGame({ mode: 'join', roomId }),
+  onCreate: () => startGame({ mode: 'create' }),
+});
 setupGameMenu({ onLeave: leaveGame });

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, WORLD } from '@boxfury/shared';
+import { GAME, PLAYER, WORLD } from '@boxfury/shared';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
@@ -33,9 +33,10 @@ export class GameScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => this.network?.disconnect());
 
+    const connectOptions = this.registry.get('connectOptions') ?? {};
     let room;
     try {
-      room = await this.network.connect();
+      room = await this.network.connect(connectOptions);
     } catch (err) {
       this.statusText.setText(`Connection failed: ${err.message}`);
       this.statusText.setColor('#ff5470');
@@ -47,7 +48,7 @@ export class GameScene extends Phaser.Scene {
 
     const handleAdd = (player, sessionId) => {
       if (sessionId === room.sessionId) {
-        if (!this.player) this.spawnLocalPlayer(player.color);
+        if (!this.player) this.spawnLocalPlayer(player.color, player.team);
         return;
       }
       if (this.remotes.has(sessionId)) return;
@@ -82,11 +83,15 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  spawnLocalPlayer(color) {
+  spawnLocalPlayer(color, team = 1) {
     this.statusText?.destroy();
     this.statusText = null;
-    const spawn = this.level.map.bases.team1
+    const baseKey = team === 2 ? 'team2' : 'team1';
+    const spawn = this.level.map.bases[baseKey]
+      ?? this.level.map.bases.team1
+      ?? this.level.map.bases.team2
       ?? { x: WORLD.WIDTH / 2, y: WORLD.HEIGHT / 2 - 100 };
+    console.log('[spawn]', { team, x: spawn.x, y: spawn.y, color: '0x' + color.toString(16) });
     this.player = new Player(this, {
       id: this.network.sessionId,
       x: spawn.x,
@@ -95,11 +100,41 @@ export class GameScene extends Phaser.Scene {
     });
     this.physics.add.collider(this.player.sprite, this.level.platforms);
 
+    const cam = this.cameras.main;
     if (GAME.ZOOM_ENABLED) {
-      const cam = this.cameras.main;
       cam.setZoom(GAME.ZOOM);
       cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+    } else {
+      cam.setZoom(1);
+      cam.centerOn(this.player.sprite.x, this.player.sprite.y);
     }
+
+    this.spawnPulse(spawn.x, spawn.y, color);
+    this.attachLocalIndicator(color);
+  }
+
+  spawnPulse(x, y, color) {
+    const ring = this.add.rectangle(x, y, 60, 90);
+    ring.setStrokeStyle(3, color, 1);
+    this.cameras.main.flash(220, 80, 80, 80);
+    this.tweens.add({
+      targets: ring,
+      scaleX: 2.6,
+      scaleY: 2.6,
+      alpha: 0,
+      duration: 1100,
+      ease: 'Cubic.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  attachLocalIndicator(color) {
+    const caret = this.add.text(0, 0, '▼', {
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '14px',
+      color: '#' + color.toString(16).padStart(6, '0'),
+    }).setOrigin(0.5, 1);
+    this.player.indicator = caret;
   }
 
   toggleFlag() {
@@ -155,6 +190,12 @@ export class GameScene extends Phaser.Scene {
 
       this.player.update(dt);
       this.network.sendState(this.player.getState());
+      if (this.player.indicator) {
+        this.player.indicator.setPosition(
+          this.player.sprite.x,
+          this.player.sprite.y - PLAYER.HEIGHT / 2 - 4,
+        );
+      }
     }
 
     this.level.flag?.update();
