@@ -30,6 +30,7 @@ function startGame() {
     pixelArt: true,
     scene: [BootScene, PreloadScene, GameScene],
   });
+  window.__bf = game;
 }
 
 async function leaveGame() {
