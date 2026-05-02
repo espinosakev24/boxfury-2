@@ -4,6 +4,7 @@ export const MESSAGES = {
   STATE: 'state',
   SHOOT: 'shoot',
   HIT: 'hit',
+  FLAG_TOGGLE: 'flag_toggle',
 };
 
 export const ROOM_NAME = 'boxfury';

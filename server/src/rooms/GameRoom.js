@@ -2,6 +2,7 @@ import { Room } from 'colyseus';
 import {
   ARROW,
   COLORS,
+  FLAG,
   GAME,
   HIT,
   MESSAGES,
@@ -41,6 +42,12 @@ export class GameRoom extends Room {
     this.displayName = (options?.name && String(options.name).slice(0, 24)) || randomName();
     this.createdAt = Date.now();
     this.map = parseMap();
+    if (this.map.flag) {
+      this.state.flag.x = this.map.flag.x;
+      this.state.flag.y = this.map.flag.y;
+      this.state.flag.homeX = this.map.flag.x;
+      this.state.flag.homeY = this.map.flag.y;
+    }
     this.updateMetadata();
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
@@ -52,6 +59,37 @@ export class GameRoom extends Room {
       if (typeof payload.vy === 'number') player.vy = payload.vy;
       if (typeof payload.facing === 'number') player.facing = payload.facing;
       if (typeof payload.bowAngle === 'number') player.bowAngle = payload.bowAngle;
+    });
+
+    this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
+      const flag = this.state.flag;
+      const player = this.state.players.get(client.sessionId);
+      if (!player || !player.alive) {
+        console.log('[flag] toggle rejected: player missing or dead', client.sessionId);
+        return;
+      }
+      if (flag.carrierId === client.sessionId) {
+        flag.carrierId = '';
+        flag.x = player.x;
+        flag.y = player.y;
+        flag.vx = 0;
+        flag.vy = 0;
+        console.log('[flag] dropped by', client.sessionId, 'at', player.x.toFixed(0), player.y.toFixed(0));
+      } else if (!flag.carrierId) {
+        const dx = player.x - flag.x;
+        const dy = player.y - flag.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= PLAYER.PICKUP_RADIUS) {
+          flag.carrierId = client.sessionId;
+          flag.vx = 0;
+          flag.vy = 0;
+          console.log('[flag] picked up by', client.sessionId, 'dist', dist.toFixed(1));
+        } else {
+          console.log('[flag] pickup too far', client.sessionId, 'dist', dist.toFixed(1), 'radius', PLAYER.PICKUP_RADIUS);
+        }
+      } else {
+        console.log('[flag] held by', flag.carrierId, '— request from', client.sessionId, 'ignored');
+      }
     });
 
     this.onMessage(MESSAGES.SHOOT, (client, payload) => {
@@ -116,6 +154,10 @@ export class GameRoom extends Room {
         if (!target.alive) continue;
         if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
         if (this.hitsPlayer(arrow, target)) {
+          arrow.stuckToId = pid;
+          arrow.stuckOffsetX = arrow.x - target.x;
+          arrow.stuckOffsetY = arrow.y - target.y;
+          arrow.stuckFacing = target.facing || 1;
           this.applyHit(arrow, target, pid);
           arrow.stuck = true;
           arrow.vx = 0;
@@ -127,6 +169,61 @@ export class GameRoom extends Room {
     });
 
     for (const id of remove) this.state.arrows.delete(id);
+
+    this.tickFlag(dt);
+  }
+
+  tickFlag(dt) {
+    const flag = this.state.flag;
+    if (flag.carrierId) {
+      const carrier = this.state.players.get(flag.carrierId);
+      if (!carrier || !carrier.alive) {
+        flag.carrierId = '';
+        if (carrier) {
+          flag.x = carrier.x;
+          flag.y = carrier.y;
+        }
+        flag.vx = 0;
+        flag.vy = 0;
+        return;
+      }
+      flag.x = carrier.x;
+      flag.y = carrier.y + FLAG.CARRY_OFFSET_Y;
+      flag.vx = 0;
+      flag.vy = 0;
+      return;
+    }
+
+    flag.vy += PHYSICS.GRAVITY * dt;
+    flag.x += flag.vx * dt;
+    flag.y += flag.vy * dt;
+
+    if (flag.y > WORLD.HEIGHT + 80) {
+      flag.x = flag.homeX;
+      flag.y = flag.homeY;
+      flag.vx = 0;
+      flag.vy = 0;
+      return;
+    }
+
+    const flagBottom = flag.y + FLAG.POLE_HEIGHT / 2;
+    for (const wall of this.map.walls) {
+      const top = wall.y - wall.h / 2;
+      const left = wall.x - wall.w / 2;
+      const right = wall.x + wall.w / 2;
+      if (
+        flag.vy > 0 &&
+        flag.x >= left &&
+        flag.x <= right &&
+        flagBottom >= top &&
+        flagBottom <= top + TILE.WALL_THICKNESS + Math.abs(flag.vy * dt) + 4
+      ) {
+        flag.y = top - FLAG.POLE_HEIGHT / 2;
+        flag.vy = 0;
+        flag.vx *= 0.4;
+        break;
+      }
+    }
   }
 
   hitsWall(x, y) {
@@ -185,6 +282,16 @@ export class GameRoom extends Room {
   }
 
   onLeave(client) {
+    if (this.state.flag.carrierId === client.sessionId) {
+      const player = this.state.players.get(client.sessionId);
+      this.state.flag.carrierId = '';
+      this.state.flag.vx = 0;
+      this.state.flag.vy = 0;
+      if (player) {
+        this.state.flag.x = player.x;
+        this.state.flag.y = player.y;
+      }
+    }
     this.state.players.delete(client.sessionId);
     this.updateMetadata();
     console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size}/${this.maxClients})`);

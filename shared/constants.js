@@ -20,7 +20,7 @@ export const PLAYER = {
   WIDTH: 24,
   HEIGHT: 48,
   MAX_HP: 100,
-  PICKUP_RADIUS: 36,
+  PICKUP_RADIUS: 56,
 };
 
 export const BOW = {
@@ -50,6 +50,12 @@ export const HIT = {
   FLASH_MS: 90,
   IFRAMES_MS: 250,
   INPUT_LOCK_MS: 150,
+};
+
+export const FLAG = {
+  POLE_HEIGHT: 34,
+  POLE_WIDTH: 2,
+  CARRY_OFFSET_Y: -41,
 };
 
 export const COLORS = {

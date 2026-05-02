@@ -16,9 +16,6 @@ export class GameScene extends Phaser.Scene {
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.level = new Level(this);
-    if (this.level.flag) {
-      this.physics.add.collider(this.level.flag.pole, this.level.platforms);
-    }
     this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
     this.network = new NetworkManager();
 
@@ -49,6 +46,7 @@ export class GameScene extends Phaser.Scene {
     const handleAdd = (player, sessionId) => {
       if (sessionId === room.sessionId) {
         if (!this.player) this.spawnLocalPlayer(player.color, player.team);
+        if (room.state.flag?.carrierId === sessionId) this.player.setCarryingFlag(true);
         return;
       }
       if (this.remotes.has(sessionId)) return;
@@ -61,6 +59,7 @@ export class GameScene extends Phaser.Scene {
         bowAngle: player.bowAngle,
       });
       this.remotes.set(sessionId, remote);
+      if (room.state.flag?.carrierId === sessionId) remote.setCarryingFlag(true);
       $(player).onChange(() => remote.applyState({
         x: player.x,
         y: player.y,
@@ -92,6 +91,22 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.network.onHit((payload) => this.handleHit(payload));
+
+    this.flagCarrierId = '';
+    if (this.level.flag) this.level.flag.applyState(room.state.flag);
+  }
+
+  syncFlag() {
+    const flagState = this.network?.room?.state?.flag;
+    if (!flagState || !this.level.flag) return;
+    this.level.flag.applyState(flagState);
+    const carrierId = flagState.carrierId || '';
+    if (carrierId !== this.flagCarrierId) {
+      const prev = this.flagCarrierId;
+      this.flagCarrierId = carrierId;
+      if (prev) this.findPlayer(prev)?.setCarryingFlag?.(false);
+      if (carrierId) this.findPlayer(carrierId)?.setCarryingFlag?.(true);
+    }
   }
 
   handleHit({ targetId, knockX, knockY }) {
@@ -164,15 +179,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   toggleFlag() {
-    const flag = this.level.flag;
-    if (!flag) return;
-    if (this.player.carryingFlag) {
-      flag.drop();
-      this.player.setCarryingFlag(false);
-    } else if (flag.canPickUp(this.player)) {
-      flag.pickUp(this.player);
-      this.player.setCarryingFlag(true);
-    }
+    this.network.sendFlagToggle();
   }
 
   update(_time, delta) {
@@ -205,8 +212,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.level.flag?.update();
-
+    this.syncFlag();
     for (const r of this.remotes.values()) r.update();
     for (const a of this.arrows.values()) a.update(dt);
   }

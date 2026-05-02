@@ -48,6 +48,10 @@ export class NetworkManager {
     this.room?.send(MESSAGES.SHOOT, payload);
   }
 
+  sendFlagToggle() {
+    this.room?.send(MESSAGES.FLAG_TOGGLE);
+  }
+
   onHit(cb) {
     this.room?.onMessage(MESSAGES.HIT, cb);
   }

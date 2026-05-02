@@ -19,6 +19,10 @@ export class RemotePlayer {
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];
   }
 
+  setCarryingFlag(carrying) {
+    this.bow.sprite.setVisible(!carrying);
+  }
+
   flashHit() {
     const sprite = this.sprite;
     if (!sprite?.active) return;
