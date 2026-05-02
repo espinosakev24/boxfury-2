@@ -9,8 +9,18 @@ import { setupGameMenu } from './game-menu.js';
 
 let game = null;
 
+const hudEl = () => document.getElementById('hud');
+
+window.addEventListener('boxfury:hud', (e) => {
+  const { map, jade, crimson } = e.detail || {};
+  if (typeof map === 'string') document.getElementById('hud-map').textContent = map.toUpperCase();
+  if (typeof jade === 'number') document.getElementById('hud-jade').textContent = String(jade);
+  if (typeof crimson === 'number') document.getElementById('hud-crimson').textContent = String(crimson);
+});
+
 function startGame() {
   document.getElementById('game').classList.remove('hidden');
+  hudEl().classList.remove('hidden');
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
@@ -18,10 +28,6 @@ function startGame() {
     height: WORLD.HEIGHT,
     backgroundColor: COLORS.ARENA,
     pixelArt: true,
-    physics: {
-      default: 'arcade',
-      arcade: { gravity: { y: 900 }, debug: false },
-    },
     scene: [BootScene, PreloadScene, GameScene],
   });
 }
@@ -34,6 +40,7 @@ async function leaveGame() {
     game = null;
   }
   document.getElementById('game').classList.add('hidden');
+  hudEl().classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
 }
 

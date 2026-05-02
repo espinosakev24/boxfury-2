@@ -10,6 +10,7 @@ export class NetworkManager {
     this.sessionId = null;
     this.sendIntervalMs = 1000 / NETWORK.SEND_RATE;
     this._lastSentAt = 0;
+    this._lastInput = null;
   }
 
   async connect() {
@@ -18,24 +19,23 @@ export class NetworkManager {
     this.sessionId = this.room.sessionId;
     this.$ = getStateCallbacks(this.room);
     console.log('[net] connected', this.sessionId);
-
     this.room.onLeave(() => console.log('[net] disconnected'));
     return this.room;
   }
 
-  sendState(state, now = performance.now()) {
+  sendInput(input, now = performance.now()) {
     if (!this.room) return;
-    if (now - this._lastSentAt < this.sendIntervalMs) return;
+    const changed = !this._lastInput
+      || this._lastInput.left !== input.left
+      || this._lastInput.right !== input.right
+      || this._lastInput.jump !== input.jump
+      || this._lastInput.down !== input.down
+      || this._lastInput.charging !== input.charging;
+    const dueByTime = now - this._lastSentAt >= this.sendIntervalMs;
+    if (!changed && !dueByTime) return;
     this._lastSentAt = now;
-    this.room.send(MESSAGES.STATE, state);
-  }
-
-  sendShoot(payload) {
-    this.room?.send(MESSAGES.SHOOT, payload);
-  }
-
-  onShoot(cb) {
-    this.room?.onMessage(MESSAGES.SHOOT, cb);
+    this._lastInput = { ...input };
+    this.room.send(MESSAGES.INPUT, input);
   }
 
   async disconnect() {
@@ -43,10 +43,7 @@ export class NetworkManager {
     const room = this.room;
     this.room = null;
     this.client = null;
-    try {
-      await room.leave();
-    } catch {
-      // ignore — connection may already be closed
-    }
+    this.$ = null;
+    try { await room.leave(); } catch {}
   }
 }

@@ -1,30 +1,34 @@
 import Phaser from 'phaser';
-import { WORLD } from '@boxfury/shared';
+import { ARROW, BOW } from '@boxfury/shared';
 import { Player } from '../entities/Player.js';
-import { RemotePlayer } from '../entities/RemotePlayer.js';
+import { Flag } from '../entities/Flag.js';
 import { Arrow } from '../entities/Arrow.js';
-import { Level } from '../entities/Level.js';
+import { GameMap } from '../entities/Map.js';
 import { NetworkManager } from '../network/NetworkManager.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
-    this.remotes = new Map();
-    this.arrows = [];
+    this.players = new Map();
+    this.arrows = new Map();
+    this.localArrows = [];
+    this.localPlayer = null;
+    this._wasCharging = false;
   }
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.level = new Level(this);
+    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.network = new NetworkManager();
 
     this.statusText = this.add
-      .text(WORLD.WIDTH / 2, WORLD.HEIGHT / 2, 'Connecting…', {
+      .text(640, 360, 'Connecting…', {
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: '14px',
         color: '#8a8a9e',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(20);
 
     this.events.once('shutdown', () => this.network?.disconnect());
 
@@ -34,106 +38,144 @@ export class GameScene extends Phaser.Scene {
     } catch (err) {
       this.statusText.setText(`Connection failed: ${err.message}`);
       this.statusText.setColor('#ff5470');
-      console.error('[scene] connect failed', err);
       return;
     }
 
+    this.statusText.destroy();
+    this.statusText = null;
+
     const $ = this.network.$;
 
-    const handleAdd = (player, sessionId) => {
-      if (sessionId === room.sessionId) {
-        if (!this.player) this.spawnLocalPlayer(player.color);
-        return;
-      }
-      if (this.remotes.has(sessionId)) return;
-      const remote = new RemotePlayer(this, {
-        id: sessionId,
-        x: player.x,
-        y: player.y,
-        color: player.color,
-        facing: player.facing,
-        bowAngle: player.bowAngle,
+    this.gameMap = new GameMap(this, room.state.mapId || 'default');
+    this.emitHud({
+      map: this.gameMap.name,
+      jade: room.state.jadeScore || 0,
+      crimson: room.state.crimsonScore || 0,
+    });
+
+    $(room.state).listen('mapId', (id) => {
+      if (this.gameMap?.def?.id === id) return;
+      this.emitHud({ map: id?.toUpperCase?.() ?? 'DEFAULT' });
+    });
+    $(room.state).listen('jadeScore', (v) => this.emitHud({ jade: v }));
+    $(room.state).listen('crimsonScore', (v) => this.emitHud({ crimson: v }));
+
+    const setupFlag = () => {
+      const f = room.state.flag;
+      if (!f || this.flag) return;
+      this.flag = new Flag(this, { x: f.x || 0, y: f.y || 0 });
+      this.flag.applyState({ x: f.x, y: f.y, carrierId: f.carrierId, team: f.team });
+      $(f).onChange(() => {
+        this.flag.applyState({ x: f.x, y: f.y, carrierId: f.carrierId, team: f.team });
       });
-      this.remotes.set(sessionId, remote);
-      $(player).onChange(() => remote.applyState({
-        x: player.x,
-        y: player.y,
-        facing: player.facing,
-        bowAngle: player.bowAngle,
-      }));
     };
+    setupFlag();
+    $(room.state).listen('flag', setupFlag);
 
-    $(room.state).players.onAdd(handleAdd);
-
-    $(room.state).players.onRemove((_player, sessionId) => {
-      const remote = this.remotes.get(sessionId);
-      if (!remote) return;
-      remote.destroy();
-      this.remotes.delete(sessionId);
+    $(room.state).players.onAdd((p, sid) => {
+      if (this.players.has(sid)) return;
+      const sprite = new Player(this, {
+        id: sid,
+        x: p.x,
+        y: p.y,
+        color: p.color,
+        facing: p.facing,
+        bowAngle: p.bowAngle,
+        isLocal: sid === room.sessionId,
+      });
+      this.players.set(sid, sprite);
+      if (sid === room.sessionId) this.localPlayer = sprite;
+      $(p).onChange(() => sprite.applyState({
+        x: p.x, y: p.y, facing: p.facing, bowAngle: p.bowAngle,
+      }));
     });
 
-    this.network.onShoot(({ id, x, y, vx, vy }) => {
-      this.spawnArrow({ x, y, vx, vy, shooterId: id });
+    $(room.state).players.onRemove((_p, sid) => {
+      const s = this.players.get(sid);
+      if (!s) return;
+      if (this.localPlayer === s) this.localPlayer = null;
+      s.destroy();
+      this.players.delete(sid);
+    });
+
+    $(room.state).arrows.onAdd((a, aid) => {
+      if (a.shooterId === room.sessionId) return; // local prediction owns this
+      if (this.arrows.has(aid)) return;
+      const arrow = new Arrow(this, { x: a.x, y: a.y, rotation: a.rotation });
+      this.arrows.set(aid, arrow);
+      $(a).onChange(() => arrow.applyState({ x: a.x, y: a.y, rotation: a.rotation }));
+    });
+    $(room.state).arrows.onRemove((_a, aid) => {
+      const arrow = this.arrows.get(aid);
+      if (!arrow) return;
+      arrow.destroy();
+      this.arrows.delete(aid);
     });
   }
 
-  spawnLocalPlayer(color) {
-    this.statusText?.destroy();
-    this.statusText = null;
-    this.player = new Player(this, {
-      id: this.network.sessionId,
-      x: WORLD.WIDTH / 2,
-      y: WORLD.HEIGHT / 2 - 100,
-      color,
+  spawnLocalArrow(angleDeg) {
+    if (!this.localPlayer) return;
+    const rad = ((90 - angleDeg) * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const facingMul = this.localPlayer.facing > 0 ? 1 : -1;
+    const muzzle = BOW.LENGTH + 6;
+    const vx = cos * facingMul * ARROW.SPEED;
+    const vy = sin * ARROW.SPEED;
+    const arrow = new Arrow(this, {
+      x: this.localPlayer.sprite.x + cos * facingMul * muzzle,
+      y: this.localPlayer.sprite.y + sin * muzzle,
+      rotation: Math.atan2(vy, vx),
+      vx,
+      vy,
+      local: true,
     });
-    this.physics.add.collider(this.player.sprite, this.level.platforms);
+    this.localArrows.push(arrow);
   }
 
-  spawnArrow(shot) {
-    const arrow = new Arrow(this, shot);
-    this.arrows.push(arrow);
-
-    this.physics.add.collider(arrow.sprite, this.level.platforms, () => arrow.stickTo());
-
-    if (this.player && this.player.id !== arrow.shooterId) {
-      this.physics.add.overlap(arrow.sprite, this.player.sprite, () => arrow.stickTo(this.player));
-    }
-    for (const remote of this.remotes.values()) {
-      if (remote.id !== arrow.shooterId) {
-        this.physics.add.overlap(arrow.sprite, remote.sprite, () => arrow.stickTo(remote));
-      }
-    }
+  emitHud(detail) {
+    window.dispatchEvent(new CustomEvent('boxfury:hud', { detail }));
   }
 
   update(_time, delta) {
     const dt = delta / 1000;
-    if (this.player) {
-      this.player.move({
-        left: this.cursors.left.isDown,
-        right: this.cursors.right.isDown,
-      });
-      if (this.cursors.up.isDown) this.player.jump();
 
-      if (this.cursors.space.isDown) {
-        this.player.chargeBow();
-      } else {
-        const shot = this.player.releaseBow();
-        if (shot) {
-          this.spawnArrow({ ...shot, shooterId: this.player.id });
-          this.network.sendShoot(shot);
+    if (this.network?.room && this.cursors) {
+      const charging = this.spaceKey.isDown;
+
+      if (this.localPlayer) {
+        if (charging) {
+          this.localPlayer.bow.angle = Math.min(
+            BOW.MAX_ANGLE,
+            this.localPlayer.bow.angle + BOW.CHARGE_RATE * dt,
+          );
+        } else {
+          if (this._wasCharging) {
+            const launchAngle = this.localPlayer.bow.angle;
+            const carrying = this.network.room.state.flag?.carrierId === this.network.sessionId;
+            if (!carrying) this.spawnLocalArrow(launchAngle);
+          }
+          this.localPlayer.bow.setAngle(BOW.MIN_ANGLE);
         }
       }
+      this._wasCharging = charging;
 
-      this.player.update(dt);
-      this.network.sendState(this.player.getState());
+      this.network.sendInput({
+        left: this.cursors.left.isDown,
+        right: this.cursors.right.isDown,
+        jump: this.cursors.up.isDown,
+        down: this.cursors.down.isDown,
+        charging,
+      });
     }
 
-    for (const r of this.remotes.values()) r.update();
-
-    for (let i = this.arrows.length - 1; i >= 0; i--) {
-      const a = this.arrows[i];
-      a.update();
-      if (!a.alive) this.arrows.splice(i, 1);
+    for (const p of this.players.values()) p.update();
+    for (const a of this.arrows.values()) a.update(dt);
+    for (let i = this.localArrows.length - 1; i >= 0; i--) {
+      const a = this.localArrows[i];
+      a.update(dt);
+      if (!a.alive) this.localArrows.splice(i, 1);
     }
+    this.flag?.update();
   }
 }

@@ -21,6 +21,13 @@ export const PLAYER = {
   MAX_HP: 100,
 };
 
+export const GRAVITY = 1100;
+
+export const TEAM = {
+  JADE: 'jade',
+  CRIMSON: 'crimson',
+};
+
 export const BOW = {
   LENGTH: 28,
   THICKNESS: 3,

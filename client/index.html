@@ -61,6 +61,14 @@
 
     <div id="game" class="hidden"></div>
 
+    <div id="hud" class="hud hidden">
+      <span class="hud__item"><span class="eyebrow">Map · </span><span id="hud-map">DEFAULT</span></span>
+      <span class="hud__sep">·</span>
+      <span class="hud__item hud__item--jade"><span class="eyebrow">Jade </span><span id="hud-jade">0</span></span>
+      <span class="hud__sep">·</span>
+      <span class="hud__item hud__item--crimson"><span class="eyebrow">Crimson </span><span id="hud-crimson">0</span></span>
+    </div>
+
     <div id="game-menu" class="overlay hidden">
       <div class="overlay__backdrop"></div>
       <div class="overlay__panel">
@@ -117,9 +125,15 @@
           </li>
           <li>
             <div class="controls-list__keys">
+              <span class="key-cap">↓</span>
+            </div>
+            <span class="controls-list__label">Pick up / drop the flag · drop through one-way platforms</span>
+          </li>
+          <li>
+            <div class="controls-list__keys">
               <span class="key-cap">Space</span>
             </div>
-            <span class="controls-list__label">Hold to charge bow, release to shoot</span>
+            <span class="controls-list__label">Charge bow · release to shoot (only while carrying the flag)</span>
           </li>
           <li>
             <div class="controls-list__keys">
