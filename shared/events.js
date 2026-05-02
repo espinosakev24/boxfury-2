@@ -3,6 +3,7 @@
 export const MESSAGES = {
   STATE: 'state',
   SHOOT: 'shoot',
+  HIT: 'hit',
 };
 
 export const ROOM_NAME = 'boxfury';

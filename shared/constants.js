@@ -37,6 +37,19 @@ export const ARROW = {
   LIFETIME_MS: 3000,
   LENGTH: 18,
   THICKNESS: 2,
+  KNOCKBACK_MULT: 0.45,
+  KNOCKBACK_UP: 140,
+};
+
+export const PHYSICS = {
+  GRAVITY: 900,
+  TICK_HZ: 60,
+};
+
+export const HIT = {
+  FLASH_MS: 90,
+  IFRAMES_MS: 250,
+  INPUT_LOCK_MS: 150,
 };
 
 export const COLORS = {
@@ -60,4 +73,5 @@ export const GAME = {
   ZOOM_ENABLED: true,
   ZOOM: 1.8,
   CAMERA_LERP: 0.12,
+  DEBUG_DUMMY: false,
 };

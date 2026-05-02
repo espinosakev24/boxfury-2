@@ -13,6 +13,7 @@ export function setupMenu({ onJoin, onCreate }) {
 
   let rooms = [];
   let filter = '';
+  let pollTimer = null;
 
   const openLobby = () => {
     lobby.classList.remove('hidden');
@@ -20,12 +21,21 @@ export function setupMenu({ onJoin, onCreate }) {
     filter = '';
     refreshRooms();
     lobbySearch.focus();
+    pollTimer = setInterval(refreshRooms, 3000);
   };
 
-  const closeLobby = () => lobby.classList.add('hidden');
+  const closeLobby = () => {
+    lobby.classList.add('hidden');
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  };
 
   const refreshRooms = async () => {
-    lobbyList.innerHTML = '<div class="lobby__empty">Loading…</div>';
+    if (rooms.length === 0) {
+      lobbyList.innerHTML = '<div class="lobby__empty">Loading…</div>';
+    }
     try {
       rooms = await NetworkManager.listRooms();
     } catch (err) {

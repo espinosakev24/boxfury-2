@@ -10,7 +10,7 @@ export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
     this.remotes = new Map();
-    this.arrows = [];
+    this.arrows = new Map();
   }
 
   async create() {
@@ -78,9 +78,35 @@ export class GameScene extends Phaser.Scene {
       this.remotes.delete(sessionId);
     });
 
-    this.network.onShoot(({ id, x, y, vx, vy }) => {
-      this.spawnArrow({ x, y, vx, vy, shooterId: id });
+    $(room.state).arrows.onAdd((arrowState, id) => {
+      const arrow = new Arrow(this, arrowState);
+      this.arrows.set(id, arrow);
+      $(arrowState).onChange(() => arrow.applyState(arrowState));
     });
+
+    $(room.state).arrows.onRemove((_arrowState, id) => {
+      const arrow = this.arrows.get(id);
+      if (!arrow) return;
+      arrow.destroy();
+      this.arrows.delete(id);
+    });
+
+    this.network.onHit((payload) => this.handleHit(payload));
+  }
+
+  handleHit({ targetId, knockX, knockY }) {
+    const target = this.findPlayer(targetId);
+    if (!target) return;
+    target.flashHit();
+    if (target === this.player) {
+      this.player.applyKnockback(knockX, knockY);
+      this.cameras.main.shake(140, 0.006);
+    }
+  }
+
+  findPlayer(id) {
+    if (this.player?.id === id) return this.player;
+    return this.remotes.get(id) ?? null;
   }
 
   spawnLocalPlayer(color, team = 1) {
@@ -149,22 +175,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  spawnArrow(shot) {
-    const arrow = new Arrow(this, shot);
-    this.arrows.push(arrow);
-
-    this.physics.add.collider(arrow.sprite, this.level.platforms, () => arrow.stickTo());
-
-    if (this.player && this.player.id !== arrow.shooterId) {
-      this.physics.add.overlap(arrow.sprite, this.player.sprite, () => arrow.stickTo(this.player));
-    }
-    for (const remote of this.remotes.values()) {
-      if (remote.id !== arrow.shooterId) {
-        this.physics.add.overlap(arrow.sprite, remote.sprite, () => arrow.stickTo(remote));
-      }
-    }
-  }
-
   update(_time, delta) {
     const dt = delta / 1000;
     if (this.player) {
@@ -182,10 +192,7 @@ export class GameScene extends Phaser.Scene {
         this.player.chargeBow();
       } else {
         const shot = this.player.releaseBow();
-        if (shot) {
-          this.spawnArrow({ ...shot, shooterId: this.player.id });
-          this.network.sendShoot(shot);
-        }
+        if (shot) this.network.sendShoot(shot);
       }
 
       this.player.update(dt);
@@ -201,11 +208,6 @@ export class GameScene extends Phaser.Scene {
     this.level.flag?.update();
 
     for (const r of this.remotes.values()) r.update();
-
-    for (let i = this.arrows.length - 1; i >= 0; i--) {
-      const a = this.arrows[i];
-      a.update();
-      if (!a.alive) this.arrows.splice(i, 1);
-    }
+    for (const a of this.arrows.values()) a.update(dt);
   }
 }

@@ -30,8 +30,11 @@ export class NetworkManager {
   }
 
   static async listRooms() {
-    const client = new Client(CLIENT_CONFIG.SERVER_URL);
-    return client.getAvailableRooms(ROOM_NAME);
+    const url = CLIENT_CONFIG.SERVER_URL.replace(/^ws/, 'http') + `/rooms/${ROOM_NAME}`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   }
 
   sendState(state, now = performance.now()) {
@@ -45,8 +48,8 @@ export class NetworkManager {
     this.room?.send(MESSAGES.SHOOT, payload);
   }
 
-  onShoot(cb) {
-    this.room?.onMessage(MESSAGES.SHOOT, cb);
+  onHit(cb) {
+    this.room?.onMessage(MESSAGES.HIT, cb);
   }
 
   async disconnect() {

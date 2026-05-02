@@ -1,5 +1,5 @@
 import { Schema, defineTypes } from '@colyseus/schema';
-import { BOW } from '@boxfury/shared';
+import { BOW, PLAYER } from '@boxfury/shared';
 
 export class Player extends Schema {
   constructor(color = 0) {
@@ -13,6 +13,9 @@ export class Player extends Schema {
     this.bowAngle = BOW.MIN_ANGLE;
     this.name = '';
     this.team = 0;
+    this.hp = PLAYER.MAX_HP;
+    this.alive = true;
+    this.lastHitAt = 0;
   }
 }
 
@@ -26,4 +29,7 @@ defineTypes(Player, {
   bowAngle: 'number',
   name: 'string',
   team: 'number',
+  hp: 'number',
+  alive: 'boolean',
+  lastHitAt: 'number',
 });

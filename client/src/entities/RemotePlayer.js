@@ -1,4 +1,4 @@
-import { NETWORK, PLAYER } from '@boxfury/shared';
+import { HIT, NETWORK, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -7,6 +7,7 @@ export class RemotePlayer {
   constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45 }) {
     this.id = id;
     this.scene = scene;
+    this.color = color;
     this.facing = facing;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     this.sprite.setStrokeStyle(2, 0xffffff, 0.4);
@@ -16,6 +17,24 @@ export class RemotePlayer {
     this.bow = new Bow(scene, this);
     this.bow.setAngle(bowAngle);
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];
+  }
+
+  flashHit() {
+    const sprite = this.sprite;
+    if (!sprite?.active) return;
+    const original = this.color;
+    sprite.setFillStyle(0xffffff);
+    this.scene.time.delayedCall(HIT.FLASH_MS, () => {
+      if (sprite.active) sprite.setFillStyle(original);
+    });
+    this.scene.tweens.add({
+      targets: sprite,
+      scaleX: 1.25,
+      scaleY: 0.8,
+      duration: 90,
+      yoyo: true,
+      ease: 'Cubic.easeOut',
+    });
   }
 
   applyState({ x, y, facing, bowAngle }) {
