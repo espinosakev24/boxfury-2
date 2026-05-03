@@ -97,6 +97,7 @@ export function setupMenu({ onJoin, onCreate }) {
         onJoin(room.roomId);
       });
     }
+
     return card;
   };
 

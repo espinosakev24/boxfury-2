@@ -1,6 +1,6 @@
 const MUTE_KEY = 'boxfury:muted';
 
-export function setupGameMenu({ onLeave }) {
+export function setupGameMenu({ onLeave, onJoinTeam }) {
   const game = document.getElementById('game');
   const menu = document.getElementById('game-menu');
   const controls = document.getElementById('controls-overlay');
@@ -21,6 +21,11 @@ export function setupGameMenu({ onLeave }) {
   });
 
   document.getElementById('opt-resume').addEventListener('click', closeMenu);
+
+  document.getElementById('opt-join-team')?.addEventListener('click', () => {
+    closeMenu();
+    onJoinTeam?.();
+  });
 
   document.getElementById('opt-controls').addEventListener('click', () => {
     controls.classList.remove('hidden');

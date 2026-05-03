@@ -33,9 +33,9 @@ export class GameScene extends Phaser.Scene {
       this.hideHud();
       this.network?.disconnect();
     });
-    this.showHud();
 
     const connectOptions = this.registry.get('connectOptions') ?? {};
+    this.isSpectator = false;
     let room;
     try {
       room = await this.network.connect(connectOptions);
@@ -76,7 +76,7 @@ export class GameScene extends Phaser.Scene {
         }
       };
 
-      if (isLocal && player.team === 0) this.showTeamPicker();
+      if (isLocal && player.team === 0 && !this.isSpectator) this.showTeamPicker();
       trySpawn();
       this.updateTeamCounts();
 
@@ -191,6 +191,7 @@ export class GameScene extends Phaser.Scene {
 
     this.spawnPulse(spawn.x, spawn.y, color);
     this.attachLocalIndicator(color);
+    this.showHud();
   }
 
   spawnPulse(x, y, color) {
@@ -221,6 +222,21 @@ export class GameScene extends Phaser.Scene {
     this.network.sendFlagToggle();
   }
 
+  joinTeam() {
+    if (this.player) return;
+    this.isSpectator = false;
+    this.showTeamPicker();
+  }
+
+  setupSpectatorCamera() {
+    this.spectatorCameraSet = true;
+    const cam = this.cameras.main;
+    cam.stopFollow();
+    cam.setZoom(1);
+    cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    this.showHud();
+  }
+
   showTeamPicker() {
     const overlay = document.getElementById('team-picker');
     if (!overlay || this.teamPickerOpen) return;
@@ -228,8 +244,14 @@ export class GameScene extends Phaser.Scene {
     overlay.classList.remove('hidden');
     this._teamPick1 = () => this.network.sendChooseTeam(1);
     this._teamPick2 = () => this.network.sendChooseTeam(2);
+    this._teamPickSpec = () => {
+      this.hideTeamPicker();
+      this.isSpectator = true;
+      this.setupSpectatorCamera();
+    };
     document.getElementById('team-pick-1')?.addEventListener('click', this._teamPick1);
     document.getElementById('team-pick-2')?.addEventListener('click', this._teamPick2);
+    document.getElementById('team-pick-spectate')?.addEventListener('click', this._teamPickSpec);
     this.updateTeamCounts();
   }
 
@@ -239,8 +261,10 @@ export class GameScene extends Phaser.Scene {
     overlay.classList.add('hidden');
     if (this._teamPick1) document.getElementById('team-pick-1')?.removeEventListener('click', this._teamPick1);
     if (this._teamPick2) document.getElementById('team-pick-2')?.removeEventListener('click', this._teamPick2);
+    if (this._teamPickSpec) document.getElementById('team-pick-spectate')?.removeEventListener('click', this._teamPickSpec);
     this._teamPick1 = null;
     this._teamPick2 = null;
+    this._teamPickSpec = null;
     this.teamPickerOpen = false;
   }
 

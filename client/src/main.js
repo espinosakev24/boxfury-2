@@ -42,4 +42,7 @@ setupMenu({
   onJoin: (roomId) => startGame({ mode: 'join', roomId }),
   onCreate: () => startGame({ mode: 'create' }),
 });
-setupGameMenu({ onLeave: leaveGame });
+setupGameMenu({
+  onLeave: leaveGame,
+  onJoinTeam: () => game?.scene.getScene('GameScene')?.joinTeam?.(),
+});
