@@ -65,6 +65,43 @@
       <span class="hud__score hud__score--p1" id="score-1">0</span>
       <span class="hud__sep">—</span>
       <span class="hud__score hud__score--p2" id="score-2">0</span>
+      <span class="hud__spectators" id="hud-spectators"></span>
+    </div>
+
+    <div id="scoreboard" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel overlay__panel--wide">
+        <div class="overlay__header">
+          <span class="eyebrow">◣ Scoreboard</span>
+          <span class="eyebrow">Hold TAB</span>
+        </div>
+        <div class="scoreboard">
+          <div class="scoreboard__team scoreboard__team--p1">
+            <div class="scoreboard__team-head">
+              <span class="scoreboard__team-name">JADE</span>
+              <span class="scoreboard__team-score" data-sb-score="1">0</span>
+            </div>
+            <div class="scoreboard__cols">
+              <span>NAME</span><span>CAPS</span><span>DEATHS</span>
+            </div>
+            <div class="scoreboard__rows" data-sb-roster="1"></div>
+          </div>
+          <div class="scoreboard__team scoreboard__team--p2">
+            <div class="scoreboard__team-head">
+              <span class="scoreboard__team-name">CRIMSON</span>
+              <span class="scoreboard__team-score" data-sb-score="2">0</span>
+            </div>
+            <div class="scoreboard__cols">
+              <span>NAME</span><span>CAPS</span><span>DEATHS</span>
+            </div>
+            <div class="scoreboard__rows" data-sb-roster="2"></div>
+          </div>
+        </div>
+        <div class="scoreboard__spectators">
+          <div class="scoreboard__spec-head"><span class="eyebrow">Watching</span> <span class="scoreboard__spec-count" data-sb-spec-count>0</span></div>
+          <div class="scoreboard__spec-list" data-sb-spectators></div>
+        </div>
+      </div>
     </div>
 
     <div id="game-menu" class="overlay hidden">

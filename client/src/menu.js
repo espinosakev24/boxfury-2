@@ -68,6 +68,7 @@ export function setupMenu({ onJoin, onCreate }) {
     const name = meta.name ?? room.roomId.slice(0, 8);
     const team1 = meta.team1 ?? [];
     const team2 = meta.team2 ?? [];
+    const spectators = meta.spectators ?? [];
     const isFull = room.clients >= room.maxClients;
     const age = ageLabel(meta.createdAt);
 
@@ -76,7 +77,7 @@ export function setupMenu({ onJoin, onCreate }) {
     card.innerHTML = `
       <div class="room__header">
         <span class="room__name">${escapeHtml(name)}</span>
-        <span class="room__meta">${room.clients}/${room.maxClients} · #${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
+        <span class="room__meta">${room.clients}/${room.maxClients}${spectators.length ? ' · ' + spectators.length + ' watching' : ''} · #${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
       </div>
       <div class="room__teams">
         <div class="room__team room__team--p1">

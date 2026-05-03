@@ -28,9 +28,26 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
+    this._tabKeydown = (e) => {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this.showScoreboard();
+    };
+    this._tabKeyup = (e) => {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      this.hideScoreboard();
+    };
+    window.addEventListener('keydown', this._tabKeydown);
+    window.addEventListener('keyup', this._tabKeyup);
+
     this.events.once('shutdown', () => {
       this.hideTeamPicker();
       this.hideHud();
+      this.hideScoreboard();
+      window.removeEventListener('keydown', this._tabKeydown);
+      window.removeEventListener('keyup', this._tabKeyup);
       this.network?.disconnect();
     });
 
@@ -291,6 +308,57 @@ export class GameScene extends Phaser.Scene {
       const el = document.getElementById('score-2');
       if (el) el.textContent = String(s2);
     }
+    let specCount = 0;
+    state.players?.forEach?.((p) => { if (p.team === 0) specCount++; });
+    if (specCount !== this._specCount) {
+      this._specCount = specCount;
+      const el = document.getElementById('hud-spectators');
+      if (el) el.textContent = specCount > 0 ? `· ${specCount} watching` : '';
+    }
+  }
+
+  showScoreboard() {
+    const overlay = document.getElementById('scoreboard');
+    if (!overlay || this.scoreboardOpen) return;
+    this.scoreboardOpen = true;
+    overlay.classList.remove('hidden');
+    this.renderScoreboard();
+  }
+
+  hideScoreboard() {
+    const overlay = document.getElementById('scoreboard');
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    this.scoreboardOpen = false;
+  }
+
+  renderScoreboard() {
+    const state = this.network?.room?.state;
+    if (!state) return;
+    const myId = this.network?.sessionId;
+    const team1Rows = [];
+    const team2Rows = [];
+    const spectatorNames = [];
+    state.players?.forEach?.((p, sessionId) => {
+      const row = `<div class="scoreboard__row${sessionId === myId ? ' scoreboard__row--self' : ''}"><span>${escapeHtml(p.name || '?')}</span><span>${p.captures || 0}</span><span>${p.deaths || 0}</span></div>`;
+      if (p.team === 1) team1Rows.push(row);
+      else if (p.team === 2) team2Rows.push(row);
+      else spectatorNames.push(p.name || '?');
+    });
+    const set = (sel, html) => {
+      const el = document.querySelector(sel);
+      if (el) el.innerHTML = html;
+    };
+    const setText = (sel, text) => {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = text;
+    };
+    set('[data-sb-roster="1"]', team1Rows.join(''));
+    set('[data-sb-roster="2"]', team2Rows.join(''));
+    setText('[data-sb-score="1"]', String(state.scoreTeam1 ?? 0));
+    setText('[data-sb-score="2"]', String(state.scoreTeam2 ?? 0));
+    setText('[data-sb-spec-count]', String(spectatorNames.length));
+    set('[data-sb-spectators]', spectatorNames.map((n) => `<span>${escapeHtml(n)}</span>`).join(''));
   }
 
   updateTeamCounts() {
@@ -343,7 +411,14 @@ export class GameScene extends Phaser.Scene {
 
     this.syncFlag();
     this.syncScores();
+    if (this.scoreboardOpen) this.renderScoreboard();
     for (const r of this.remotes.values()) r.update();
     for (const a of this.arrows.values()) a.update(dt);
   }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
 }

@@ -367,6 +367,120 @@ html, body {
   font-size: 14px;
   color: var(--bf-soft);
 }
+.hud__spectators {
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid var(--bf-line);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--bf-soft);
+  text-transform: uppercase;
+}
+
+/* ---------- Scoreboard ---------- */
+.scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.scoreboard__team {
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.scoreboard__team-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.scoreboard__team-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+.scoreboard__team--p1 .scoreboard__team-name { color: var(--p1); }
+.scoreboard__team--p2 .scoreboard__team-name { color: var(--p2); }
+.scoreboard__team-score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+}
+.scoreboard__team--p1 .scoreboard__team-score { color: var(--p1); }
+.scoreboard__team--p2 .scoreboard__team-score { color: var(--p2); }
+
+.scoreboard__cols {
+  display: grid;
+  grid-template-columns: 1fr 48px 56px;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--bf-soft);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--bf-line);
+}
+.scoreboard__cols span:nth-child(2),
+.scoreboard__cols span:nth-child(3) { text-align: right; }
+.scoreboard__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scoreboard__rows:empty::after {
+  content: 'No players';
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bf-mute);
+  letter-spacing: 0.06em;
+  padding: 8px 0;
+}
+.scoreboard__row {
+  display: grid;
+  grid-template-columns: 1fr 48px 56px;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--bf-bone);
+}
+.scoreboard__row span:nth-child(2),
+.scoreboard__row span:nth-child(3) { text-align: right; color: var(--bf-soft); }
+.scoreboard__row--self { font-weight: 700; }
+
+.scoreboard__spectators {
+  border-top: 1px solid var(--bf-line);
+  padding-top: 12px;
+}
+.scoreboard__spec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.scoreboard__spec-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bf-soft);
+}
+.scoreboard__spec-list {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--bf-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.scoreboard__spec-list:empty::after {
+  content: 'No spectators';
+  color: var(--bf-mute);
+}
 
 /* ---------- Team picker ---------- */
 .team-pick {

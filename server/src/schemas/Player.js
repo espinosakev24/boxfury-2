@@ -16,6 +16,8 @@ export class Player extends Schema {
     this.hp = PLAYER.MAX_HP;
     this.alive = true;
     this.lastHitAt = 0;
+    this.deaths = 0;
+    this.captures = 0;
   }
 }
 
@@ -32,4 +34,6 @@ defineTypes(Player, {
   hp: 'number',
   alive: 'boolean',
   lastHitAt: 'number',
+  deaths: 'number',
+  captures: 'number',
 });

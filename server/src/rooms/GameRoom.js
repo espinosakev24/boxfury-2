@@ -91,6 +91,7 @@ export class GameRoom extends Room {
         if (base && distToBase <= SCORE.CAPTURE_RADIUS) {
           if (player.team === 1) this.state.scoreTeam1++;
           else if (player.team === 2) this.state.scoreTeam2++;
+          player.captures++;
           flag.carrierId = '';
           flag.x = flag.homeX;
           flag.y = flag.homeY;
@@ -284,9 +285,13 @@ export class GameRoom extends Room {
 
   applyHit(arrow, target, targetId) {
     const damage = ARROW.DAMAGE;
+    const wasAlive = target.alive;
     target.hp = Math.max(0, target.hp - damage);
     target.lastHitAt = Date.now();
-    if (target.hp <= 0) target.alive = false;
+    if (target.hp <= 0 && wasAlive) {
+      target.alive = false;
+      target.deaths++;
+    }
 
     const knockX = arrow.vx * ARROW.KNOCKBACK_MULT;
     const knockY = arrow.vy * ARROW.KNOCKBACK_MULT - ARROW.KNOCKBACK_UP;
@@ -334,15 +339,17 @@ export class GameRoom extends Room {
   updateMetadata() {
     const team1 = [];
     const team2 = [];
+    const spectators = [];
     for (const p of this.state.players.values()) {
-      const entry = { name: p.name, color: p.color };
-      if (p.team === 1) team1.push(entry);
-      else if (p.team === 2) team2.push(entry);
+      if (p.team === 1) team1.push({ name: p.name, color: p.color });
+      else if (p.team === 2) team2.push({ name: p.name, color: p.color });
+      else spectators.push({ name: p.name });
     }
     this.setMetadata({
       name: this.displayName,
       team1,
       team2,
+      spectators,
       createdAt: this.createdAt,
     });
   }
