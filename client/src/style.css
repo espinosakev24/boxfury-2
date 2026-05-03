@@ -336,6 +336,49 @@ html, body {
   color: var(--bf-bone);
 }
 
+/* ---------- Death overlay ---------- */
+.death-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 6;
+  padding-top: 96px;
+}
+.death-overlay__inner {
+  text-align: center;
+  font-family: var(--font-display);
+  background: rgba(21, 21, 31, 0.55);
+  padding: 24px 36px;
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  backdrop-filter: blur(4px);
+}
+.death-overlay__title {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--p2);
+  letter-spacing: 0.06em;
+}
+.death-overlay__sub {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--bf-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#death-timer {
+  display: inline-block;
+  min-width: 16px;
+  color: var(--bf-bone);
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0 4px;
+}
+
 /* ---------- HUD ---------- */
 .hud {
   position: fixed;

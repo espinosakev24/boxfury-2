@@ -52,6 +52,10 @@ export const HIT = {
   INPUT_LOCK_MS: 150,
 };
 
+export const RESPAWN = {
+  COOLDOWN_MS: 5000,
+};
+
 export const FLAG = {
   POLE_HEIGHT: 34,
   POLE_WIDTH: 2,

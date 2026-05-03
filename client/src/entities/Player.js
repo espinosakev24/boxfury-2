@@ -31,6 +31,35 @@ export class Player {
     this.bow.setAngle(BOW.MIN_ANGLE);
   }
 
+  playDeathAnim() {
+    if (this.dead) return;
+    this.dead = true;
+    this.bow.sprite.setVisible(false);
+    if (this.indicator) this.indicator.setVisible(false);
+    const fallDir = this.facing >= 0 ? 1 : -1;
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.scene.tweens.add({
+      targets: this.sprite,
+      rotation: fallDir * Math.PI / 2,
+      y: this.sprite.y + 12,
+      alpha: 0.55,
+      duration: 360,
+      ease: 'Cubic.easeOut',
+    });
+  }
+
+  resetVisual() {
+    this.dead = false;
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.sprite.rotation = 0;
+    this.sprite.alpha = 1;
+    this.sprite.scaleX = 1;
+    this.sprite.scaleY = 1;
+    this.sprite.setVisible(true);
+    this.bow.sprite.setVisible(!this.carryingFlag);
+    if (this.indicator) this.indicator.setVisible(true);
+  }
+
   flashHit() {
     const sprite = this.sprite;
     if (!sprite?.active) return;

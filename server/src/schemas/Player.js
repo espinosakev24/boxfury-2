@@ -19,6 +19,7 @@ export class Player extends Schema {
     this.deaths = 0;
     this.captures = 0;
     this.kills = 0;
+    this.respawnAt = 0;
   }
 }
 
@@ -38,4 +39,5 @@ defineTypes(Player, {
   deaths: 'number',
   captures: 'number',
   kills: 'number',
+  respawnAt: 'number',
 });

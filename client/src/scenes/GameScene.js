@@ -47,6 +47,7 @@ export class GameScene extends Phaser.Scene {
       this.hideHud();
       this.hideScoreboard();
       this.hideMatchEnd();
+      this.hideDeathOverlay();
       window.removeEventListener('keydown', this._tabKeydown);
       window.removeEventListener('keyup', this._tabKeyup);
       this.network?.disconnect();
@@ -319,6 +320,67 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  syncDeath() {
+    if (this.matchEnded) return;
+    const players = this.network?.room?.state?.players;
+    if (!players) return;
+    const myId = this.network.sessionId;
+    players.forEach((p, sessionId) => {
+      if (sessionId === myId) {
+        if (!this.player) return;
+        if (!p.alive && !this.deathState) this.enterDeath(p);
+        else if (p.alive && this.deathState) this.exitDeath(p);
+        else if (this.deathState) this.updateDeathTimer(p.respawnAt);
+        return;
+      }
+      const remote = this.remotes.get(sessionId);
+      if (!remote) return;
+      if (!p.alive && !remote.dead) remote.playDeathAnim();
+      else if (p.alive && remote.dead) remote.resetVisual();
+    });
+  }
+
+  enterDeath(me) {
+    this.deathState = { respawnAt: me.respawnAt };
+    this.player.playDeathAnim();
+    this.player.sprite.body.setVelocity(0, 0);
+    this.player.sprite.body.enable = false;
+    const cam = this.cameras.main;
+    cam.stopFollow();
+    cam.setZoom(1);
+    cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    document.getElementById('death-overlay')?.classList.remove('hidden');
+    this.updateDeathTimer(me.respawnAt);
+  }
+
+  exitDeath(me) {
+    this.deathState = null;
+    this.player.resetVisual();
+    this.player.sprite.body.enable = true;
+    this.player.sprite.body.setVelocity(0, 0);
+    this.player.sprite.setPosition(me.x, me.y);
+    const cam = this.cameras.main;
+    if (GAME.ZOOM_ENABLED) {
+      cam.setZoom(GAME.ZOOM);
+      cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+    } else {
+      cam.setZoom(1);
+      cam.centerOn(this.player.sprite.x, this.player.sprite.y);
+    }
+    this.spawnPulse(me.x, me.y, this.player.color);
+    document.getElementById('death-overlay')?.classList.add('hidden');
+  }
+
+  updateDeathTimer(respawnAt) {
+    const remaining = Math.max(0, Math.ceil((respawnAt - Date.now()) / 1000));
+    const el = document.getElementById('death-timer');
+    if (el && el.textContent !== String(remaining)) el.textContent = String(remaining);
+  }
+
+  hideDeathOverlay() {
+    document.getElementById('death-overlay')?.classList.add('hidden');
+  }
+
   showMatchEnd(payload) {
     const overlay = document.getElementById('match-end');
     if (!overlay) return;
@@ -435,7 +497,8 @@ export class GameScene extends Phaser.Scene {
 
   update(_time, delta) {
     const dt = delta / 1000;
-    if (this.player) {
+    this.syncDeath();
+    if (this.player && !this.deathState) {
       this.player.move({
         left: this.cursors.left.isDown,
         right: this.cursors.right.isDown,

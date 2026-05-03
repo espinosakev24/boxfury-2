@@ -10,6 +10,7 @@ import {
   PHYSICS,
   PLAYER,
   PLAYER_COLORS,
+  RESPAWN,
   ROOM,
   SCORE,
   TILE,
@@ -248,6 +249,25 @@ export class GameRoom extends Room {
     for (const id of remove) this.state.arrows.delete(id);
 
     this.tickFlag(dt);
+    this.tickRespawns(now);
+  }
+
+  tickRespawns(now) {
+    this.state.players.forEach((p) => {
+      if (p.alive) return;
+      if (p.team === 0) return;
+      if (!p.respawnAt || now < p.respawnAt) return;
+      const base = this.bases?.[p.team];
+      if (base) {
+        p.x = base.x;
+        p.y = base.y;
+      }
+      p.vx = 0;
+      p.vy = 0;
+      p.hp = PLAYER.MAX_HP;
+      p.alive = true;
+      p.respawnAt = 0;
+    });
   }
 
   tickFlag(dt) {
@@ -333,6 +353,7 @@ export class GameRoom extends Room {
     if (target.hp <= 0 && wasAlive) {
       target.alive = false;
       target.deaths++;
+      target.respawnAt = Date.now() + RESPAWN.COOLDOWN_MS;
       const shooter = this.state.players.get(arrow.shooterId);
       if (shooter) shooter.kills++;
     }
