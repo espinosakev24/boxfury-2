@@ -173,9 +173,30 @@ export class GameScene extends Phaser.Scene {
     const target = this.findPlayer(targetId);
     if (!target) return;
     target.flashHit();
+    this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
     if (target === this.player) {
       this.player.applyKnockback(knockX, knockY);
       this.cameras.main.shake(140, 0.006);
+    }
+  }
+
+  spawnHitParticles(x, y, color) {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const size = Phaser.Math.Between(2, 4);
+      const p = this.add.rectangle(x, y, size, size, color);
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const speed = Phaser.Math.Between(40, 110);
+      const duration = Phaser.Math.Between(220, 360);
+      this.tweens.add({
+        targets: p,
+        x: x + Math.cos(angle) * speed,
+        y: y + Math.sin(angle) * speed,
+        alpha: 0,
+        duration,
+        ease: 'Cubic.easeOut',
+        onComplete: () => p.destroy(),
+      });
     }
   }
 
