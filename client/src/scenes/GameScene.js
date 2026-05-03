@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FLAG, GAME, PLAYER, WORLD } from '@boxfury/shared';
+import { FLAG, GAME, PLAYER, ROOM, WORLD } from '@boxfury/shared';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
@@ -46,6 +46,7 @@ export class GameScene extends Phaser.Scene {
       this.hideTeamPicker();
       this.hideHud();
       this.hideScoreboard();
+      this.hideMatchEnd();
       window.removeEventListener('keydown', this._tabKeydown);
       window.removeEventListener('keyup', this._tabKeyup);
       this.network?.disconnect();
@@ -137,6 +138,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.network.onHit((payload) => this.handleHit(payload));
+    this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);
@@ -317,6 +319,54 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  showMatchEnd(payload) {
+    const overlay = document.getElementById('match-end');
+    if (!overlay) return;
+    this.matchEnded = true;
+    this.hideTeamPicker();
+    this.hideScoreboard();
+    const titleEl = document.getElementById('match-end-title');
+    const winLabel = payload.winnerTeam === 1
+      ? '<span style="color:var(--p1)">JADE</span> WINS'
+      : payload.winnerTeam === 2
+        ? '<span style="color:var(--p2)">CRIMSON</span> WINS'
+        : 'TIE';
+    if (titleEl) titleEl.innerHTML = winLabel;
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(txt);
+    };
+    setText('match-end-s1', payload.scoreTeam1 ?? 0);
+    setText('match-end-s2', payload.scoreTeam2 ?? 0);
+    const team1Rows = [];
+    const team2Rows = [];
+    for (const p of payload.players ?? []) {
+      const row = `<div class="scoreboard__row"><span>${escapeHtml(p.name || '?')}</span><span>${p.kills || 0}</span><span>${p.captures || 0}</span><span>${p.deaths || 0}</span></div>`;
+      if (p.team === 1) team1Rows.push(row);
+      else if (p.team === 2) team2Rows.push(row);
+    }
+    const setHtml = (sel, html) => {
+      const el = document.querySelector(sel);
+      if (el) el.innerHTML = html;
+    };
+    setHtml('[data-me-roster="1"]', team1Rows.join(''));
+    setHtml('[data-me-roster="2"]', team2Rows.join(''));
+    overlay.classList.remove('hidden');
+
+    const back = document.getElementById('match-end-back');
+    if (back && !this._matchEndBackBound) {
+      this._matchEndBackBound = true;
+      back.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        this.registry.get('leaveGame')?.();
+      });
+    }
+  }
+
+  hideMatchEnd() {
+    document.getElementById('match-end')?.classList.add('hidden');
+  }
+
   showScoreboard() {
     const overlay = document.getElementById('scoreboard');
     if (!overlay || this.scoreboardOpen) return;
@@ -340,7 +390,7 @@ export class GameScene extends Phaser.Scene {
     const team2Rows = [];
     const spectatorNames = [];
     state.players?.forEach?.((p, sessionId) => {
-      const row = `<div class="scoreboard__row${sessionId === myId ? ' scoreboard__row--self' : ''}"><span>${escapeHtml(p.name || '?')}</span><span>${p.captures || 0}</span><span>${p.deaths || 0}</span></div>`;
+      const row = `<div class="scoreboard__row${sessionId === myId ? ' scoreboard__row--self' : ''}"><span>${escapeHtml(p.name || '?')}</span><span>${p.kills || 0}</span><span>${p.captures || 0}</span><span>${p.deaths || 0}</span></div>`;
       if (p.team === 1) team1Rows.push(row);
       else if (p.team === 2) team2Rows.push(row);
       else spectatorNames.push(p.name || '?');
@@ -371,12 +421,16 @@ export class GameScene extends Phaser.Scene {
       if (p.team === 1) t1++;
       else if (p.team === 2) t2++;
     });
-    const set = (team, count) => {
-      const el = document.querySelector(`.team-pick__count[data-team="${team}"]`);
-      if (el) el.textContent = `${count} player${count === 1 ? '' : 's'}`;
+    const cap = Math.floor(ROOM.MAX_CLIENTS / 2);
+    const apply = (team, count) => {
+      const countEl = document.querySelector(`.team-pick__count[data-team="${team}"]`);
+      const btn = document.getElementById(`team-pick-${team}`);
+      const full = count >= cap;
+      if (countEl) countEl.textContent = full ? `FULL · ${count}/${cap}` : `${count}/${cap} player${count === 1 ? '' : 's'}`;
+      if (btn) btn.disabled = full;
     };
-    set(1, t1);
-    set(2, t2);
+    apply(1, t1);
+    apply(2, t2);
   }
 
   update(_time, delta) {

@@ -25,6 +25,7 @@ function startGame(connectOptions = {}) {
     scene: [BootScene, PreloadScene, GameScene],
   });
   game.registry.set('connectOptions', connectOptions);
+  game.registry.set('leaveGame', leaveGame);
 }
 
 async function leaveGame() {

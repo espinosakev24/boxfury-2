@@ -6,6 +6,7 @@ export const MESSAGES = {
   HIT: 'hit',
   FLAG_TOGGLE: 'flag_toggle',
   CHOOSE_TEAM: 'choose_team',
+  MATCH_END: 'match_end',
 };
 
 export const ROOM_NAME = 'boxfury';

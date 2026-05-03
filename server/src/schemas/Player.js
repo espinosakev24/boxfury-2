@@ -18,6 +18,7 @@ export class Player extends Schema {
     this.lastHitAt = 0;
     this.deaths = 0;
     this.captures = 0;
+    this.kills = 0;
   }
 }
 
@@ -36,4 +37,5 @@ defineTypes(Player, {
   lastHitAt: 'number',
   deaths: 'number',
   captures: 'number',
+  kills: 'number',
 });

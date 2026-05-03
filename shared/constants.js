@@ -60,6 +60,11 @@ export const FLAG = {
 
 export const SCORE = {
   CAPTURE_RADIUS: 64,
+  TARGET: 10,
+};
+
+export const ROOM = {
+  MAX_CLIENTS: 8,
 };
 
 export const COLORS = {

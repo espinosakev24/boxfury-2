@@ -10,6 +10,7 @@ import {
   PHYSICS,
   PLAYER,
   PLAYER_COLORS,
+  ROOM,
   SCORE,
   TILE,
   WORLD,
@@ -33,7 +34,7 @@ function defaultPlayerName(sessionId) {
 }
 
 export class GameRoom extends Room {
-  maxClients = 8;
+  maxClients = ROOM.MAX_CLIENTS;
   patchRate = 1000 / NETWORK.PATCH_RATE;
   state = new GameState();
 
@@ -56,6 +57,7 @@ export class GameRoom extends Room {
     this.updateMetadata();
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
+      if (this.matchEnded) return;
       const player = this.state.players.get(client.sessionId);
       if (!player || !player.alive) return;
       if (typeof payload.x === 'number') player.x = payload.x;
@@ -67,18 +69,27 @@ export class GameRoom extends Room {
     });
 
     this.onMessage(MESSAGES.CHOOSE_TEAM, (client, payload) => {
+      if (this.matchEnded) return;
       const player = this.state.players.get(client.sessionId);
       if (!player || player.team !== 0) return;
       const team = payload?.team;
       if (team !== 1 && team !== 2) return;
+      const cap = Math.floor(ROOM.MAX_CLIENTS / 2);
+      let count = 0;
+      this.state.players.forEach((p) => { if (p.team === team) count++; });
+      if (count >= cap) {
+        console.log(`[room ${this.displayName}] ${player.name} rejected team ${team}: full (${count}/${cap})`);
+        return;
+      }
       player.team = team;
       player.color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
       player.alive = true;
       this.updateMetadata();
-      console.log(`[room ${this.displayName}] ${player.name} chose team ${team}`);
+      console.log(`[room ${this.displayName}] ${player.name} chose team ${team} (${count + 1}/${cap})`);
     });
 
     this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
+      if (this.matchEnded) return;
       const flag = this.state.flag;
       const player = this.state.players.get(client.sessionId);
       if (!player || !player.alive) {
@@ -100,6 +111,9 @@ export class GameRoom extends Room {
           console.log(
             `[room ${this.displayName}] SCORE team ${player.team} by ${player.name} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
           );
+          if (this.state.scoreTeam1 >= SCORE.TARGET || this.state.scoreTeam2 >= SCORE.TARGET) {
+            this.endMatch();
+          }
         } else {
           flag.carrierId = '';
           flag.x = player.x;
@@ -126,6 +140,7 @@ export class GameRoom extends Room {
     });
 
     this.onMessage(MESSAGES.SHOOT, (client, payload) => {
+      if (this.matchEnded) return;
       const shooter = this.state.players.get(client.sessionId);
       if (!shooter || !shooter.alive) return;
       const arrow = new Arrow();
@@ -143,6 +158,33 @@ export class GameRoom extends Room {
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / PHYSICS.TICK_HZ);
 
     if (GAME.DEBUG_DUMMY) this.spawnDummy();
+  }
+
+  endMatch() {
+    if (this.matchEnded) return;
+    this.matchEnded = true;
+    const winnerTeam = this.state.scoreTeam1 > this.state.scoreTeam2 ? 1
+      : this.state.scoreTeam2 > this.state.scoreTeam1 ? 2 : 0;
+    const players = [];
+    this.state.players.forEach((p) => {
+      players.push({
+        name: p.name,
+        team: p.team,
+        captures: p.captures,
+        deaths: p.deaths,
+        kills: p.kills,
+      });
+    });
+    const payload = {
+      winnerTeam,
+      scoreTeam1: this.state.scoreTeam1,
+      scoreTeam2: this.state.scoreTeam2,
+      players,
+    };
+    this.broadcast(MESSAGES.MATCH_END, payload);
+    console.log(
+      `[room ${this.displayName}] MATCH END — winner: team ${winnerTeam} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
+    );
   }
 
   spawnDummy() {
@@ -291,6 +333,8 @@ export class GameRoom extends Room {
     if (target.hp <= 0 && wasAlive) {
       target.alive = false;
       target.deaths++;
+      const shooter = this.state.players.get(arrow.shooterId);
+      if (shooter) shooter.kills++;
     }
 
     const knockX = arrow.vx * ARROW.KNOCKBACK_MULT;
