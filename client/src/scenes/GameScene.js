@@ -313,7 +313,7 @@ export class GameScene extends Phaser.Scene {
     if (specCount !== this._specCount) {
       this._specCount = specCount;
       const el = document.getElementById('hud-spectators');
-      if (el) el.textContent = specCount > 0 ? `· ${specCount} watching` : '';
+      if (el) el.textContent = specCount === 0 ? 'no spectators' : `${specCount} watching`;
     }
   }
 

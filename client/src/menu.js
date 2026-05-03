@@ -77,7 +77,7 @@ export function setupMenu({ onJoin, onCreate }) {
     card.innerHTML = `
       <div class="room__header">
         <span class="room__name">${escapeHtml(name)}</span>
-        <span class="room__meta">${room.clients}/${room.maxClients}${spectators.length ? ' · ' + spectators.length + ' watching' : ''} · #${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
+        <span class="room__meta">${room.clients}/${room.maxClients} · ${spectators.length === 0 ? 'no spectators' : spectators.length + ' watching'} · #${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
       </div>
       <div class="room__teams">
         <div class="room__team room__team--p1">
