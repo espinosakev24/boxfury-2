@@ -77,6 +77,7 @@ export class GameScene extends Phaser.Scene {
         facing: player.facing,
         bowAngle: player.bowAngle,
         name: player.name,
+        skin: player.skin,
       });
       this.remotes.set(sessionId, remote);
       if (this.flagCarrierId === sessionId) remote.setCarryingFlag(true);
@@ -89,7 +90,7 @@ export class GameScene extends Phaser.Scene {
         if (isLocal) {
           if (this.player) return;
           this.hideTeamPicker();
-          this.spawnLocalPlayer(player.color, player.team, player.name);
+          this.spawnLocalPlayer(player.color, player.team, player.name, player.skin);
           if (room.state.flag?.carrierId === sessionId) this.player.setCarryingFlag(true);
         } else {
           spawnRemote(sessionId, player);
@@ -206,7 +207,7 @@ export class GameScene extends Phaser.Scene {
     return this.remotes.get(id) ?? null;
   }
 
-  spawnLocalPlayer(color, team = 1, name = '') {
+  spawnLocalPlayer(color, team = 1, name = '', skin = undefined) {
     this.statusText?.destroy();
     this.statusText = null;
     const baseKey = team === 2 ? 'team2' : 'team1';
@@ -221,6 +222,7 @@ export class GameScene extends Phaser.Scene {
       y: spawn.y,
       color,
       name,
+      skin,
     });
     this.physics.add.collider(this.player.sprite, this.level.platforms);
 

@@ -214,6 +214,13 @@
           <input id="settings-username" class="settings__input" type="text" maxlength="16" autocomplete="off" data-i18n-placeholder="settings.usernamePlaceholder" />
         </div>
         <div class="settings__field">
+          <span class="settings__label" data-i18n="settings.skin">Face</span>
+          <button id="settings-skin-open" class="settings__skin-trigger" type="button">
+            <span class="settings__skin-trigger-label" id="settings-skin-current">Smile</span>
+            <span class="settings__skin-trigger-arrow">›</span>
+          </button>
+        </div>
+        <div class="settings__field">
           <span class="settings__label" data-i18n="settings.language">Language</span>
           <div class="settings__lang">
             <label class="settings__radio">
@@ -229,6 +236,28 @@
         <div class="settings__actions">
           <button id="settings-cancel" class="btn btn--secondary" type="button" data-i18n="settings.cancel">Cancel</button>
           <button id="settings-save" class="btn btn--primary" type="button" data-i18n="settings.save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="skin-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel overlay__panel--wide">
+        <div class="overlay__header">
+          <span class="eyebrow" data-i18n="skinPicker.eyebrow">◣ Face</span>
+          <button id="skin-picker-close" class="btn btn--secondary btn--compact" type="button" data-i18n="settings.close">CLOSE</button>
+        </div>
+        <h2 class="overlay__title" data-i18n="skinPicker.title">CHOOSE A FACE</h2>
+        <div class="skin-picker">
+          <div class="skin-picker__preview">
+            <canvas id="skin-picker-canvas" width="240" height="480"></canvas>
+            <div id="skin-picker-name" class="skin-picker__name">SMILE</div>
+          </div>
+          <div class="skin-picker__list" id="skin-picker-list"></div>
+        </div>
+        <div class="settings__actions">
+          <button id="skin-picker-cancel" class="btn btn--secondary" type="button" data-i18n="settings.cancel">Cancel</button>
+          <button id="skin-picker-save" class="btn btn--primary" type="button" data-i18n="settings.save">Save</button>
         </div>
       </div>
     </div>

@@ -15,9 +15,20 @@ const TRANSLATIONS = {
     'settings.username': 'Username',
     'settings.usernamePlaceholder': 'Pick a name…',
     'settings.language': 'Language',
+    'settings.skin': 'Face',
     'settings.save': 'Save',
     'settings.cancel': 'Cancel',
     'settings.close': 'CLOSE',
+
+    'skin.smile': 'Smile',
+    'skin.neutral': 'Neutral',
+    'skin.sad': 'Sad',
+    'skin.surprised': 'Surprised',
+    'skin.cool': 'Cool',
+    'skin.angry': 'Angry',
+
+    'skinPicker.eyebrow': '◣ Face',
+    'skinPicker.title': 'CHOOSE A FACE',
 
     'pause.eyebrow': '◣ Paused',
     'pause.escResume': 'ESC to resume',
@@ -89,9 +100,20 @@ const TRANSLATIONS = {
     'settings.username': 'Nombre',
     'settings.usernamePlaceholder': 'Elige un nombre…',
     'settings.language': 'Idioma',
+    'settings.skin': 'Cara',
     'settings.save': 'Guardar',
     'settings.cancel': 'Cancelar',
     'settings.close': 'CERRAR',
+
+    'skin.smile': 'Sonrisa',
+    'skin.neutral': 'Neutra',
+    'skin.sad': 'Triste',
+    'skin.surprised': 'Sorpresa',
+    'skin.cool': 'Cool',
+    'skin.angry': 'Enojo',
+
+    'skinPicker.eyebrow': '◣ Cara',
+    'skinPicker.title': 'ELIGE UNA CARA',
 
     'pause.eyebrow': '◣ Pausa',
     'pause.escResume': 'ESC para reanudar',

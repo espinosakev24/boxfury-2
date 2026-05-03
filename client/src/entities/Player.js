@@ -1,12 +1,14 @@
-import { ARROW, BOW, HIT, PLAYER } from '@boxfury/shared';
+import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
+import { drawFace } from './faces.js';
 
 export class Player {
-  constructor(scene, { id, x, y, color = 0x4ade80, name = '' }) {
+  constructor(scene, { id, x, y, color = 0x4ade80, name = '', skin = DEFAULT_SKIN }) {
     this.scene = scene;
     this.id = id;
     this.color = color;
+    this.skin = skin;
     this.facing = 1;
     this.charging = false;
     this.carryingFlag = false;
@@ -17,7 +19,12 @@ export class Player {
     this.damageStage = 0;
     this.damageSeed = hashSeed(String(id));
     this.damageGfx = scene.add.graphics();
-    this._postUpdateBound = () => this.syncDamageOverlay();
+    this.faceGfx = scene.add.graphics();
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+    this._postUpdateBound = () => {
+      this.syncDamageOverlay();
+      this.syncFaceOverlay();
+    };
     scene.events.on('postupdate', this._postUpdateBound);
     this.bow = new Bow(scene, this);
     this.nameText = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
@@ -89,6 +96,22 @@ export class Player {
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible && this.damageStage > 0);
+  }
+
+  setSkin(skin) {
+    if (skin === this.skin) return;
+    this.skin = skin;
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+  }
+
+  syncFaceOverlay() {
+    const gfx = this.faceGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
   }
 
   flashHit() {
@@ -175,5 +198,6 @@ export class Player {
     this.sprite.destroy();
     this.nameText?.destroy();
     this.damageGfx?.destroy();
+    this.faceGfx?.destroy();
   }
 }

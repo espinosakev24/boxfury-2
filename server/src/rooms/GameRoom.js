@@ -15,6 +15,7 @@ import {
   SCORE,
   TILE,
   WORLD,
+  normalizeSkin,
   parseMap,
 } from '@boxfury/shared';
 import { GameState } from '../schemas/GameState.js';
@@ -376,6 +377,7 @@ export class GameRoom extends Room {
     const name = (options?.name && String(options.name).slice(0, 16)) || defaultPlayerName(client.sessionId);
     const player = new Player(0);
     player.name = name;
+    player.skin = normalizeSkin(options?.skin);
     player.team = 0;
     player.alive = false;
     this.state.players.set(client.sessionId, player);

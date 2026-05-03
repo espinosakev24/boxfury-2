@@ -1,14 +1,16 @@
-import { HIT, NETWORK, PLAYER } from '@boxfury/shared';
+import { DEFAULT_SKIN, HIT, NETWORK, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
+import { drawFace } from './faces.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
 export class RemotePlayer {
-  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45, name = '' }) {
+  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45, name = '', skin = DEFAULT_SKIN }) {
     this.id = id;
     this.scene = scene;
     this.color = color;
+    this.skin = skin;
     this.facing = facing;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     this.sprite.setStrokeStyle(2, 0xffffff, 0.4);
@@ -18,7 +20,12 @@ export class RemotePlayer {
     this.damageStage = 0;
     this.damageSeed = hashSeed(String(id));
     this.damageGfx = scene.add.graphics();
-    this._postUpdateBound = () => this.syncDamageOverlay();
+    this.faceGfx = scene.add.graphics();
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+    this._postUpdateBound = () => {
+      this.syncDamageOverlay();
+      this.syncFaceOverlay();
+    };
     scene.events.on('postupdate', this._postUpdateBound);
     this.bow = new Bow(scene, this);
     this.bow.setAngle(bowAngle);
@@ -81,6 +88,22 @@ export class RemotePlayer {
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible && this.damageStage > 0);
+  }
+
+  setSkin(skin) {
+    if (skin === this.skin) return;
+    this.skin = skin;
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+  }
+
+  syncFaceOverlay() {
+    const gfx = this.faceGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
   }
 
   flashHit() {
@@ -156,5 +179,6 @@ export class RemotePlayer {
     this.sprite.destroy();
     this.nameText?.destroy();
     this.damageGfx?.destroy();
+    this.faceGfx?.destroy();
   }
 }

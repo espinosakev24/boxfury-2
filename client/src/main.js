@@ -9,6 +9,7 @@ import { setupGameMenu } from './game-menu.js';
 import { setupSettings } from './settings.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
+import { getSkin } from './skin.js';
 
 let game = null;
 
@@ -17,7 +18,10 @@ setupSettings();
 
 function buildOptions(extra = {}) {
   const name = getUsername();
-  return name ? { ...extra, name } : extra;
+  const skin = getSkin();
+  const out = { ...extra, skin };
+  if (name) out.name = name;
+  return out;
 }
 
 function startGame(connectOptions = {}) {
