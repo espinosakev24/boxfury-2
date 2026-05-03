@@ -9,25 +9,25 @@
     <main id="menu" class="menu">
       <section class="menu__left">
         <div>
-          <div class="eyebrow">◣ A minimal arena brawler</div>
+          <div class="eyebrow" data-i18n="menu.eyebrow">◣ A minimal arena brawler</div>
           <h1 class="wordmark">
             <div>BOX</div>
             <div><span class="wordmark__accent">FURY</span><span class="wordmark__dot">.</span></div>
           </h1>
-          <p class="tagline">Up to four boxes. One line. Last shape standing wins.</p>
+          <p class="tagline" data-i18n="menu.tagline">Up to four boxes. One line. Last shape standing wins.</p>
         </div>
 
         <div class="menu__actions">
           <button id="btn-find" class="btn btn--primary" type="button">
-            <span class="btn__label"><span class="btn__index">01</span>Find game</span>
+            <span class="btn__label"><span class="btn__index">01</span><span data-i18n="menu.findGame">Find game</span></span>
             <span class="btn__key">ENTER</span>
           </button>
           <button id="btn-create" class="btn btn--secondary" type="button">
-            <span class="btn__label"><span class="btn__index">02</span>Create game</span>
+            <span class="btn__label"><span class="btn__index">02</span><span data-i18n="menu.createGame">Create game</span></span>
             <span class="btn__key">C</span>
           </button>
-          <button id="btn-settings" class="btn btn--secondary" type="button" disabled>
-            <span class="btn__label"><span class="btn__index">03</span>Settings</span>
+          <button id="btn-settings" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">03</span><span data-i18n="menu.settings">Settings</span></span>
             <span class="btn__key">S</span>
           </button>
         </div>
@@ -198,6 +198,38 @@
           </button>
         </div>
         <button id="team-pick-spectate" class="team-pick__spectate" type="button">JUST SPECTATE</button>
+      </div>
+    </div>
+
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel">
+        <div class="overlay__header">
+          <span class="eyebrow" data-i18n="settings.eyebrow">◣ Settings</span>
+          <button id="settings-close" class="btn btn--secondary btn--compact" type="button" data-i18n="settings.close">CLOSE</button>
+        </div>
+        <h2 class="overlay__title" data-i18n="settings.title">SETTINGS</h2>
+        <div class="settings__field">
+          <label class="settings__label" for="settings-username" data-i18n="settings.username">Username</label>
+          <input id="settings-username" class="settings__input" type="text" maxlength="16" autocomplete="off" data-i18n-placeholder="settings.usernamePlaceholder" />
+        </div>
+        <div class="settings__field">
+          <span class="settings__label" data-i18n="settings.language">Language</span>
+          <div class="settings__lang">
+            <label class="settings__radio">
+              <input type="radio" name="settings-lang" value="en" />
+              <span>English</span>
+            </label>
+            <label class="settings__radio">
+              <input type="radio" name="settings-lang" value="es" />
+              <span>Español</span>
+            </label>
+          </div>
+        </div>
+        <div class="settings__actions">
+          <button id="settings-cancel" class="btn btn--secondary" type="button" data-i18n="settings.cancel">Cancel</button>
+          <button id="settings-save" class="btn btn--primary" type="button" data-i18n="settings.save">Save</button>
+        </div>
       </div>
     </div>
 

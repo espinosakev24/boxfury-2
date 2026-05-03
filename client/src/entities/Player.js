@@ -2,7 +2,7 @@ import { ARROW, BOW, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
 
 export class Player {
-  constructor(scene, { id, x, y, color = 0x4ade80 }) {
+  constructor(scene, { id, x, y, color = 0x4ade80, name = '' }) {
     this.scene = scene;
     this.id = id;
     this.color = color;
@@ -14,6 +14,14 @@ export class Player {
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
     this.bow = new Bow(scene, this);
+    this.nameText = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#' + color.toString(16).padStart(6, '0'),
+      stroke: '#15151f',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 1);
   }
 
   move({ left, right, lockFacing = false }) {
@@ -35,7 +43,7 @@ export class Player {
     if (this.dead) return;
     this.dead = true;
     this.bow.sprite.setVisible(false);
-    if (this.indicator) this.indicator.setVisible(false);
+    if (this.nameText) this.nameText.setVisible(false);
     const fallDir = this.facing >= 0 ? 1 : -1;
     this.scene.tweens.killTweensOf(this.sprite);
     this.scene.tweens.add({
@@ -57,7 +65,7 @@ export class Player {
     this.sprite.scaleY = 1;
     this.sprite.setVisible(true);
     this.bow.sprite.setVisible(!this.carryingFlag);
-    if (this.indicator) this.indicator.setVisible(true);
+    if (this.nameText) this.nameText.setVisible(true);
   }
 
   flashHit() {
@@ -138,5 +146,6 @@ export class Player {
   destroy() {
     this.bow.destroy();
     this.sprite.destroy();
+    this.nameText?.destroy();
   }
 }

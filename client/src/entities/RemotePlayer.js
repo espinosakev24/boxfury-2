@@ -4,7 +4,7 @@ import { Bow } from './Bow.js';
 const lerp = (a, b, t) => a + (b - a) * t;
 
 export class RemotePlayer {
-  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45 }) {
+  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45, name = '' }) {
     this.id = id;
     this.scene = scene;
     this.color = color;
@@ -16,6 +16,14 @@ export class RemotePlayer {
     this.sprite.body.setImmovable(true);
     this.bow = new Bow(scene, this);
     this.bow.setAngle(bowAngle);
+    this.nameText = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#' + color.toString(16).padStart(6, '0'),
+      stroke: '#15151f',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 1);
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];
   }
 
@@ -27,6 +35,7 @@ export class RemotePlayer {
     if (this.dead) return;
     this.dead = true;
     this.bow.sprite.setVisible(false);
+    if (this.nameText) this.nameText.setVisible(false);
     const fallDir = this.facing >= 0 ? 1 : -1;
     this.scene.tweens.killTweensOf(this.sprite);
     this.scene.tweens.add({
@@ -48,6 +57,7 @@ export class RemotePlayer {
     this.sprite.scaleY = 1;
     this.sprite.setVisible(true);
     this.bow.sprite.setVisible(true);
+    if (this.nameText) this.nameText.setVisible(true);
   }
 
   flashHit() {
@@ -109,10 +119,14 @@ export class RemotePlayer {
     }
 
     this.bow.update();
+    if (this.nameText) {
+      this.nameText.setPosition(this.sprite.x, this.sprite.y - PLAYER.HEIGHT / 2 - 6);
+    }
   }
 
   destroy() {
     this.bow.destroy();
     this.sprite.destroy();
+    this.nameText?.destroy();
   }
 }

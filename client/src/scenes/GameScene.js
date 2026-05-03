@@ -76,6 +76,7 @@ export class GameScene extends Phaser.Scene {
         color: player.color,
         facing: player.facing,
         bowAngle: player.bowAngle,
+        name: player.name,
       });
       this.remotes.set(sessionId, remote);
       if (this.flagCarrierId === sessionId) remote.setCarryingFlag(true);
@@ -88,7 +89,7 @@ export class GameScene extends Phaser.Scene {
         if (isLocal) {
           if (this.player) return;
           this.hideTeamPicker();
-          this.spawnLocalPlayer(player.color, player.team);
+          this.spawnLocalPlayer(player.color, player.team, player.name);
           if (room.state.flag?.carrierId === sessionId) this.player.setCarryingFlag(true);
         } else {
           spawnRemote(sessionId, player);
@@ -183,7 +184,7 @@ export class GameScene extends Phaser.Scene {
     return this.remotes.get(id) ?? null;
   }
 
-  spawnLocalPlayer(color, team = 1) {
+  spawnLocalPlayer(color, team = 1, name = '') {
     this.statusText?.destroy();
     this.statusText = null;
     const baseKey = team === 2 ? 'team2' : 'team1';
@@ -197,6 +198,7 @@ export class GameScene extends Phaser.Scene {
       x: spawn.x,
       y: spawn.y,
       color,
+      name,
     });
     this.physics.add.collider(this.player.sprite, this.level.platforms);
 
@@ -210,7 +212,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.spawnPulse(spawn.x, spawn.y, color);
-    this.attachLocalIndicator(color);
     this.showHud();
   }
 
@@ -227,15 +228,6 @@ export class GameScene extends Phaser.Scene {
       ease: 'Cubic.easeOut',
       onComplete: () => ring.destroy(),
     });
-  }
-
-  attachLocalIndicator(color) {
-    const caret = this.add.text(0, 0, '▼', {
-      fontFamily: 'JetBrains Mono, monospace',
-      fontSize: '14px',
-      color: '#' + color.toString(16).padStart(6, '0'),
-    }).setOrigin(0.5, 1);
-    this.player.indicator = caret;
   }
 
   toggleFlag() {
@@ -519,10 +511,10 @@ export class GameScene extends Phaser.Scene {
 
       this.player.update(dt);
       this.network.sendState(this.player.getState());
-      if (this.player.indicator) {
-        this.player.indicator.setPosition(
+      if (this.player.nameText) {
+        this.player.nameText.setPosition(
           this.player.sprite.x,
-          this.player.sprite.y - PLAYER.HEIGHT / 2 - 4,
+          this.player.sprite.y - PLAYER.HEIGHT / 2 - 6,
         );
       }
     }

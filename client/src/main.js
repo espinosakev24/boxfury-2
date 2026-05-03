@@ -6,10 +6,29 @@ import { PreloadScene } from './scenes/PreloadScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { setupMenu } from './menu.js';
 import { setupGameMenu } from './game-menu.js';
+import { setupSettings } from './settings.js';
+import { applyLocale } from './i18n.js';
+import { getUsername } from './username.js';
 
 let game = null;
 
+applyLocale();
+setupSettings();
+
+function buildOptions(extra = {}) {
+  const name = getUsername();
+  return name ? { ...extra, name } : extra;
+}
+
 function startGame(connectOptions = {}) {
+  const enriched = {
+    ...connectOptions,
+    options: buildOptions(connectOptions.options),
+  };
+  return doStartGame(enriched);
+}
+
+function doStartGame(connectOptions) {
   document.getElementById('game').classList.remove('hidden');
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -37,6 +56,9 @@ async function leaveGame() {
   }
   document.getElementById('game').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
+  // Belt-and-suspenders: ensure all in-game DOM overlays are hidden
+  ['hud', 'death-overlay', 'team-picker', 'scoreboard', 'match-end']
+    .forEach((id) => document.getElementById(id)?.classList.add('hidden'));
 }
 
 setupMenu({

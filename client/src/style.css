@@ -336,6 +336,64 @@ html, body {
   color: var(--bf-bone);
 }
 
+/* ---------- Settings ---------- */
+.settings__field {
+  margin-bottom: 18px;
+}
+.settings__label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bf-soft);
+  margin-bottom: 8px;
+}
+.settings__input {
+  width: 100%;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  color: var(--bf-bone);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-radius: var(--r-tight);
+}
+.settings__input:focus {
+  outline: none;
+  border-color: var(--bf-bone);
+}
+.settings__lang {
+  display: flex;
+  gap: 12px;
+}
+.settings__radio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--bf-bone);
+  transition: border-color 120ms ease;
+}
+.settings__radio:hover { border-color: var(--bf-bone); }
+.settings__radio input[type="radio"] {
+  accent-color: var(--bf-bone);
+}
+.settings__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 /* ---------- Death overlay ---------- */
 .death-overlay {
   position: fixed;
