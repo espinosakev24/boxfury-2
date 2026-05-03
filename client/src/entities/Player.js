@@ -16,12 +16,12 @@ export class Player {
     this.bow = new Bow(scene, this);
   }
 
-  move({ left, right }) {
+  move({ left, right, lockFacing = false }) {
     if (performance.now() < this.inputLockedUntil) return;
     const vx = (right ? 1 : 0) - (left ? 1 : 0);
     const speed = this.carryingFlag ? PLAYER.CARRY_SPEED : PLAYER.SPEED;
     this.sprite.body.setVelocityX(vx * speed);
-    if (vx !== 0) this.facing = vx;
+    if (vx !== 0 && !lockFacing) this.facing = vx;
   }
 
   applyKnockback(vx, vy) {

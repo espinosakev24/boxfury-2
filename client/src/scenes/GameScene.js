@@ -385,6 +385,7 @@ export class GameScene extends Phaser.Scene {
       this.player.move({
         left: this.cursors.left.isDown,
         right: this.cursors.right.isDown,
+        lockFacing: this.cursors.up.isDown,
       });
       if (this.cursors.up.isDown) this.player.jump();
 
