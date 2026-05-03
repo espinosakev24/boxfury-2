@@ -1,5 +1,6 @@
 import { ARROW, BOW, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
+import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 
 export class Player {
   constructor(scene, { id, x, y, color = 0x4ade80, name = '' }) {
@@ -13,6 +14,11 @@ export class Player {
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
+    this.damageStage = 0;
+    this.damageSeed = hashSeed(String(id));
+    this.damageGfx = scene.add.graphics();
+    this._postUpdateBound = () => this.syncDamageOverlay();
+    scene.events.on('postupdate', this._postUpdateBound);
     this.bow = new Bow(scene, this);
     this.nameText = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
       fontFamily: 'JetBrains Mono, monospace',
@@ -66,6 +72,23 @@ export class Player {
     this.sprite.setVisible(true);
     this.bow.sprite.setVisible(!this.carryingFlag);
     if (this.nameText) this.nameText.setVisible(true);
+    this.setDamageFromHp(PLAYER.MAX_HP);
+  }
+
+  setDamageFromHp(hp) {
+    const stage = damageStageFromHp(hp);
+    if (stage === this.damageStage) return;
+    this.damageStage = stage;
+    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT, this.damageSeed);
+  }
+
+  syncDamageOverlay() {
+    const gfx = this.damageGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible && this.damageStage > 0);
   }
 
   flashHit() {
@@ -144,8 +167,13 @@ export class Player {
   }
 
   destroy() {
+    if (this._postUpdateBound) {
+      this.scene.events.off('postupdate', this._postUpdateBound);
+      this._postUpdateBound = null;
+    }
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();
+    this.damageGfx?.destroy();
   }
 }

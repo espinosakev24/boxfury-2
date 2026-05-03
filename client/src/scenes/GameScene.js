@@ -169,11 +169,12 @@ export class GameScene extends Phaser.Scene {
     this.level.flag.applyState(flagState);
   }
 
-  handleHit({ targetId, knockX, knockY }) {
+  handleHit({ targetId, knockX, knockY, hp }) {
     const target = this.findPlayer(targetId);
     if (!target) return;
     target.flashHit();
     this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
+    if (typeof hp === 'number') target.setDamageFromHp(hp);
     if (target === this.player) {
       this.player.applyKnockback(knockX, knockY);
       this.cameras.main.shake(140, 0.006);
