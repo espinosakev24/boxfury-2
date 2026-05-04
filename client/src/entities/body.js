@@ -11,9 +11,16 @@ const LIFT = 4;
 const KNEE_FWD = 3;
 const KNEE_UP = 2;
 const BOB_AMP = 1.5;
+const MAX_TILT = 0.07;
 
 export function computeWalkBob(phase) {
   return -Math.abs(Math.sin(phase * 0.5)) * BOB_AMP;
+}
+
+export function computeLean(vx, maxSpeed) {
+  if (!vx) return 0;
+  const ratio = Math.min(1, Math.abs(vx) / maxSpeed);
+  return Math.sign(vx) * ratio * MAX_TILT;
 }
 
 export function drawBody(gfx, fillColor, { stroke = false } = {}) {

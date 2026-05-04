@@ -1,6 +1,6 @@
 import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
-import { computeWalkBob, drawBody, drawLegs } from './body.js';
+import { computeLean, computeWalkBob, drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
 
@@ -109,11 +109,12 @@ export class Player {
     const cos = Math.cos(this.sprite.rotation);
     const sy = this.sprite.scaleY;
     const bob = this._bobY ?? 0;
+    const lean = this._leanAngle ?? 0;
     gfx.setPosition(
       this.sprite.x - offsetY * sin * sy,
       this.sprite.y + offsetY * cos * sy + bob,
     );
-    gfx.setRotation(this.sprite.rotation);
+    gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible && this.damageStage > 0);
   }
@@ -122,8 +123,9 @@ export class Player {
     const gfx = this.bodyGfx;
     if (!gfx) return;
     const bob = this._bobY ?? 0;
+    const lean = this._leanAngle ?? 0;
     gfx.setPosition(this.sprite.x, this.sprite.y + bob);
-    gfx.setRotation(this.sprite.rotation);
+    gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
     gfx.setAlpha(this.sprite.alpha);
@@ -155,8 +157,9 @@ export class Player {
     const gfx = this.faceGfx;
     if (!gfx) return;
     const bob = this._bobY ?? 0;
+    const lean = this._leanAngle ?? 0;
     gfx.setPosition(this.sprite.x, this.sprite.y + bob);
-    gfx.setRotation(this.sprite.rotation);
+    gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
     gfx.setAlpha(this.sprite.alpha);
@@ -234,6 +237,7 @@ export class Player {
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
     this._bobY = (moving && grounded) ? computeWalkBob(this.legPhase) : 0;
+    this._leanAngle = (moving && grounded) ? computeLean(vx, PLAYER.SPEED) : 0;
   }
 
   getState() {
