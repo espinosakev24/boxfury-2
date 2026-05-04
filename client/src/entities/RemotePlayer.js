@@ -1,24 +1,42 @@
-import { HIT, NETWORK, PLAYER } from '@boxfury/shared';
+import { DEFAULT_SKIN, HIT, NETWORK, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
+import { drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
+import { drawFace } from './faces.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
 export class RemotePlayer {
-  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45, name = '' }) {
+  constructor(scene, { id, x, y, color, facing = 1, bowAngle = 45, name = '', skin = DEFAULT_SKIN }) {
     this.id = id;
     this.scene = scene;
     this.color = color;
+    this.skin = skin;
     this.facing = facing;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
-    this.sprite.setStrokeStyle(2, 0xffffff, 0.4);
+    this.sprite.setFillStyle(color, 0);
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setAllowGravity(false);
     this.sprite.body.setImmovable(true);
+    this.bodyGfx = scene.add.graphics();
+    this.legsGfx = scene.add.graphics();
+    this.legPhase = 0;
+    this._isMoving = false;
+    this._isGrounded = true;
+    this._lastSyncX = x;
+    drawBody(this.bodyGfx, color, { stroke: true });
+    drawLegs(this.legsGfx, color, 0, { isMoving: false, isGrounded: true });
     this.damageStage = 0;
     this.damageSeed = hashSeed(String(id));
     this.damageGfx = scene.add.graphics();
-    this._postUpdateBound = () => this.syncDamageOverlay();
+    this.faceGfx = scene.add.graphics();
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+    this._postUpdateBound = () => {
+      this.syncBodyOverlay();
+      this.syncLegsOverlay();
+      this.syncDamageOverlay();
+      this.syncFaceOverlay();
+    };
     scene.events.on('postupdate', this._postUpdateBound);
     this.bow = new Bow(scene, this);
     this.bow.setAngle(bowAngle);
@@ -64,6 +82,7 @@ export class RemotePlayer {
     this.sprite.setVisible(true);
     this.bow.sprite.setVisible(true);
     if (this.nameText) this.nameText.setVisible(true);
+    drawBody(this.bodyGfx, this.color, { stroke: true });
     this.setDamageFromHp(PLAYER.MAX_HP);
   }
 
@@ -71,25 +90,73 @@ export class RemotePlayer {
     const stage = damageStageFromHp(hp);
     if (stage === this.damageStage) return;
     this.damageStage = stage;
-    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT, this.damageSeed);
+    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT * (2 / 3), this.damageSeed);
   }
 
   syncDamageOverlay() {
     const gfx = this.damageGfx;
     if (!gfx) return;
-    gfx.setPosition(this.sprite.x, this.sprite.y);
+    const offsetY = -PLAYER.HEIGHT / 6;
+    const sin = Math.sin(this.sprite.rotation);
+    const cos = Math.cos(this.sprite.rotation);
+    const sy = this.sprite.scaleY;
+    gfx.setPosition(
+      this.sprite.x - offsetY * sin * sy,
+      this.sprite.y + offsetY * cos * sy,
+    );
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible && this.damageStage > 0);
   }
 
+  syncBodyOverlay() {
+    const gfx = this.bodyGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
+  }
+
+  syncLegsOverlay() {
+    const gfx = this.legsGfx;
+    if (!gfx) return;
+    drawLegs(gfx, this.color, this.legPhase, {
+      isMoving: this._isMoving,
+      isGrounded: this._isGrounded,
+      facing: this.facing,
+      vyNorm: this._vyNorm ?? 0,
+    });
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
+  }
+
+  setSkin(skin) {
+    if (skin === this.skin) return;
+    this.skin = skin;
+    drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
+  }
+
+  syncFaceOverlay() {
+    const gfx = this.faceGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
+  }
+
   flashHit() {
     const sprite = this.sprite;
     if (!sprite?.active) return;
-    const original = this.color;
-    sprite.setFillStyle(0xffffff);
+    drawBody(this.bodyGfx, 0xffffff, { stroke: true });
     this.scene.time.delayedCall(HIT.FLASH_MS, () => {
-      if (sprite.active) sprite.setFillStyle(original);
+      if (this.bodyGfx) drawBody(this.bodyGfx, this.color, { stroke: true });
     });
     this.scene.tweens.add({
       targets: sprite,
@@ -101,12 +168,13 @@ export class RemotePlayer {
     });
   }
 
-  applyState({ x, y, facing, bowAngle }) {
+  applyState({ x, y, vy, facing, bowAngle }) {
     const last = this.buffer[this.buffer.length - 1];
     this.buffer.push({
       t: performance.now(),
       x: typeof x === 'number' ? x : last.x,
       y: typeof y === 'number' ? y : last.y,
+      vy: typeof vy === 'number' ? vy : last.vy ?? 0,
       facing: typeof facing === 'number' ? facing : last.facing,
       bowAngle: typeof bowAngle === 'number' ? bowAngle : last.bowAngle,
     });
@@ -132,12 +200,14 @@ export class RemotePlayer {
       this.sprite.x = lerp(a.x, b.x, t);
       this.sprite.y = lerp(a.y, b.y, t);
       this.facing = b.facing;
+      this._vy = b.vy ?? 0;
       this.bow.setAngle(lerp(a.bowAngle, b.bowAngle, t));
     } else {
       const s = this.buffer[0];
       this.sprite.x = s.x;
       this.sprite.y = s.y;
       this.facing = s.facing;
+      this._vy = s.vy ?? 0;
       this.bow.setAngle(s.bowAngle);
     }
 
@@ -145,6 +215,17 @@ export class RemotePlayer {
     if (this.nameText) {
       this.nameText.setPosition(this.sprite.x, this.sprite.y - PLAYER.HEIGHT / 2 - 6);
     }
+
+    const dx = this.sprite.x - this._lastSyncX;
+    this._lastSyncX = this.sprite.x;
+    const vy = this._vy ?? 0;
+    const grounded = Math.abs(vy) < 30;
+    const moving = Math.abs(dx) > 0.4 && grounded;
+    if (moving) this.legPhase += Math.abs(dx) * 0.1;
+    else this.legPhase = 0;
+    this._isMoving = moving;
+    this._isGrounded = grounded;
+    this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
   }
 
   destroy() {
@@ -155,6 +236,9 @@ export class RemotePlayer {
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();
+    this.bodyGfx?.destroy();
+    this.legsGfx?.destroy();
     this.damageGfx?.destroy();
+    this.faceGfx?.destroy();
   }
 }
