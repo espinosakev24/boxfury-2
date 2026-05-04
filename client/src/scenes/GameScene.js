@@ -5,6 +5,7 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
 import { Level } from '../entities/Level.js';
 import { NetworkManager } from '../network/NetworkManager.js';
+import { t } from '../i18n.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -143,6 +144,7 @@ export class GameScene extends Phaser.Scene {
 
     this.network.onHit((payload) => this.handleHit(payload));
     this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
+    this.network.onMatchReset(() => this.handleMatchReset());
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);
@@ -404,6 +406,7 @@ export class GameScene extends Phaser.Scene {
     this.matchEnded = true;
     this.hideTeamPicker();
     this.hideScoreboard();
+    this.hideDeathOverlay();
     const titleEl = document.getElementById('match-end-title');
     const winLabel = payload.winnerTeam === 1
       ? '<span style="color:var(--p1)">JADE</span> WINS'
@@ -430,20 +433,99 @@ export class GameScene extends Phaser.Scene {
     };
     setHtml('[data-me-roster="1"]', team1Rows.join(''));
     setHtml('[data-me-roster="2"]', team2Rows.join(''));
+
+    this.renderMatchEndSummary();
+    this.updateMatchEndTeamCounts();
     overlay.classList.remove('hidden');
 
-    const back = document.getElementById('match-end-back');
-    if (back && !this._matchEndBackBound) {
-      this._matchEndBackBound = true;
-      back.addEventListener('click', () => {
+    if (!this._matchEndBound) {
+      this._matchEndBound = true;
+      const back = document.getElementById('match-end-back');
+      back?.addEventListener('click', () => {
         overlay.classList.add('hidden');
         this.registry.get('leaveGame')?.();
+      });
+      document.getElementById('match-end-team-1')?.addEventListener('click', () => {
+        this.network.sendChooseTeam(1);
+      });
+      document.getElementById('match-end-team-2')?.addEventListener('click', () => {
+        this.network.sendChooseTeam(2);
+      });
+      document.getElementById('match-end-spectate')?.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        this.isSpectator = true;
+        this.setupSpectatorCamera();
       });
     }
   }
 
+  renderMatchEndSummary() {
+    const root = document.getElementById('match-end-summary');
+    if (!root) return;
+    const meta = this.network?.room?.metadata ?? {};
+    const state = this.network?.room?.state;
+    const items = [
+      { label: t('createRoom.mode'), value: t(`mode.${meta.mode ?? 'ctf'}`) },
+      { label: t('createRoom.maxPlayers'), value: String(meta.maxPlayers ?? '—') },
+      { label: t('createRoom.maxPoints'), value: String(meta.scoreTarget ?? state?.scoreTarget ?? '—') },
+    ];
+    root.innerHTML = items.map((it) => `
+      <div class="match-end__summary-item">
+        <span class="match-end__summary-label">${escapeHtml(it.label)}</span>
+        <span class="match-end__summary-value">${escapeHtml(it.value)}</span>
+      </div>
+    `).join('');
+  }
+
+  updateMatchEndTeamCounts() {
+    const players = this.network?.room?.state?.players;
+    if (!players) return;
+    let t1 = 0;
+    let t2 = 0;
+    players.forEach((p) => {
+      if (p.team === 1) t1++;
+      else if (p.team === 2) t2++;
+    });
+    const cap = Math.floor((this.network?.room?.maxClients ?? 8) / 2);
+    const fmt = (n) => `${n}/${cap} ${n === 1 ? t('team.player') : t('team.players')}`;
+    const e1 = document.querySelector('[data-me-team="1"]');
+    const e2 = document.querySelector('[data-me-team="2"]');
+    if (e1) e1.textContent = fmt(t1);
+    if (e2) e2.textContent = fmt(t2);
+  }
+
   hideMatchEnd() {
     document.getElementById('match-end')?.classList.add('hidden');
+  }
+
+  handleMatchReset() {
+    this.matchEnded = false;
+    this.hideMatchEnd();
+    this.showHud();
+    if (this.player) {
+      const me = this.network?.room?.state?.players?.get(this.network.sessionId);
+      if (me && me.alive && me.team) {
+        this.deathState = null;
+        this.player.resetVisual();
+        this.player.sprite.body.enable = true;
+        this.player.sprite.body.setVelocity(0, 0);
+        this.player.sprite.setPosition(me.x, me.y);
+        const cam = this.cameras.main;
+        if (GAME.ZOOM_ENABLED) {
+          cam.setZoom(GAME.ZOOM);
+          cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+        } else {
+          cam.setZoom(1);
+          cam.centerOn(this.player.sprite.x, this.player.sprite.y);
+        }
+        this.spawnPulse(me.x, me.y, this.player.color);
+        document.getElementById('death-overlay')?.classList.add('hidden');
+      }
+    }
+    for (const remote of this.remotes.values()) {
+      remote.dead = false;
+      remote.resetVisual?.();
+    }
   }
 
   showScoreboard() {
@@ -491,6 +573,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateTeamCounts() {
+    if (this.matchEnded) this.updateMatchEndTeamCounts();
     if (!this.teamPickerOpen) return;
     const players = this.network?.room?.state?.players;
     if (!players) return;
@@ -500,7 +583,7 @@ export class GameScene extends Phaser.Scene {
       if (p.team === 1) t1++;
       else if (p.team === 2) t2++;
     });
-    const cap = Math.floor(ROOM.MAX_CLIENTS / 2);
+    const cap = Math.floor((this.network?.room?.maxClients ?? ROOM.MAX_CLIENTS) / 2);
     const apply = (team, count) => {
       const countEl = document.querySelector(`.team-pick__count[data-team="${team}"]`);
       const btn = document.getElementById(`team-pick-${team}`);
@@ -515,7 +598,7 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     const dt = delta / 1000;
     this.syncDeath();
-    if (this.player && !this.deathState) {
+    if (this.player && !this.deathState && !this.matchEnded) {
       this.player.move({
         left: this.cursors.left.isDown,
         right: this.cursors.right.isDown,

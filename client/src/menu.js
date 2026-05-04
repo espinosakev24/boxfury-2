@@ -71,30 +71,31 @@ export function setupMenu({ onJoin, onCreate }) {
     const spectators = meta.spectators ?? [];
     const isFull = room.clients >= room.maxClients;
     const age = ageLabel(meta.createdAt);
+    const target = meta.scoreTarget;
+    const rosterTooltip = [
+      team1.length ? `JADE: ${team1.map((m) => m.name ?? '?').join(', ')}` : '',
+      team2.length ? `CRIMSON: ${team2.map((m) => m.name ?? '?').join(', ')}` : '',
+      spectators.length ? `WATCHING: ${spectators.map((m) => m.name ?? '?').join(', ')}` : '',
+    ].filter(Boolean).join('\n');
 
     const card = document.createElement('div');
     card.className = `room ${isFull ? 'room--full' : ''}`;
+    if (rosterTooltip) card.title = rosterTooltip;
     card.innerHTML = `
-      <div class="room__header">
-        <span class="room__name">${escapeHtml(name)}</span>
-        <span class="room__meta">${room.clients}/${room.maxClients} · ${spectators.length === 0 ? 'no spectators' : spectators.length + ' watching'} · #${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
-      </div>
-      <div class="room__teams">
-        <div class="room__team room__team--p1">
-          <div class="room__team-head"><span>JADE</span><span>${team1.length}</span></div>
-          <div class="room__team-members">${formatMembers(team1)}</div>
-        </div>
-        <div class="room__team room__team--p2">
-          <div class="room__team-head"><span>CRIMSON</span><span>${team2.length}</span></div>
-          <div class="room__team-members">${formatMembers(team2)}</div>
-        </div>
-      </div>
+      <span class="room__name">${escapeHtml(name)}</span>
+      <span class="room__meta">
+        <span class="room__dot room__dot--p1">${team1.length}</span>
+        <span class="room__dot room__dot--p2">${team2.length}</span>
+        <span class="room__stat">${room.clients}/${room.maxClients}</span>
+        <span class="room__stat" title="spectators">◐ ${spectators.length}</span>
+        ${target ? `<span class="room__stat">${target}p</span>` : ''}
+        <span class="room__sub">#${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
+      </span>
     `;
 
     if (!isFull) {
       card.addEventListener('click', () => {
         closeLobby();
-        menu.classList.add('hidden');
         onJoin(room.roomId);
       });
     }
@@ -104,7 +105,6 @@ export function setupMenu({ onJoin, onCreate }) {
 
   const create = () => {
     closeLobby();
-    menu.classList.add('hidden');
     onCreate();
   };
 
@@ -118,18 +118,15 @@ export function setupMenu({ onJoin, onCreate }) {
   });
 
   window.addEventListener('keydown', (e) => {
-    if (!menu.classList.contains('hidden') && lobby.classList.contains('hidden')) {
+    const createOverlay = document.getElementById('create-overlay');
+    const createOpen = createOverlay && !createOverlay.classList.contains('hidden');
+    if (!menu.classList.contains('hidden') && lobby.classList.contains('hidden') && !createOpen) {
       if (e.key === 'Enter') openLobby();
       else if (e.key === 'c' || e.key === 'C') create();
     } else if (!lobby.classList.contains('hidden') && e.key === 'Escape') {
       closeLobby();
     }
   });
-}
-
-function formatMembers(members) {
-  if (!members || members.length === 0) return '<span style="opacity:0.5">—</span>';
-  return members.map((m) => escapeHtml(m.name ?? '?')).join(', ');
 }
 
 function ageLabel(createdAt) {

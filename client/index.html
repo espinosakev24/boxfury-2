@@ -99,9 +99,31 @@
             <div class="scoreboard__rows" data-me-roster="2"></div>
           </div>
         </div>
-        <button id="match-end-back" class="btn btn--primary" type="button">
-          <span class="btn__label"><span class="btn__index">·</span>Back to lobby</span>
-        </button>
+        <div class="match-end__divider"></div>
+
+        <div class="match-end__summary" id="match-end-summary"></div>
+
+        <div class="match-end__rematch">
+          <div class="match-end__rematch-head">
+            <span class="eyebrow" data-i18n="matchEnd.rematch">◣ Play again</span>
+            <span class="eyebrow" data-i18n="matchEnd.rematchHint">Pick a team — match starts when both sides have a player</span>
+          </div>
+          <div class="team-pick">
+            <button id="match-end-team-1" class="team-pick__btn team-pick__btn--p1" type="button">
+              <div class="team-pick__chip"></div>
+              <div class="team-pick__name">JADE</div>
+              <div class="team-pick__count" data-me-team="1">0 players</div>
+            </button>
+            <button id="match-end-team-2" class="team-pick__btn team-pick__btn--p2" type="button">
+              <div class="team-pick__chip"></div>
+              <div class="team-pick__name">CRIMSON</div>
+              <div class="team-pick__count" data-me-team="2">0 players</div>
+            </button>
+          </div>
+          <button id="match-end-spectate" class="team-pick__spectate" type="button" data-i18n="team.spectate">JUST SPECTATE</button>
+        </div>
+
+        <button id="match-end-back" class="match-end__leave" type="button" data-i18n="matchEnd.leave">Leave room</button>
       </div>
     </div>
 
@@ -236,6 +258,42 @@
         <div class="settings__actions">
           <button id="settings-cancel" class="btn btn--secondary" type="button" data-i18n="settings.cancel">Cancel</button>
           <button id="settings-save" class="btn btn--primary" type="button" data-i18n="settings.save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel">
+        <div class="overlay__header">
+          <span class="eyebrow" data-i18n="createRoom.eyebrow">◣ Create room</span>
+          <button id="create-close" class="btn btn--secondary btn--compact" type="button" data-i18n="settings.close">CLOSE</button>
+        </div>
+        <h2 class="overlay__title" data-i18n="createRoom.title">CREATE ROOM</h2>
+
+        <div class="settings__field">
+          <label class="settings__label" for="create-name" data-i18n="createRoom.name">Room name</label>
+          <input id="create-name" class="settings__input" type="text" maxlength="24" autocomplete="off" data-i18n-placeholder="createRoom.namePlaceholder" />
+        </div>
+
+        <div class="settings__field">
+          <span class="settings__label" data-i18n="createRoom.mode">Mode</span>
+          <div class="chip-row" id="create-mode"></div>
+        </div>
+
+        <div class="settings__field">
+          <span class="settings__label" data-i18n="createRoom.maxPlayers">Max players</span>
+          <div class="chip-row" id="create-max-players"></div>
+        </div>
+
+        <div class="settings__field">
+          <span class="settings__label" data-i18n="createRoom.maxPoints">Points to win</span>
+          <div class="chip-row" id="create-max-points"></div>
+        </div>
+
+        <div class="settings__actions">
+          <button id="create-cancel" class="btn btn--secondary" type="button" data-i18n="settings.cancel">Cancel</button>
+          <button id="create-submit" class="btn btn--primary" type="button" data-i18n="createRoom.submit">Create room</button>
         </div>
       </div>
     </div>

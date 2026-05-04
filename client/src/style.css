@@ -447,6 +447,37 @@ html, body {
   gap: 8px;
   align-content: start;
 }
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bf-bone);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.chip:hover { border-color: var(--bf-bone); }
+.chip.is-selected {
+  background: var(--bf-bone);
+  color: var(--bf-deep);
+  border-color: var(--bf-bone);
+}
+.chip.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.chip.is-disabled:hover { border-color: var(--bf-line); }
+
 .skin-picker__chip {
   padding: 12px 14px;
   background: var(--bf-arena);
@@ -574,6 +605,59 @@ html, body {
   font-size: 32px;
   margin-bottom: 10px;
 }
+.match-end__divider {
+  height: 1px;
+  background: var(--bf-line);
+  margin: 22px 0 16px;
+}
+.match-end__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bf-soft);
+  margin-bottom: 18px;
+}
+.match-end__summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.match-end__summary-label { color: var(--bf-mute); font-size: 10px; }
+.match-end__summary-value { color: var(--bf-bone); font-size: 14px; font-weight: 600; }
+.match-end__rematch {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.match-end__rematch-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.match-end__leave {
+  display: block;
+  margin: 6px auto 0;
+  background: none;
+  border: none;
+  color: var(--bf-mute);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 6px 8px;
+  transition: color 120ms ease;
+}
+.match-end__leave:hover { color: var(--bf-bone); }
 
 /* ---------- Scoreboard ---------- */
 .scoreboard {
@@ -798,7 +882,10 @@ html, body {
 }
 
 .room {
-  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
   background: var(--bf-arena);
   border: 1px solid var(--bf-line);
   border-radius: var(--r-tight);
@@ -814,58 +901,40 @@ html, body {
 .room--full:hover { border-color: var(--bf-line); }
 .room--full:active { transform: none; }
 
-.room__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
-  gap: 12px;
-}
 .room__name {
+  display: block;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--bf-bone);
-}
-.room__meta {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--bf-soft);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.room__teams {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-.room__team {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.room__team-head {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-.room__team--p1 .room__team-head { color: var(--p1); }
-.room__team--p2 .room__team-head { color: var(--p2); }
-.room__team-members {
-  color: var(--bf-soft);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.room__actions {
+.room__meta {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bf-soft);
+  letter-spacing: 0.04em;
 }
+.room__dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.room__dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.room__dot--p1 { color: var(--p1); }
+.room__dot--p2 { color: var(--p2); }
+.room__stat { color: var(--bf-bone); }
+.room__sub { color: var(--bf-mute); font-size: 10px; margin-left: auto; }

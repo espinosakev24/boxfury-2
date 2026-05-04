@@ -15,6 +15,9 @@ import {
   SCORE,
   TILE,
   WORLD,
+  normalizeMaxPlayers,
+  normalizeMaxPoints,
+  normalizeMode,
   normalizeSkin,
   parseMap,
 } from '@boxfury/shared';
@@ -43,7 +46,11 @@ export class GameRoom extends Room {
   onCreate(options = {}) {
     this.joinCount = 0;
     this.arrowSeq = 0;
-    this.displayName = (options?.name && String(options.name).slice(0, 24)) || randomName();
+    this.displayName = (options?.roomName && String(options.roomName).slice(0, 24)) || randomName();
+    this.maxClients = normalizeMaxPlayers(options?.maxPlayers);
+    this.scoreTarget = normalizeMaxPoints(options?.maxPoints);
+    this.mode = normalizeMode(options?.mode);
+    this.state.scoreTarget = this.scoreTarget;
     this.createdAt = Date.now();
     this.map = parseMap();
     this.bases = {
@@ -71,23 +78,25 @@ export class GameRoom extends Room {
     });
 
     this.onMessage(MESSAGES.CHOOSE_TEAM, (client, payload) => {
-      if (this.matchEnded) return;
       const player = this.state.players.get(client.sessionId);
-      if (!player || player.team !== 0) return;
+      if (!player) return;
       const team = payload?.team;
       if (team !== 1 && team !== 2) return;
-      const cap = Math.floor(ROOM.MAX_CLIENTS / 2);
+      if (!this.matchEnded && player.team !== 0) return;
+      if (player.team === team) return;
+      const cap = Math.floor(this.maxClients / 2);
       let count = 0;
-      this.state.players.forEach((p) => { if (p.team === team) count++; });
+      this.state.players.forEach((p) => { if (p.team === team && p !== player) count++; });
       if (count >= cap) {
         console.log(`[room ${this.displayName}] ${player.name} rejected team ${team}: full (${count}/${cap})`);
         return;
       }
       player.team = team;
       player.color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
-      player.alive = true;
+      player.alive = !this.matchEnded;
       this.updateMetadata();
       console.log(`[room ${this.displayName}] ${player.name} chose team ${team} (${count + 1}/${cap})`);
+      if (this.matchEnded) this.maybeResetMatch();
     });
 
     this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
@@ -113,7 +122,7 @@ export class GameRoom extends Room {
           console.log(
             `[room ${this.displayName}] SCORE team ${player.team} by ${player.name} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
           );
-          if (this.state.scoreTeam1 >= SCORE.TARGET || this.state.scoreTeam2 >= SCORE.TARGET) {
+          if (this.state.scoreTeam1 >= this.scoreTarget || this.state.scoreTeam2 >= this.scoreTarget) {
             this.endMatch();
           }
         } else {
@@ -187,6 +196,51 @@ export class GameRoom extends Room {
     console.log(
       `[room ${this.displayName}] MATCH END — winner: team ${winnerTeam} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
     );
+  }
+
+  maybeResetMatch() {
+    if (!this.matchEnded) return;
+    let team1Count = 0;
+    let team2Count = 0;
+    this.state.players.forEach((p) => {
+      if (p.team === 1) team1Count++;
+      else if (p.team === 2) team2Count++;
+    });
+    if (team1Count > 0 && team2Count > 0) this.resetMatch();
+  }
+
+  resetMatch() {
+    this.matchEnded = false;
+    this.state.scoreTeam1 = 0;
+    this.state.scoreTeam2 = 0;
+    const arrowIds = Array.from(this.state.arrows.keys());
+    for (const id of arrowIds) this.state.arrows.delete(id);
+    if (this.map.flag) {
+      this.state.flag.x = this.map.flag.x;
+      this.state.flag.y = this.map.flag.y;
+      this.state.flag.carrierId = '';
+      this.state.flag.vx = 0;
+      this.state.flag.vy = 0;
+    }
+    this.state.players.forEach((p) => {
+      p.kills = 0;
+      p.deaths = 0;
+      p.captures = 0;
+      p.hp = PLAYER.MAX_HP;
+      p.respawnAt = 0;
+      if (p.team === 1 || p.team === 2) {
+        p.alive = true;
+        const base = this.bases[p.team];
+        if (base) {
+          p.x = base.x;
+          p.y = base.y;
+          p.vx = 0;
+          p.vy = 0;
+        }
+      }
+    });
+    this.broadcast(MESSAGES.MATCH_RESET);
+    console.log(`[room ${this.displayName}] MATCH RESET`);
   }
 
   spawnDummy() {
@@ -418,6 +472,9 @@ export class GameRoom extends Room {
       team2,
       spectators,
       createdAt: this.createdAt,
+      maxPlayers: this.maxClients,
+      scoreTarget: this.scoreTarget,
+      mode: this.mode,
     });
   }
 }

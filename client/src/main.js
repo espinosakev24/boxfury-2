@@ -7,6 +7,7 @@ import { GameScene } from './scenes/GameScene.js';
 import { setupMenu } from './menu.js';
 import { setupGameMenu } from './game-menu.js';
 import { setupSettings } from './settings.js';
+import { openCreateRoom, setupCreateRoom } from './create-room.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
@@ -33,6 +34,7 @@ function startGame(connectOptions = {}) {
 }
 
 function doStartGame(connectOptions) {
+  document.getElementById('menu').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -65,9 +67,13 @@ async function leaveGame() {
     .forEach((id) => document.getElementById(id)?.classList.add('hidden'));
 }
 
+setupCreateRoom({
+  onSubmit: (cfg) => startGame({ mode: 'create', options: cfg }),
+});
+
 setupMenu({
   onJoin: (roomId) => startGame({ mode: 'join', roomId }),
-  onCreate: () => startGame({ mode: 'create' }),
+  onCreate: () => openCreateRoom(),
 });
 setupGameMenu({
   onLeave: leaveGame,

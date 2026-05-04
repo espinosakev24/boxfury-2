@@ -30,6 +30,18 @@ const TRANSLATIONS = {
     'skinPicker.eyebrow': '◣ Face',
     'skinPicker.title': 'CHOOSE A FACE',
 
+    'createRoom.eyebrow': '◣ Create room',
+    'createRoom.title': 'CREATE ROOM',
+    'createRoom.name': 'Room name',
+    'createRoom.namePlaceholder': 'Optional…',
+    'createRoom.mode': 'Mode',
+    'createRoom.modeComingSoon': 'More soon',
+    'createRoom.maxPlayers': 'Max players',
+    'createRoom.maxPoints': 'Points to win',
+    'createRoom.submit': 'Create room',
+
+    'mode.ctf': 'Capture the flag',
+
     'pause.eyebrow': '◣ Paused',
     'pause.escResume': 'ESC to resume',
     'pause.title': 'MENU',
@@ -79,6 +91,9 @@ const TRANSLATIONS = {
     'matchEnd.tie': 'TIE',
     'matchEnd.wins': 'WINS',
     'matchEnd.back': 'Back to lobby',
+    'matchEnd.rematch': '◣ Play again',
+    'matchEnd.rematchHint': 'Pick a team — match starts when both sides have a player',
+    'matchEnd.leave': 'Leave room',
 
     'death.title': 'YOU DIED',
     'death.respawnIn': 'Respawning in',
@@ -114,6 +129,18 @@ const TRANSLATIONS = {
 
     'skinPicker.eyebrow': '◣ Cara',
     'skinPicker.title': 'ELIGE UNA CARA',
+
+    'createRoom.eyebrow': '◣ Crear sala',
+    'createRoom.title': 'CREAR SALA',
+    'createRoom.name': 'Nombre de sala',
+    'createRoom.namePlaceholder': 'Opcional…',
+    'createRoom.mode': 'Modo',
+    'createRoom.modeComingSoon': 'Más pronto',
+    'createRoom.maxPlayers': 'Jugadores máx.',
+    'createRoom.maxPoints': 'Puntos para ganar',
+    'createRoom.submit': 'Crear sala',
+
+    'mode.ctf': 'Captura la bandera',
 
     'pause.eyebrow': '◣ Pausa',
     'pause.escResume': 'ESC para reanudar',
@@ -164,6 +191,9 @@ const TRANSLATIONS = {
     'matchEnd.tie': 'EMPATE',
     'matchEnd.wins': 'GANA',
     'matchEnd.back': 'Volver al lobby',
+    'matchEnd.rematch': '◣ Jugar de nuevo',
+    'matchEnd.rematchHint': 'Elige equipo — la partida empieza cuando ambos lados tienen jugador',
+    'matchEnd.leave': 'Salir de la sala',
 
     'death.title': 'HAS MUERTO',
     'death.respawnIn': 'Reapareciendo en',

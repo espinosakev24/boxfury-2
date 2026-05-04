@@ -1,4 +1,5 @@
 import { Schema, MapSchema, defineTypes } from '@colyseus/schema';
+import { DEFAULT_MAX_POINTS } from '@boxfury/shared';
 import { Player } from './Player.js';
 import { Arrow } from './Arrow.js';
 import { Flag } from './Flag.js';
@@ -11,6 +12,7 @@ export class GameState extends Schema {
     this.flag = new Flag();
     this.scoreTeam1 = 0;
     this.scoreTeam2 = 0;
+    this.scoreTarget = DEFAULT_MAX_POINTS;
   }
 }
 
@@ -20,4 +22,5 @@ defineTypes(GameState, {
   flag: Flag,
   scoreTeam1: 'number',
   scoreTeam2: 'number',
+  scoreTarget: 'number',
 });

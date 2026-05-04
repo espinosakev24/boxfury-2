@@ -7,6 +7,7 @@ export const MESSAGES = {
   FLAG_TOGGLE: 'flag_toggle',
   CHOOSE_TEAM: 'choose_team',
   MATCH_END: 'match_end',
+  MATCH_RESET: 'match_reset',
 };
 
 export const ROOM_NAME = 'boxfury';
