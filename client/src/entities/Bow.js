@@ -2,13 +2,18 @@ import { BOW } from '@boxfury/shared';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+const ARC_STEPS = 14;
+const ARC_BULGE = 5;
+const ARC_CHORD = BOW.LENGTH * 0.7;
+const ARC_CENTER_X = BOW.LENGTH * 0.5;
+
 export class Bow {
   constructor(scene, owner) {
     this.scene = scene;
     this.owner = owner;
     this.angle = BOW.MIN_ANGLE;
-    this.sprite = scene.add.rectangle(0, 0, BOW.LENGTH, BOW.THICKNESS, 0xffffff);
-    this.sprite.setOrigin(0, 0.5);
+    this.sprite = scene.add.graphics();
+    this._draw();
   }
 
   setAngle(deg) {
@@ -23,8 +28,30 @@ export class Bow {
   update() {
     this.sprite.x = this.owner.sprite.x;
     this.sprite.y = this.owner.sprite.y;
-    const dirRad = ((90 - this.angle) * Math.PI) / 180;
-    this.sprite.rotation = this.owner.facing > 0 ? dirRad : Math.PI - dirRad;
+    this.sprite.rotation = this.getRotation();
+  }
+
+  _draw() {
+    const gfx = this.sprite;
+    gfx.clear();
+
+    gfx.lineStyle(1, 0xffffff, 0.35);
+    gfx.beginPath();
+    gfx.moveTo(0, 0);
+    gfx.lineTo(BOW.LENGTH, 0);
+    gfx.strokePath();
+
+    gfx.lineStyle(2, 0xffffff, 1);
+    gfx.beginPath();
+    for (let i = 0; i <= ARC_STEPS; i++) {
+      const t = i / ARC_STEPS;
+      const a = Math.PI * (t - 0.5);
+      const y = (ARC_CHORD / 2) * Math.sin(a);
+      const x = ARC_CENTER_X + ARC_BULGE * Math.cos(a);
+      if (i === 0) gfx.moveTo(x, y);
+      else gfx.lineTo(x, y);
+    }
+    gfx.strokePath();
   }
 
   destroy() {
