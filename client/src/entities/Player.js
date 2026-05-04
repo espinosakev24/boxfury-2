@@ -1,6 +1,6 @@
 import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
-import { drawBody, drawLegs } from './body.js';
+import { computeWalkBob, drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
 
@@ -108,9 +108,10 @@ export class Player {
     const sin = Math.sin(this.sprite.rotation);
     const cos = Math.cos(this.sprite.rotation);
     const sy = this.sprite.scaleY;
+    const bob = this._bobY ?? 0;
     gfx.setPosition(
       this.sprite.x - offsetY * sin * sy,
-      this.sprite.y + offsetY * cos * sy,
+      this.sprite.y + offsetY * cos * sy + bob,
     );
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
@@ -120,7 +121,8 @@ export class Player {
   syncBodyOverlay() {
     const gfx = this.bodyGfx;
     if (!gfx) return;
-    gfx.setPosition(this.sprite.x, this.sprite.y);
+    const bob = this._bobY ?? 0;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
@@ -152,7 +154,8 @@ export class Player {
   syncFaceOverlay() {
     const gfx = this.faceGfx;
     if (!gfx) return;
-    gfx.setPosition(this.sprite.x, this.sprite.y);
+    const bob = this._bobY ?? 0;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
@@ -230,6 +233,7 @@ export class Player {
     this._isMoving = moving;
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
+    this._bobY = (moving && grounded) ? computeWalkBob(this.legPhase) : 0;
   }
 
   getState() {

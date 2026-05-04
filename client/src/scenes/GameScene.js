@@ -537,9 +537,10 @@ export class GameScene extends Phaser.Scene {
       this.player.update(dt);
       this.network.sendState(this.player.getState());
       if (this.player.nameText) {
+        const bob = this.player._bobY ?? 0;
         this.player.nameText.setPosition(
           this.player.sprite.x,
-          this.player.sprite.y - PLAYER.HEIGHT / 2 - 6,
+          this.player.sprite.y - PLAYER.HEIGHT / 2 - 6 + bob,
         );
       }
     }

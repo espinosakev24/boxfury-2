@@ -10,6 +10,11 @@ const STRIDE = 5;
 const LIFT = 4;
 const KNEE_FWD = 3;
 const KNEE_UP = 2;
+const BOB_AMP = 1.5;
+
+export function computeWalkBob(phase) {
+  return -Math.abs(Math.sin(phase * 0.5)) * BOB_AMP;
+}
 
 export function drawBody(gfx, fillColor, { stroke = false } = {}) {
   gfx.clear();
