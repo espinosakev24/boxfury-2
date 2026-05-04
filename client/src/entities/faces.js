@@ -9,9 +9,9 @@ export function drawFace(gfx, skinId, width, height) {
   const halfW = width / 2;
   const halfH = height / 2;
 
-  const eyeY = -halfH * 0.45;
+  const eyeY = -halfH * 0.78;
   const eyeX = halfW * 0.42;
-  const mouthY = halfH * 0.05;
+  const mouthY = -halfH * 0.55;
 
   gfx.lineStyle(STROKE_W, STROKE, 1);
   gfx.fillStyle(STROKE, 1);
@@ -97,9 +97,9 @@ export function drawFaceCanvas(ctx, skinId, width, height) {
   const id = normalizeSkin(skinId);
   const halfW = width / 2;
   const halfH = height / 2;
-  const eyeY = -halfH * 0.45;
+  const eyeY = -halfH * 0.78;
   const eyeX = halfW * 0.42;
-  const mouthY = halfH * 0.05;
+  const mouthY = -halfH * 0.55;
   const dotR = Math.max(2, Math.round(width * 0.06));
   const lineW = Math.max(1, Math.round(width / 60));
 

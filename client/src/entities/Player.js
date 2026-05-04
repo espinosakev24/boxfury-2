@@ -1,5 +1,6 @@
 import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
+import { drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
 
@@ -14,14 +15,24 @@ export class Player {
     this.carryingFlag = false;
     this.inputLockedUntil = 0;
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
+    this.sprite.setFillStyle(color, 0);
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
+    this.bodyGfx = scene.add.graphics();
+    this.legsGfx = scene.add.graphics();
+    this.legPhase = 0;
+    this._isMoving = false;
+    this._isGrounded = true;
+    drawBody(this.bodyGfx, color);
+    drawLegs(this.legsGfx, color, 0, { isMoving: false, isGrounded: true });
     this.damageStage = 0;
     this.damageSeed = hashSeed(String(id));
     this.damageGfx = scene.add.graphics();
     this.faceGfx = scene.add.graphics();
     drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
     this._postUpdateBound = () => {
+      this.syncBodyOverlay();
+      this.syncLegsOverlay();
       this.syncDamageOverlay();
       this.syncFaceOverlay();
     };
@@ -79,6 +90,7 @@ export class Player {
     this.sprite.setVisible(true);
     this.bow.sprite.setVisible(!this.carryingFlag);
     if (this.nameText) this.nameText.setVisible(true);
+    drawBody(this.bodyGfx, this.color);
     this.setDamageFromHp(PLAYER.MAX_HP);
   }
 
@@ -86,16 +98,49 @@ export class Player {
     const stage = damageStageFromHp(hp);
     if (stage === this.damageStage) return;
     this.damageStage = stage;
-    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT, this.damageSeed);
+    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT * (2 / 3), this.damageSeed);
   }
 
   syncDamageOverlay() {
     const gfx = this.damageGfx;
     if (!gfx) return;
-    gfx.setPosition(this.sprite.x, this.sprite.y);
+    const offsetY = -PLAYER.HEIGHT / 6;
+    const sin = Math.sin(this.sprite.rotation);
+    const cos = Math.cos(this.sprite.rotation);
+    const sy = this.sprite.scaleY;
+    gfx.setPosition(
+      this.sprite.x - offsetY * sin * sy,
+      this.sprite.y + offsetY * cos * sy,
+    );
     gfx.setRotation(this.sprite.rotation);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible && this.damageStage > 0);
+  }
+
+  syncBodyOverlay() {
+    const gfx = this.bodyGfx;
+    if (!gfx) return;
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
+  }
+
+  syncLegsOverlay() {
+    const gfx = this.legsGfx;
+    if (!gfx) return;
+    drawLegs(gfx, this.color, this.legPhase, {
+      isMoving: this._isMoving,
+      isGrounded: this._isGrounded,
+      facing: this.facing,
+      vyNorm: this._vyNorm ?? 0,
+    });
+    gfx.setPosition(this.sprite.x, this.sprite.y);
+    gfx.setRotation(this.sprite.rotation);
+    gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    gfx.setVisible(this.sprite.visible);
+    gfx.setAlpha(this.sprite.alpha);
   }
 
   setSkin(skin) {
@@ -117,10 +162,9 @@ export class Player {
   flashHit() {
     const sprite = this.sprite;
     if (!sprite?.active) return;
-    const original = this.color;
-    sprite.setFillStyle(0xffffff);
+    drawBody(this.bodyGfx, 0xffffff);
     this.scene.time.delayedCall(HIT.FLASH_MS, () => {
-      if (sprite.active) sprite.setFillStyle(original);
+      if (this.bodyGfx) drawBody(this.bodyGfx, this.color);
     });
     this.scene.tweens.add({
       targets: sprite,
@@ -175,6 +219,17 @@ export class Player {
       this.bow.setAngle(BOW.MIN_ANGLE);
     }
     this.bow.update();
+
+    const body = this.sprite.body;
+    const vx = body.velocity.x;
+    const vy = body.velocity.y;
+    const grounded = body.blocked.down || body.touching.down;
+    const moving = Math.abs(vx) > 5 && grounded;
+    if (moving) this.legPhase += Math.abs(vx) * dt * 0.1;
+    else this.legPhase = 0;
+    this._isMoving = moving;
+    this._isGrounded = grounded;
+    this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
   }
 
   getState() {
@@ -197,6 +252,8 @@ export class Player {
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();
+    this.bodyGfx?.destroy();
+    this.legsGfx?.destroy();
     this.damageGfx?.destroy();
     this.faceGfx?.destroy();
   }

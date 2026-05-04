@@ -108,6 +108,7 @@ export class GameScene extends Phaser.Scene {
           remote.applyState({
             x: player.x,
             y: player.y,
+            vy: player.vy,
             facing: player.facing,
             bowAngle: player.bowAngle,
           });

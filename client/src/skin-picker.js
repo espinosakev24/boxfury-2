@@ -5,6 +5,7 @@ import { getSkin, setSkin } from './skin.js';
 
 const PREVIEW_BOX_W = 160;
 const PREVIEW_BOX_H = 320;
+const PREVIEW_BODY_RATIO = 2 / 3;
 const PREVIEW_COLOR = '#4ee08a';
 
 let onSavedCb = null;
@@ -79,9 +80,27 @@ function renderPreview() {
 
   const cx = cssW / 2;
   const cy = cssH / 2;
+  const bodyH = PREVIEW_BOX_H * PREVIEW_BODY_RATIO;
+  const legH = PREVIEW_BOX_H - bodyH;
+  const halfW = PREVIEW_BOX_W / 2;
+  const halfH = PREVIEW_BOX_H / 2;
+  const bodyTop = cy - halfH;
 
   ctx.fillStyle = PREVIEW_COLOR;
-  ctx.fillRect(cx - PREVIEW_BOX_W / 2, cy - PREVIEW_BOX_H / 2, PREVIEW_BOX_W, PREVIEW_BOX_H);
+  ctx.fillRect(cx - halfW, bodyTop, PREVIEW_BOX_W, bodyH);
+
+  ctx.strokeStyle = PREVIEW_COLOR;
+  ctx.lineWidth = Math.max(2, Math.round(PREVIEW_BOX_W * 0.06));
+  ctx.lineCap = 'round';
+  const legTopY = bodyTop + bodyH;
+  const legBottomY = legTopY + legH;
+  const legInset = halfW * 0.42;
+  ctx.beginPath();
+  ctx.moveTo(cx - legInset, legTopY);
+  ctx.lineTo(cx - legInset, legBottomY);
+  ctx.moveTo(cx + legInset, legTopY);
+  ctx.lineTo(cx + legInset, legBottomY);
+  ctx.stroke();
 
   ctx.save();
   ctx.translate(cx, cy);
