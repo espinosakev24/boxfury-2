@@ -13,7 +13,6 @@ import {
   RESPAWN,
   SCORE,
   TILE,
-  WORLD,
   LOG_EVENTS,
   getMap,
   normalizeMapId,
@@ -289,7 +288,7 @@ export class GameRoom extends Room {
       arrow.x += arrow.vx * dt;
       arrow.y += arrow.vy * dt;
 
-      if (arrow.x < 0 || arrow.x > WORLD.WIDTH || arrow.y > WORLD.HEIGHT + 80) {
+      if (arrow.x < 0 || arrow.x > this.map.pixelWidth || arrow.y > this.map.pixelHeight + 80) {
         remove.push(id);
         return;
       }
@@ -371,7 +370,7 @@ export class GameRoom extends Room {
     flag.x += flag.vx * dt;
     flag.y += flag.vy * dt;
 
-    if (flag.y > WORLD.HEIGHT + 80) {
+    if (flag.y > this.map.pixelHeight + 80) {
       flag.x = flag.homeX;
       flag.y = flag.homeY;
       flag.vx = 0;

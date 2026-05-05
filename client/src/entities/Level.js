@@ -10,6 +10,7 @@ export class Level {
     this.mapId = mapId;
     this.map = parseMap(getMap(mapId));
 
+    this.applyBounds();
     this.buildWalls();
     this.buildMarkers();
   }
@@ -24,8 +25,16 @@ export class Level {
       this.flag = null;
     }
     this.map = parseMap(getMap(mapId));
+    this.applyBounds();
     this.buildWalls();
     this.buildMarkers();
+  }
+
+  applyBounds() {
+    const w = this.map.pixelWidth;
+    const h = this.map.pixelHeight;
+    this.scene.physics.world.setBounds(0, 0, w, h);
+    this.scene.cameras.main.setBounds(0, 0, w, h);
   }
 
   buildWalls() {

@@ -19,7 +19,6 @@ export class GameScene extends Phaser.Scene {
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.level = new Level(this);
-    this.cameras.main.setBounds(0, 0, WORLD.WIDTH, WORLD.HEIGHT);
     this.network = new NetworkManager();
 
     this.statusText = this.add
@@ -99,7 +98,8 @@ export class GameScene extends Phaser.Scene {
             const cam = this.cameras.main;
             cam.stopFollow();
             cam.setZoom(1);
-            cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+            const m = this.level.map;
+            cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
             this.hideDeathOverlay();
           } else if (!isLocal) {
             const remote = this.remotes.get(sessionId);
@@ -177,9 +177,12 @@ export class GameScene extends Phaser.Scene {
     setupEventLog();
     this.network.onLog((payload) => pushEvent(payload));
 
-    if (room.state.mapId && room.state.mapId !== this.level.mapId) {
-      this.level.rebuild(room.state.mapId);
-    }
+    $(room.state).listen('mapId', (newId) => {
+      if (!newId || !this.level) return;
+      if (this.level.mapId === newId) return;
+      this.level.rebuild(newId);
+      this.updateMatchEndMapTrigger?.();
+    });
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);
@@ -297,10 +300,11 @@ export class GameScene extends Phaser.Scene {
     this.statusText?.destroy();
     this.statusText = null;
     const baseKey = team === 2 ? 'team2' : 'team1';
-    const spawn = this.level.map.bases[baseKey]
-      ?? this.level.map.bases.team1
-      ?? this.level.map.bases.team2
-      ?? { x: WORLD.WIDTH / 2, y: WORLD.HEIGHT / 2 - 100 };
+    const map = this.level.map;
+    const spawn = map.bases[baseKey]
+      ?? map.bases.team1
+      ?? map.bases.team2
+      ?? { x: map.pixelWidth / 2, y: map.pixelHeight / 2 - 100 };
     console.log('[spawn]', { team, x: spawn.x, y: spawn.y, color: '0x' + color.toString(16) });
     this.player = new Player(this, {
       id: this.network.sessionId,
@@ -313,9 +317,13 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player.sprite, this.level.platforms);
 
     const cam = this.cameras.main;
+    const mapBiggerThanViewport = map.pixelWidth > cam.width || map.pixelHeight > cam.height;
     if (GAME.ZOOM_ENABLED) {
       cam.setZoom(GAME.ZOOM);
       cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+    } else if (mapBiggerThanViewport) {
+      cam.setZoom(1);
+      cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP ?? 0.1, GAME.CAMERA_LERP ?? 0.1);
     } else {
       cam.setZoom(1);
       cam.centerOn(this.player.sprite.x, this.player.sprite.y);
@@ -355,7 +363,8 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.stopFollow();
     cam.setZoom(1);
-    cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    const m = this.level.map;
+    cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
     this.showHud();
   }
 
@@ -449,7 +458,8 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.stopFollow();
     cam.setZoom(1);
-    cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    const m = this.level.map;
+    cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
     document.getElementById('death-overlay')?.classList.remove('hidden');
     this.updateDeathTimer(me.respawnAt);
   }
@@ -461,9 +471,14 @@ export class GameScene extends Phaser.Scene {
     this.player.sprite.body.setVelocity(0, 0);
     this.player.sprite.setPosition(me.x, me.y);
     const cam = this.cameras.main;
+    const map = this.level.map;
+    const mapBiggerThanViewport = map.pixelWidth > cam.width || map.pixelHeight > cam.height;
     if (GAME.ZOOM_ENABLED) {
       cam.setZoom(GAME.ZOOM);
       cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
+    } else if (mapBiggerThanViewport) {
+      cam.setZoom(1);
+      cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP ?? 0.1, GAME.CAMERA_LERP ?? 0.1);
     } else {
       cam.setZoom(1);
       cam.centerOn(this.player.sprite.x, this.player.sprite.y);
@@ -569,7 +584,8 @@ export class GameScene extends Phaser.Scene {
       const cam = this.cameras.main;
       cam.stopFollow();
       cam.setZoom(1);
-      cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+      const m = this.level.map;
+      cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
     }
     this.showHud();
   }
