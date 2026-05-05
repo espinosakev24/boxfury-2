@@ -68,6 +68,10 @@ export class NetworkManager {
     this.room?.onMessage(MESSAGES.MATCH_RESET, cb);
   }
 
+  onLog(cb) {
+    this.room?.onMessage(MESSAGES.LOG, cb);
+  }
+
   async disconnect() {
     if (!this.room) return;
     const room = this.room;

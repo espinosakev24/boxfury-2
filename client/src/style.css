@@ -549,6 +549,38 @@ html, body {
 }
 
 /* ---------- HUD ---------- */
+.event-log {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+  pointer-events: none;
+  max-width: 320px;
+}
+.event-log__entry {
+  padding: 6px 10px;
+  background: rgba(21, 21, 31, 0.7);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--bf-bone);
+  animation: event-log-in 180ms ease-out;
+}
+.event-log__name { font-weight: 600; }
+.event-log__name--p1, .event-log__team--p1 { color: var(--p1); font-weight: 600; }
+.event-log__name--p2, .event-log__team--p2 { color: var(--p2); font-weight: 600; }
+.event-log__sep { color: var(--bf-mute); margin: 0 4px; }
+@keyframes event-log-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .hud {
   position: fixed;
   top: 20px;

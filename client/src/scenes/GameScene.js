@@ -5,6 +5,7 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
 import { Level } from '../entities/Level.js';
 import { NetworkManager } from '../network/NetworkManager.js';
+import { pushEvent, setupEventLog, teardownEventLog } from '../event-log.js';
 import { t } from '../i18n.js';
 
 export class GameScene extends Phaser.Scene {
@@ -49,6 +50,7 @@ export class GameScene extends Phaser.Scene {
       this.hideScoreboard();
       this.hideMatchEnd();
       this.hideDeathOverlay();
+      teardownEventLog();
       window.removeEventListener('keydown', this._tabKeydown);
       window.removeEventListener('keyup', this._tabKeyup);
       this.network?.disconnect();
@@ -153,6 +155,8 @@ export class GameScene extends Phaser.Scene {
     this.network.onHit((payload) => this.handleHit(payload));
     this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
     this.network.onMatchReset(() => this.handleMatchReset());
+    setupEventLog();
+    this.network.onLog((payload) => pushEvent(payload));
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);

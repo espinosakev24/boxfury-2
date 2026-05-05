@@ -15,6 +15,7 @@ import {
   SCORE,
   TILE,
   WORLD,
+  LOG_EVENTS,
   normalizeMaxPlayers,
   normalizeMaxPoints,
   normalizeMode,
@@ -95,6 +96,7 @@ export class GameRoom extends Room {
       player.color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
       player.alive = !this.matchEnded;
       this.updateMetadata();
+      this.logEvent(LOG_EVENTS.JOIN_TEAM, { name: player.name, team });
       console.log(`[room ${this.displayName}] ${player.name} chose team ${team} (${count + 1}/${cap})`);
       if (this.matchEnded) this.maybeResetMatch();
     });
@@ -119,6 +121,7 @@ export class GameRoom extends Room {
           flag.y = flag.homeY;
           flag.vx = 0;
           flag.vy = 0;
+          this.logEvent(LOG_EVENTS.CAPTURE, { name: player.name, team: player.team });
           console.log(
             `[room ${this.displayName}] SCORE team ${player.team} by ${player.name} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
           );
@@ -193,6 +196,7 @@ export class GameRoom extends Room {
       players,
     };
     this.broadcast(MESSAGES.MATCH_END, payload);
+    this.logEvent(LOG_EVENTS.MATCH_END, { winnerTeam });
     console.log(
       `[room ${this.displayName}] MATCH END — winner: team ${winnerTeam} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
     );
@@ -240,6 +244,7 @@ export class GameRoom extends Room {
       }
     });
     this.broadcast(MESSAGES.MATCH_RESET);
+    this.logEvent(LOG_EVENTS.MATCH_RESET);
     console.log(`[room ${this.displayName}] MATCH RESET`);
   }
 
@@ -411,6 +416,12 @@ export class GameRoom extends Room {
       target.respawnAt = Date.now() + RESPAWN.COOLDOWN_MS;
       const shooter = this.state.players.get(arrow.shooterId);
       if (shooter) shooter.kills++;
+      this.logEvent(LOG_EVENTS.KILL, {
+        shooter: shooter?.name ?? '?',
+        shooterTeam: shooter?.team ?? 0,
+        victim: target.name,
+        victimTeam: target.team,
+      });
     }
 
     const knockX = arrow.vx * ARROW.KNOCKBACK_MULT;
@@ -437,12 +448,13 @@ export class GameRoom extends Room {
     this.state.players.set(client.sessionId, player);
     this.joinCount++;
     this.updateMetadata();
+    this.logEvent(LOG_EVENTS.JOIN, { name });
     console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size})`);
   }
 
   onLeave(client) {
+    const player = this.state.players.get(client.sessionId);
     if (this.state.flag.carrierId === client.sessionId) {
-      const player = this.state.players.get(client.sessionId);
       this.state.flag.carrierId = '';
       this.state.flag.vx = 0;
       this.state.flag.vy = 0;
@@ -453,7 +465,12 @@ export class GameRoom extends Room {
     }
     this.state.players.delete(client.sessionId);
     this.updateMetadata();
+    if (player) this.logEvent(LOG_EVENTS.LEAVE, { name: player.name });
     console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size})`);
+  }
+
+  logEvent(type, payload = {}) {
+    this.broadcast(MESSAGES.LOG, { type, t: Date.now(), ...payload });
   }
 
 

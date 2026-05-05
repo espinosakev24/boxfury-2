@@ -43,6 +43,14 @@ const TRANSLATIONS = {
 
     'mode.ctf': 'Capture the flag',
 
+    'log.join': 'joined the room',
+    'log.leave': 'left the room',
+    'log.joinTeam': 'joined',
+    'log.capture': 'captured the flag',
+    'log.matchWins': 'wins the match',
+    'log.matchTie': 'Match ended in a tie',
+    'log.matchReset': 'New match starting',
+
     'pause.eyebrow': '◣ Paused',
     'pause.escResume': 'ESC to resume',
     'pause.title': 'MENU',
@@ -143,6 +151,14 @@ const TRANSLATIONS = {
     'createRoom.submit': 'Crear sala',
 
     'mode.ctf': 'Captura la bandera',
+
+    'log.join': 'entró a la sala',
+    'log.leave': 'salió de la sala',
+    'log.joinTeam': 'se unió a',
+    'log.capture': 'capturó la bandera',
+    'log.matchWins': 'gana la partida',
+    'log.matchTie': 'La partida terminó en empate',
+    'log.matchReset': 'Nueva partida iniciando',
 
     'pause.eyebrow': '◣ Pausa',
     'pause.escResume': 'ESC para reanudar',
