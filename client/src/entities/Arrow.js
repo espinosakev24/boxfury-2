@@ -35,11 +35,16 @@ export class Arrow {
       this.stuckOffsetY = state.stuckOffsetY || 0;
       this.stuckFacing = state.stuckFacing || 1;
       this.stuckRotation = this.sprite.rotation;
+      const hitVx = this.vx;
+      const hitVy = this.vy;
       this.x = state.x;
       this.y = state.y;
       this.vx = 0;
       this.vy = 0;
       this.snapToAnchor();
+      if (!this.stuckToId) {
+        this.scene.spawnArrowSplash?.(state.x, state.y, hitVx, hitVy);
+      }
       return;
     }
 

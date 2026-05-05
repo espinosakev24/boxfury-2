@@ -29,11 +29,14 @@ export class Bow {
     this.sprite.x = this.owner.sprite.x;
     this.sprite.y = this.owner.sprite.y + (this.owner._bobY ?? 0);
     this.sprite.rotation = this.getRotation();
+    this._draw();
   }
 
   _draw() {
     const gfx = this.sprite;
     gfx.clear();
+    const range = BOW.MAX_ANGLE - BOW.MIN_ANGLE;
+    const pull = range > 0 ? Math.max(0, Math.min(1, (this.angle - BOW.MIN_ANGLE) / range)) : 0;
 
     gfx.lineStyle(1, 0xffffff, 0.35);
     gfx.beginPath();
@@ -51,6 +54,15 @@ export class Bow {
       if (i === 0) gfx.moveTo(x, y);
       else gfx.lineTo(x, y);
     }
+    gfx.strokePath();
+
+    const STRING_PULL_MAX = ARC_BULGE + 5;
+    const midX = ARC_CENTER_X - pull * STRING_PULL_MAX;
+    gfx.lineStyle(1, 0xffffff, 0.85);
+    gfx.beginPath();
+    gfx.moveTo(ARC_CENTER_X, -ARC_CHORD / 2);
+    gfx.lineTo(midX, 0);
+    gfx.lineTo(ARC_CENTER_X, ARC_CHORD / 2);
     gfx.strokePath();
   }
 

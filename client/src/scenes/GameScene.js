@@ -189,6 +189,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  spawnArrowSplash(x, y, vx = 0, vy = 0) {
+    const speed = Math.hypot(vx, vy) || 1;
+    const nx = -vx / speed;
+    const ny = -vy / speed;
+    const baseAngle = Math.atan2(ny, nx);
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const size = Phaser.Math.Between(1, 2);
+      const p = this.add.rectangle(x, y, size, size, 0xffffff);
+      p.setAlpha(0.9);
+      const spread = Phaser.Math.FloatBetween(-Math.PI / 2, Math.PI / 2);
+      const angle = baseAngle + spread;
+      const dist = Phaser.Math.Between(20, 55);
+      this.tweens.add({
+        targets: p,
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist,
+        alpha: 0,
+        duration: Phaser.Math.Between(220, 340),
+        ease: 'Cubic.easeOut',
+        onComplete: () => p.destroy(),
+      });
+    }
+  }
+
   spawnLandingDust(x, y, color, intensity = 1) {
     const count = 4 + Math.round(intensity * 4);
     for (let i = 0; i < count; i++) {

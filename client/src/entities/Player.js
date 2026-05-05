@@ -196,20 +196,7 @@ export class Player {
   jump() {
     if (this.sprite.body.blocked.down || this.sprite.body.touching.down) {
       this.sprite.body.setVelocityY(-PLAYER.JUMP_SPEED);
-      this.playJumpStretch();
     }
-  }
-
-  playJumpStretch() {
-    if (!this.sprite?.active) return;
-    this.scene.tweens.add({
-      targets: this.sprite,
-      scaleX: 0.85,
-      scaleY: 1.18,
-      duration: 160,
-      ease: 'Sine.easeOut',
-      yoyo: true,
-    });
   }
 
   playLandingSquash(impactVy) {
