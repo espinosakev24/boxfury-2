@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MAP_ID,
   DEFAULT_MAX_PLAYERS,
   DEFAULT_MAX_POINTS,
   DEFAULT_MODE,
@@ -7,11 +8,13 @@ import {
   MODES,
 } from '@boxfury/shared';
 import { t } from './i18n.js';
+import { openMapPicker } from './map-picker.js';
 
 let onSubmitCb = null;
 let pickedMaxPlayers = DEFAULT_MAX_PLAYERS;
 let pickedMaxPoints = DEFAULT_MAX_POINTS;
 let pickedMode = DEFAULT_MODE;
+let pickedMap = DEFAULT_MAP_ID;
 
 export function setupCreateRoom({ onSubmit } = {}) {
   onSubmitCb = onSubmit ?? null;
@@ -26,11 +29,22 @@ export function setupCreateRoom({ onSubmit } = {}) {
   closeBtn.addEventListener('click', close);
   cancelBtn.addEventListener('click', close);
 
+  document.getElementById('create-map-trigger')?.addEventListener('click', () => {
+    openMapPicker({
+      mapId: pickedMap,
+      onSelect: (id) => {
+        pickedMap = id;
+        updateMapTrigger();
+      },
+    });
+  });
+
   submitBtn.addEventListener('click', () => {
     close();
     onSubmitCb?.({
       roomName: nameInput.value.trim().slice(0, 24),
       mode: pickedMode,
+      mapId: pickedMap,
       maxPlayers: pickedMaxPlayers,
       maxPoints: pickedMaxPoints,
     });
@@ -50,8 +64,10 @@ export function openCreateRoom() {
   pickedMaxPlayers = DEFAULT_MAX_PLAYERS;
   pickedMaxPoints = DEFAULT_MAX_POINTS;
   pickedMode = DEFAULT_MODE;
+  pickedMap = DEFAULT_MAP_ID;
   document.getElementById('create-name').value = '';
   renderModes();
+  updateMapTrigger();
   renderPlayers();
   renderPoints();
   document.getElementById('create-overlay').classList.remove('hidden');
@@ -69,6 +85,11 @@ function renderModes() {
   }
   const placeholder = makeChip(t('createRoom.modeComingSoon'), false, null, true);
   root.appendChild(placeholder);
+}
+
+function updateMapTrigger() {
+  const label = document.getElementById('create-map-current');
+  if (label) label.textContent = t(`map.${pickedMap}`);
 }
 
 function renderPlayers() {

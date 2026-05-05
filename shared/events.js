@@ -7,6 +7,8 @@ export const MESSAGES = {
   FLAG_TOGGLE: 'flag_toggle',
   CHOOSE_TEAM: 'choose_team',
   MATCH_END: 'match_end',
+  CHANGE_MAP: 'change_map',
+  MAP_CHANGED: 'map_changed',
   LOG: 'log',
 };
 
@@ -17,6 +19,7 @@ export const LOG_EVENTS = {
   KILL: 'kill',
   CAPTURE: 'capture',
   MATCH_END: 'match_end',
+  MAP_CHANGED: 'map_changed',
 };
 
 export const ROOM_NAME = 'boxfury';

@@ -15,6 +15,8 @@ import {
   TILE,
   WORLD,
   LOG_EVENTS,
+  getMap,
+  normalizeMapId,
   normalizeMaxPlayers,
   normalizeMaxPoints,
   normalizeMode,
@@ -50,9 +52,11 @@ export class GameRoom extends Room {
     this.playerCap = normalizeMaxPlayers(options?.maxPlayers);
     this.scoreTarget = normalizeMaxPoints(options?.maxPoints);
     this.mode = normalizeMode(options?.mode);
+    this.mapId = normalizeMapId(options?.mapId);
     this.state.scoreTarget = this.scoreTarget;
+    this.state.mapId = this.mapId;
     this.createdAt = Date.now();
-    this.map = parseMap();
+    this.map = parseMap(getMap(this.mapId));
     this.bases = {
       1: this.map.bases.team1,
       2: this.map.bases.team2,
@@ -174,6 +178,37 @@ export class GameRoom extends Room {
       arrow.spawnedAt = now;
       const id = `${client.sessionId}-${++this.arrowSeq}`;
       this.state.arrows.set(id, arrow);
+    });
+
+    this.onMessage(MESSAGES.CHANGE_MAP, (client, payload) => {
+      let anyOnTeam = false;
+      this.state.players.forEach((p) => { if (p.team !== 0) anyOnTeam = true; });
+      if (anyOnTeam) return;
+      const newMapId = normalizeMapId(payload?.mapId);
+      if (newMapId === this.mapId) return;
+      this.mapId = newMapId;
+      this.state.mapId = newMapId;
+      this.map = parseMap(getMap(newMapId));
+      this.bases = {
+        1: this.map.bases.team1,
+        2: this.map.bases.team2,
+      };
+      if (this.map.flag) {
+        this.state.flag.x = this.map.flag.x;
+        this.state.flag.y = this.map.flag.y;
+        this.state.flag.homeX = this.map.flag.x;
+        this.state.flag.homeY = this.map.flag.y;
+        this.state.flag.carrierId = '';
+        this.state.flag.vx = 0;
+        this.state.flag.vy = 0;
+      }
+      const arrowIds = Array.from(this.state.arrows.keys());
+      for (const id of arrowIds) this.state.arrows.delete(id);
+      this.broadcast(MESSAGES.MAP_CHANGED, { mapId: newMapId });
+      const requester = this.state.players.get(client.sessionId);
+      this.logEvent(LOG_EVENTS.MAP_CHANGED, { mapId: newMapId, name: requester?.name ?? '?' });
+      this.updateMetadata();
+      console.log(`[room ${this.displayName}] MAP changed to ${newMapId}`);
     });
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / PHYSICS.TICK_HZ);
@@ -474,6 +509,7 @@ export class GameRoom extends Room {
       maxPlayers: this.playerCap,
       scoreTarget: this.scoreTarget,
       mode: this.mode,
+      mapId: this.mapId,
     });
   }
 }

@@ -37,11 +37,22 @@ const TRANSLATIONS = {
     'createRoom.namePlaceholder': 'Optional…',
     'createRoom.mode': 'Mode',
     'createRoom.modeComingSoon': 'More soon',
+    'createRoom.map': 'Map',
     'createRoom.maxPlayers': 'Max players',
     'createRoom.maxPoints': 'Points to win',
     'createRoom.submit': 'Create room',
 
     'mode.ctf': 'Capture the flag',
+
+    'map.default': 'Classic',
+    'map.open': 'Open arena',
+    'map.stacks': 'Stacks',
+
+    'mapPicker.eyebrow': '◣ Map',
+    'mapPicker.title': 'CHOOSE A MAP',
+    'mapPicker.back': 'Back',
+
+    'matchEnd.mapPick': '◣ Map',
 
     'log.join': 'joined the room',
     'log.leave': 'left the room',
@@ -49,6 +60,7 @@ const TRANSLATIONS = {
     'log.capture': 'captured the flag',
     'log.matchWins': 'wins the match',
     'log.matchTie': 'Match ended in a tie',
+    'log.mapChanged': 'changed map to',
     'log.matchReset': 'New match starting',
 
     'pause.eyebrow': '◣ Paused',
@@ -147,11 +159,22 @@ const TRANSLATIONS = {
     'createRoom.namePlaceholder': 'Opcional…',
     'createRoom.mode': 'Modo',
     'createRoom.modeComingSoon': 'Más pronto',
+    'createRoom.map': 'Mapa',
     'createRoom.maxPlayers': 'Jugadores máx.',
     'createRoom.maxPoints': 'Puntos para ganar',
     'createRoom.submit': 'Crear sala',
 
     'mode.ctf': 'Captura la bandera',
+
+    'map.default': 'Clásico',
+    'map.open': 'Arena abierta',
+    'map.stacks': 'Plataformas',
+
+    'mapPicker.eyebrow': '◣ Mapa',
+    'mapPicker.title': 'ELIGE UN MAPA',
+    'mapPicker.back': 'Volver',
+
+    'matchEnd.mapPick': '◣ Mapa',
 
     'log.join': 'entró a la sala',
     'log.leave': 'salió de la sala',
@@ -159,6 +182,7 @@ const TRANSLATIONS = {
     'log.capture': 'capturó la bandera',
     'log.matchWins': 'gana la partida',
     'log.matchTie': 'La partida terminó en empate',
+    'log.mapChanged': 'cambió el mapa a',
     'log.matchReset': 'Nueva partida iniciando',
 
     'pause.eyebrow': '◣ Pausa',

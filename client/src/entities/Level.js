@@ -1,14 +1,29 @@
-import { COLORS, DEFAULT_MAP, TILE, parseMap } from '@boxfury/shared';
+import { COLORS, DEFAULT_MAP_ID, TILE, getMap, parseMap } from '@boxfury/shared';
 import { Flag } from './Flag.js';
 
 export class Level {
-  constructor(scene, mapString = DEFAULT_MAP) {
+  constructor(scene, mapId = DEFAULT_MAP_ID) {
     this.scene = scene;
     this.platforms = scene.physics.add.staticGroup();
     this.markers = [];
     this.flag = null;
-    this.map = parseMap(mapString);
+    this.mapId = mapId;
+    this.map = parseMap(getMap(mapId));
 
+    this.buildWalls();
+    this.buildMarkers();
+  }
+
+  rebuild(mapId) {
+    this.mapId = mapId;
+    this.platforms.clear(true, true);
+    for (const m of this.markers) m.destroy?.();
+    this.markers = [];
+    if (this.flag) {
+      this.flag.destroy?.();
+      this.flag = null;
+    }
+    this.map = parseMap(getMap(mapId));
     this.buildWalls();
     this.buildMarkers();
   }

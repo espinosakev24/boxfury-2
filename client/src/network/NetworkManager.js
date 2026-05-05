@@ -56,12 +56,20 @@ export class NetworkManager {
     this.room?.send(MESSAGES.CHOOSE_TEAM, { team });
   }
 
+  sendChangeMap(mapId) {
+    this.room?.send(MESSAGES.CHANGE_MAP, { mapId });
+  }
+
   onHit(cb) {
     this.room?.onMessage(MESSAGES.HIT, cb);
   }
 
   onMatchEnd(cb) {
     this.room?.onMessage(MESSAGES.MATCH_END, cb);
+  }
+
+  onMapChanged(cb) {
+    this.room?.onMessage(MESSAGES.MAP_CHANGED, cb);
   }
 
   onLog(cb) {

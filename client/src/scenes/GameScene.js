@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { FLAG, GAME, PLAYER, ROOM, WORLD } from '@boxfury/shared';
+import { openMapPicker } from '../map-picker.js';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
@@ -172,8 +173,13 @@ export class GameScene extends Phaser.Scene {
 
     this.network.onHit((payload) => this.handleHit(payload));
     this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
+    this.network.onMapChanged((payload) => this.handleMapChanged(payload));
     setupEventLog();
     this.network.onLog((payload) => pushEvent(payload));
+
+    if (room.state.mapId && room.state.mapId !== this.level.mapId) {
+      this.level.rebuild(room.state.mapId);
+    }
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);
@@ -514,6 +520,7 @@ export class GameScene extends Phaser.Scene {
     document.getElementById('match-end-team-2')?.classList.remove('is-selected');
 
     this.renderMatchEndSummary();
+    this.updateMatchEndMapTrigger();
     this.updateMatchEndTeamCounts();
     overlay.classList.remove('hidden');
 
@@ -522,6 +529,16 @@ export class GameScene extends Phaser.Scene {
       document.getElementById('match-end-back')?.addEventListener('click', () => {
         overlay.classList.add('hidden');
         this.registry.get('leaveGame')?.();
+      });
+      document.getElementById('match-end-map-trigger')?.addEventListener('click', () => {
+        const currentMapId = this.network?.room?.state?.mapId ?? this.level?.mapId ?? 'default';
+        openMapPicker({
+          mapId: currentMapId,
+          onSelect: (id) => {
+            if (id === currentMapId) return;
+            this.network.sendChangeMap(id);
+          },
+        });
       });
       document.getElementById('match-end-team-1')?.addEventListener('click', () => {
         this._pickedTeam = 1;
@@ -569,8 +586,10 @@ export class GameScene extends Phaser.Scene {
     if (!root) return;
     const meta = this.network?.room?.metadata ?? {};
     const state = this.network?.room?.state;
+    const mapId = state?.mapId ?? meta.mapId ?? 'default';
     const items = [
       { label: t('createRoom.mode'), value: t(`mode.${meta.mode ?? 'ctf'}`) },
+      { label: t('createRoom.map'), value: t(`map.${mapId}`) },
       { label: t('createRoom.maxPlayers'), value: String(meta.maxPlayers ?? '—') },
       { label: t('createRoom.maxPoints'), value: String(meta.scoreTarget ?? state?.scoreTarget ?? '—') },
     ];
@@ -601,6 +620,21 @@ export class GameScene extends Phaser.Scene {
 
   hideMatchEnd() {
     document.getElementById('match-end')?.classList.add('hidden');
+  }
+
+  handleMapChanged(payload) {
+    const mapId = payload?.mapId;
+    if (!mapId || !this.level) return;
+    if (this.level.mapId === mapId) return;
+    this.level.rebuild(mapId);
+    this.updateMatchEndMapTrigger();
+    this.renderMatchEndSummary();
+  }
+
+  updateMatchEndMapTrigger() {
+    const label = document.getElementById('match-end-map-current');
+    const currentMapId = this.network?.room?.state?.mapId ?? this.level?.mapId ?? 'default';
+    if (label) label.textContent = t(`map.${currentMapId}`);
   }
 
   showScoreboard() {

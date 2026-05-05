@@ -8,6 +8,7 @@ import { setupMenu } from './menu.js';
 import { setupGameMenu } from './game-menu.js';
 import { setupSettings } from './settings.js';
 import { openCreateRoom, setupCreateRoom } from './create-room.js';
+import { setupMapPicker } from './map-picker.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
@@ -16,6 +17,7 @@ let game = null;
 
 applyLocale();
 setupSettings();
+setupMapPicker();
 
 function buildOptions(extra = {}) {
   const name = getUsername();
