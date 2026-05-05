@@ -101,8 +101,9 @@ const TRANSLATIONS = {
     'matchEnd.wins': 'WINS',
     'matchEnd.back': 'Back to lobby',
     'matchEnd.rematch': '◣ Play again',
-    'matchEnd.rematchHint': 'Pick a team — match starts when both sides have a player',
+    'matchEnd.rematchHint': 'Pick a team and press Play to jump back in',
     'matchEnd.leave': 'Leave room',
+    'matchEnd.play': 'Play',
 
     'death.title': 'YOU DIED',
     'death.respawnIn': 'Respawning in',
@@ -210,8 +211,9 @@ const TRANSLATIONS = {
     'matchEnd.wins': 'GANA',
     'matchEnd.back': 'Volver al lobby',
     'matchEnd.rematch': '◣ Jugar de nuevo',
-    'matchEnd.rematchHint': 'Elige equipo — la partida empieza cuando ambos lados tienen jugador',
+    'matchEnd.rematchHint': 'Elige un equipo y presiona Jugar para volver a entrar',
     'matchEnd.leave': 'Salir de la sala',
+    'matchEnd.play': 'Jugar',
 
     'death.title': 'HAS MUERTO',
     'death.respawnIn': 'Reapareciendo en',

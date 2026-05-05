@@ -675,9 +675,14 @@ html, body {
   gap: 16px;
   flex-wrap: wrap;
 }
+.match-end__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
 .match-end__leave {
-  display: block;
-  margin: 6px auto 0;
   background: none;
   border: none;
   color: var(--bf-mute);
@@ -690,6 +695,19 @@ html, body {
   transition: color 120ms ease;
 }
 .match-end__leave:hover { color: var(--bf-bone); }
+
+.team-pick__btn.is-selected {
+  background: rgba(245, 245, 240, 0.12);
+  transform: translateY(-1px);
+}
+.team-pick__btn--p1.is-selected {
+  border-color: var(--p1);
+  box-shadow: 0 0 0 2px var(--p1) inset, 0 0 12px rgba(78, 224, 138, 0.35);
+}
+.team-pick__btn--p2.is-selected {
+  border-color: var(--p2);
+  box-shadow: 0 0 0 2px var(--p2) inset, 0 0 12px rgba(255, 84, 112, 0.35);
+}
 
 /* ---------- Scoreboard ---------- */
 .scoreboard {

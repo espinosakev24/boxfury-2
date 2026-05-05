@@ -11,7 +11,6 @@ import {
   PLAYER,
   PLAYER_COLORS,
   RESPAWN,
-  ROOM,
   SCORE,
   TILE,
   WORLD,
@@ -67,7 +66,6 @@ export class GameRoom extends Room {
     this.updateMetadata();
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
-      if (this.matchEnded) return;
       const player = this.state.players.get(client.sessionId);
       if (!player || !player.alive) return;
       if (typeof payload.x === 'number') player.x = payload.x;
@@ -80,29 +78,34 @@ export class GameRoom extends Room {
 
     this.onMessage(MESSAGES.CHOOSE_TEAM, (client, payload) => {
       const player = this.state.players.get(client.sessionId);
-      if (!player) return;
+      if (!player || player.team !== 0) return;
       const team = payload?.team;
       if (team !== 1 && team !== 2) return;
-      if (!this.matchEnded && player.team !== 0) return;
-      if (player.team === team) return;
       const cap = Math.floor(this.playerCap / 2);
       let count = 0;
-      this.state.players.forEach((p) => { if (p.team === team && p !== player) count++; });
+      this.state.players.forEach((p) => { if (p.team === team) count++; });
       if (count >= cap) {
         console.log(`[room ${this.displayName}] ${player.name} rejected team ${team}: full (${count}/${cap})`);
         return;
       }
       player.team = team;
       player.color = team === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[1];
-      player.alive = !this.matchEnded;
+      player.alive = true;
+      player.hp = PLAYER.MAX_HP;
+      player.respawnAt = 0;
+      const base = this.bases?.[team];
+      if (base) {
+        player.x = base.x;
+        player.y = base.y;
+        player.vx = 0;
+        player.vy = 0;
+      }
       this.updateMetadata();
       this.logEvent(LOG_EVENTS.JOIN_TEAM, { name: player.name, team });
       console.log(`[room ${this.displayName}] ${player.name} chose team ${team} (${count + 1}/${cap})`);
-      if (this.matchEnded) this.maybeResetMatch();
     });
 
     this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
-      if (this.matchEnded) return;
       const flag = this.state.flag;
       const player = this.state.players.get(client.sessionId);
       if (!player || !player.alive) {
@@ -154,7 +157,6 @@ export class GameRoom extends Room {
     });
 
     this.onMessage(MESSAGES.SHOOT, (client, payload) => {
-      if (this.matchEnded) return;
       const shooter = this.state.players.get(client.sessionId);
       if (!shooter || !shooter.alive) return;
       const arrow = new Arrow();
@@ -175,8 +177,6 @@ export class GameRoom extends Room {
   }
 
   endMatch() {
-    if (this.matchEnded) return;
-    this.matchEnded = true;
     const winnerTeam = this.state.scoreTeam1 > this.state.scoreTeam2 ? 1
       : this.state.scoreTeam2 > this.state.scoreTeam1 ? 2 : 0;
     const players = [];
@@ -189,32 +189,17 @@ export class GameRoom extends Room {
         kills: p.kills,
       });
     });
-    const payload = {
+    this.broadcast(MESSAGES.MATCH_END, {
       winnerTeam,
       scoreTeam1: this.state.scoreTeam1,
       scoreTeam2: this.state.scoreTeam2,
       players,
-    };
-    this.broadcast(MESSAGES.MATCH_END, payload);
+    });
     this.logEvent(LOG_EVENTS.MATCH_END, { winnerTeam });
     console.log(
       `[room ${this.displayName}] MATCH END — winner: team ${winnerTeam} | JADE ${this.state.scoreTeam1} — ${this.state.scoreTeam2} CRIMSON`,
     );
-  }
 
-  maybeResetMatch() {
-    if (!this.matchEnded) return;
-    let team1Count = 0;
-    let team2Count = 0;
-    this.state.players.forEach((p) => {
-      if (p.team === 1) team1Count++;
-      else if (p.team === 2) team2Count++;
-    });
-    if (team1Count > 0 && team2Count > 0) this.resetMatch();
-  }
-
-  resetMatch() {
-    this.matchEnded = false;
     this.state.scoreTeam1 = 0;
     this.state.scoreTeam2 = 0;
     const arrowIds = Array.from(this.state.arrows.keys());
@@ -227,25 +212,16 @@ export class GameRoom extends Room {
       this.state.flag.vy = 0;
     }
     this.state.players.forEach((p) => {
+      p.team = 0;
+      p.color = 0;
+      p.alive = false;
+      p.hp = PLAYER.MAX_HP;
+      p.respawnAt = 0;
       p.kills = 0;
       p.deaths = 0;
       p.captures = 0;
-      p.hp = PLAYER.MAX_HP;
-      p.respawnAt = 0;
-      if (p.team === 1 || p.team === 2) {
-        p.alive = true;
-        const base = this.bases[p.team];
-        if (base) {
-          p.x = base.x;
-          p.y = base.y;
-          p.vx = 0;
-          p.vy = 0;
-        }
-      }
     });
-    this.broadcast(MESSAGES.MATCH_RESET);
-    this.logEvent(LOG_EVENTS.MATCH_RESET);
-    console.log(`[room ${this.displayName}] MATCH RESET`);
+    this.updateMetadata();
   }
 
   spawnDummy() {

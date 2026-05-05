@@ -54,8 +54,6 @@ function formatEvent(e) {
     case LOG_EVENTS.MATCH_END:
       if (!e.winnerTeam) return plain(t('log.matchTie'));
       return `${teamSpan(e.winnerTeam)} ${plain(t('log.matchWins'))}`;
-    case LOG_EVENTS.MATCH_RESET:
-      return plain(t('log.matchReset'));
     default:
       return null;
   }

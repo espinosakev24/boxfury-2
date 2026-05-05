@@ -90,7 +90,25 @@ export class GameScene extends Phaser.Scene {
     const handleAdd = (player, sessionId) => {
       const isLocal = sessionId === room.sessionId;
       const trySpawn = () => {
-        if (player.team === 0) return;
+        if (player.team === 0) {
+          if (isLocal && this.player) {
+            this.player.destroy();
+            this.player = null;
+            this.deathState = null;
+            const cam = this.cameras.main;
+            cam.stopFollow();
+            cam.setZoom(1);
+            cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+            this.hideDeathOverlay();
+          } else if (!isLocal) {
+            const remote = this.remotes.get(sessionId);
+            if (remote) {
+              remote.destroy();
+              this.remotes.delete(sessionId);
+            }
+          }
+          return;
+        }
         if (isLocal) {
           if (this.player) return;
           this.hideTeamPicker();
@@ -154,7 +172,6 @@ export class GameScene extends Phaser.Scene {
 
     this.network.onHit((payload) => this.handleHit(payload));
     this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
-    this.network.onMatchReset(() => this.handleMatchReset());
     setupEventLog();
     this.network.onLog((payload) => pushEvent(payload));
 
@@ -400,7 +417,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   syncDeath() {
-    if (this.matchEnded) return;
     const players = this.network?.room?.state?.players;
     if (!players) return;
     const myId = this.network.sessionId;
@@ -463,10 +479,10 @@ export class GameScene extends Phaser.Scene {
   showMatchEnd(payload) {
     const overlay = document.getElementById('match-end');
     if (!overlay) return;
-    this.matchEnded = true;
     this.hideTeamPicker();
     this.hideScoreboard();
     this.hideDeathOverlay();
+    this._pickedTeam = 0;
     const titleEl = document.getElementById('match-end-title');
     const winLabel = payload.winnerTeam === 1
       ? '<span style="color:var(--p1)">JADE</span> WINS'
@@ -494,29 +510,58 @@ export class GameScene extends Phaser.Scene {
     setHtml('[data-me-roster="1"]', team1Rows.join(''));
     setHtml('[data-me-roster="2"]', team2Rows.join(''));
 
+    document.getElementById('match-end-team-1')?.classList.remove('is-selected');
+    document.getElementById('match-end-team-2')?.classList.remove('is-selected');
+
     this.renderMatchEndSummary();
     this.updateMatchEndTeamCounts();
     overlay.classList.remove('hidden');
 
     if (!this._matchEndBound) {
       this._matchEndBound = true;
-      const back = document.getElementById('match-end-back');
-      back?.addEventListener('click', () => {
+      document.getElementById('match-end-back')?.addEventListener('click', () => {
         overlay.classList.add('hidden');
         this.registry.get('leaveGame')?.();
       });
       document.getElementById('match-end-team-1')?.addEventListener('click', () => {
-        this.network.sendChooseTeam(1);
+        this._pickedTeam = 1;
+        this._highlightMatchEndTeam(1);
       });
       document.getElementById('match-end-team-2')?.addEventListener('click', () => {
-        this.network.sendChooseTeam(2);
+        this._pickedTeam = 2;
+        this._highlightMatchEndTeam(2);
       });
       document.getElementById('match-end-spectate')?.addEventListener('click', () => {
+        this._pickedTeam = 0;
         overlay.classList.add('hidden');
-        this.isSpectator = true;
-        this.setupSpectatorCamera();
+        this._enterSpectatorView();
+      });
+      document.getElementById('match-end-play')?.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        if (this._pickedTeam) {
+          this.network.sendChooseTeam(this._pickedTeam);
+        } else {
+          this._enterSpectatorView();
+        }
       });
     }
+  }
+
+  _enterSpectatorView() {
+    if (!this.player) {
+      const cam = this.cameras.main;
+      cam.stopFollow();
+      cam.setZoom(1);
+      cam.centerOn(WORLD.WIDTH / 2, WORLD.HEIGHT / 2);
+    }
+    this.showHud();
+  }
+
+  _highlightMatchEndTeam(team) {
+    const btn1 = document.getElementById('match-end-team-1');
+    const btn2 = document.getElementById('match-end-team-2');
+    btn1?.classList.toggle('is-selected', team === 1);
+    btn2?.classList.toggle('is-selected', team === 2);
   }
 
   renderMatchEndSummary() {
@@ -556,36 +601,6 @@ export class GameScene extends Phaser.Scene {
 
   hideMatchEnd() {
     document.getElementById('match-end')?.classList.add('hidden');
-  }
-
-  handleMatchReset() {
-    this.matchEnded = false;
-    this.hideMatchEnd();
-    this.showHud();
-    if (this.player) {
-      const me = this.network?.room?.state?.players?.get(this.network.sessionId);
-      if (me && me.alive && me.team) {
-        this.deathState = null;
-        this.player.resetVisual();
-        this.player.sprite.body.enable = true;
-        this.player.sprite.body.setVelocity(0, 0);
-        this.player.sprite.setPosition(me.x, me.y);
-        const cam = this.cameras.main;
-        if (GAME.ZOOM_ENABLED) {
-          cam.setZoom(GAME.ZOOM);
-          cam.startFollow(this.player.sprite, true, GAME.CAMERA_LERP, GAME.CAMERA_LERP);
-        } else {
-          cam.setZoom(1);
-          cam.centerOn(this.player.sprite.x, this.player.sprite.y);
-        }
-        this.spawnPulse(me.x, me.y, this.player.color);
-        document.getElementById('death-overlay')?.classList.add('hidden');
-      }
-    }
-    for (const remote of this.remotes.values()) {
-      remote.dead = false;
-      remote.resetVisual?.();
-    }
   }
 
   showScoreboard() {
@@ -633,7 +648,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateTeamCounts() {
-    if (this.matchEnded) this.updateMatchEndTeamCounts();
+    const matchEndOverlay = document.getElementById('match-end');
+    if (matchEndOverlay && !matchEndOverlay.classList.contains('hidden')) {
+      this.updateMatchEndTeamCounts();
+    }
     if (!this.teamPickerOpen) return;
     const players = this.network?.room?.state?.players;
     if (!players) return;
@@ -658,7 +676,7 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     const dt = delta / 1000;
     this.syncDeath();
-    if (this.player && !this.deathState && !this.matchEnded) {
+    if (this.player && !this.deathState) {
       this.player.move({
         left: this.cursors.left.isDown,
         right: this.cursors.right.isDown,
@@ -669,7 +687,6 @@ export class GameScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
         this.toggleFlag();
       }
-
       if (this.cursors.space.isDown) {
         this.player.chargeBow();
       } else {
