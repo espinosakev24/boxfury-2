@@ -1,9 +1,10 @@
 import { NetworkManager } from './network/NetworkManager.js';
 
-export function setupMenu({ onJoin, onCreate }) {
+export function setupMenu({ onJoin, onCreate, onTest }) {
   const menu = document.getElementById('menu');
   const findBtn = document.getElementById('btn-find');
   const createBtn = document.getElementById('btn-create');
+  const testBtn = document.getElementById('btn-test');
 
   const lobby = document.getElementById('lobby-overlay');
   const lobbyClose = document.getElementById('lobby-close');
@@ -110,6 +111,10 @@ export function setupMenu({ onJoin, onCreate }) {
 
   findBtn.addEventListener('click', openLobby);
   createBtn.addEventListener('click', create);
+  testBtn?.addEventListener('click', () => {
+    closeLobby();
+    onTest?.();
+  });
   lobbyClose.addEventListener('click', closeLobby);
   lobbyRefresh.addEventListener('click', refreshRooms);
   lobbySearch.addEventListener('input', (e) => {
@@ -123,6 +128,10 @@ export function setupMenu({ onJoin, onCreate }) {
     if (!menu.classList.contains('hidden') && lobby.classList.contains('hidden') && !createOpen) {
       if (e.key === 'Enter') openLobby();
       else if (e.key === 'c' || e.key === 'C') create();
+      else if (e.key === 't' || e.key === 'T') {
+        closeLobby();
+        onTest?.();
+      }
     } else if (!lobby.classList.contains('hidden') && e.key === 'Escape') {
       closeLobby();
     }

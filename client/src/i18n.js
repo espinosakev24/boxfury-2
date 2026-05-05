@@ -7,6 +7,7 @@ const TRANSLATIONS = {
     'menu.findGame': 'Find game',
     'menu.createGame': 'Create game',
     'menu.settings': 'Settings',
+    'menu.test': 'Quick test (jade)',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': '4 players max',
 
@@ -107,6 +108,7 @@ const TRANSLATIONS = {
     'menu.findGame': 'Buscar partida',
     'menu.createGame': 'Crear partida',
     'menu.settings': 'Ajustes',
+    'menu.test': 'Prueba rápida (jade)',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': 'Máx 4 jugadores',
 

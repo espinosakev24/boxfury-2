@@ -74,6 +74,16 @@ setupCreateRoom({
 setupMenu({
   onJoin: (roomId) => startGame({ mode: 'join', roomId }),
   onCreate: () => openCreateRoom(),
+  onTest: () => startGame({
+    mode: 'create',
+    autoTeam: 1,
+    options: {
+      roomName: 'TEST',
+      mode: 'ctf',
+      maxPlayers: 8,
+      maxPoints: 1,
+    },
+  }),
 });
 setupGameMenu({
   onLeave: leaveGame,

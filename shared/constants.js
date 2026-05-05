@@ -14,7 +14,7 @@ export const NETWORK = {
 // export const COLORS = [0x4ade80, 0xf87171, 0x60a5fa, 0xfbbf24, 0xa78bfa, 0xf472b6];
 
 export const PLAYER = {
-  SPEED: 320,
+  SPEED: 270,
   CARRY_SPEED: 200,
   JUMP_SPEED: 450,
   WIDTH: 24,

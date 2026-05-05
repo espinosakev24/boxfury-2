@@ -30,6 +30,8 @@ export class RemotePlayer {
     this.damageSeed = hashSeed(String(id));
     this.damageGfx = scene.add.graphics();
     this.faceGfx = scene.add.graphics();
+    this._wasGrounded = true;
+    this._lastVy = 0;
     drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
     this._postUpdateBound = () => {
       this.syncBodyOverlay();
@@ -157,6 +159,27 @@ export class RemotePlayer {
     gfx.setAlpha(this.sprite.alpha);
   }
 
+  playLandingSquash(impactVy) {
+    if (!this.sprite?.active) return;
+    const intensity = Math.max(0.25, Math.min(1, impactVy / 600));
+    const squashY = 1 - 0.28 * intensity;
+    const squashX = 1 + 0.22 * intensity;
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleX: squashX,
+      scaleY: squashY,
+      duration: 70,
+      ease: 'Quad.easeOut',
+      yoyo: true,
+    });
+    this.scene.spawnLandingDust?.(
+      this.sprite.x,
+      this.sprite.y + PLAYER.HEIGHT / 2,
+      this.color,
+      intensity,
+    );
+  }
+
   flashHit() {
     const sprite = this.sprite;
     if (!sprite?.active) return;
@@ -227,6 +250,11 @@ export class RemotePlayer {
     this._lastSyncX = this.sprite.x;
     const vy = this._vy ?? 0;
     const grounded = Math.abs(vy) < 30;
+    if (grounded && !this._wasGrounded && this._lastVy > 180) {
+      this.playLandingSquash(this._lastVy);
+    }
+    this._wasGrounded = grounded;
+    this._lastVy = vy;
     const moving = Math.abs(dx) > 0.4 && grounded;
     if (moving) this.legPhase += Math.abs(dx) * 0.1;
     else this.legPhase = 0;

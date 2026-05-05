@@ -55,6 +55,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     const connectOptions = this.registry.get('connectOptions') ?? {};
+    this.autoTeam = connectOptions.autoTeam ?? 0;
     this.isSpectator = false;
     let room;
     try {
@@ -98,7 +99,10 @@ export class GameScene extends Phaser.Scene {
         }
       };
 
-      if (isLocal && player.team === 0 && !this.isSpectator) this.showTeamPicker();
+      if (isLocal && player.team === 0 && !this.isSpectator) {
+        if (this.autoTeam) this.network.sendChooseTeam(this.autoTeam);
+        else this.showTeamPicker();
+      }
       trySpawn();
       this.updateTeamCounts();
 
@@ -182,6 +186,29 @@ export class GameScene extends Phaser.Scene {
     if (target === this.player) {
       this.player.applyKnockback(knockX, knockY);
       this.cameras.main.shake(140, 0.006);
+    }
+  }
+
+  spawnLandingDust(x, y, color, intensity = 1) {
+    const count = 4 + Math.round(intensity * 4);
+    for (let i = 0; i < count; i++) {
+      const size = Phaser.Math.Between(2, 3);
+      const p = this.add.rectangle(x, y - 1, size, size, color);
+      p.setAlpha(0.7);
+      const side = i % 2 === 0 ? -1 : 1;
+      const spread = Phaser.Math.FloatBetween(0.2, 0.9);
+      const speed = Phaser.Math.Between(40, 90) * intensity;
+      const dx = side * spread * speed;
+      const dy = -Phaser.Math.Between(6, 18) * intensity;
+      this.tweens.add({
+        targets: p,
+        x: x + dx,
+        y: y + dy + Phaser.Math.Between(2, 6),
+        alpha: 0,
+        duration: Phaser.Math.Between(220, 380),
+        ease: 'Cubic.easeOut',
+        onComplete: () => p.destroy(),
+      });
     }
   }
 
