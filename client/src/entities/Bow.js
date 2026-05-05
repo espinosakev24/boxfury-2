@@ -12,8 +12,19 @@ export class Bow {
     this.scene = scene;
     this.owner = owner;
     this.angle = BOW.MIN_ANGLE;
+    this._stringOvershoot = 0;
     this.sprite = scene.add.graphics();
     this._draw();
+  }
+
+  triggerSnap() {
+    this._stringOvershoot = 0.45;
+    this.scene.tweens.add({
+      targets: this,
+      _stringOvershoot: 0,
+      duration: 160,
+      ease: 'Sine.easeOut',
+    });
   }
 
   setAngle(deg) {
@@ -57,7 +68,8 @@ export class Bow {
     gfx.strokePath();
 
     const STRING_PULL_MAX = ARC_BULGE + 5;
-    const midX = ARC_CENTER_X - pull * STRING_PULL_MAX;
+    const effectivePull = pull - (this._stringOvershoot ?? 0);
+    const midX = ARC_CENTER_X - effectivePull * STRING_PULL_MAX;
     gfx.lineStyle(1, 0xffffff, 0.85);
     gfx.beginPath();
     gfx.moveTo(ARC_CENTER_X, -ARC_CHORD / 2);

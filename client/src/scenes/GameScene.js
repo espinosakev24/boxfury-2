@@ -134,6 +134,10 @@ export class GameScene extends Phaser.Scene {
     });
 
     $(room.state).arrows.onAdd((arrowState, id) => {
+      if (arrowState.shooterId !== this.network.sessionId) {
+        const shooter = this.findPlayer(arrowState.shooterId);
+        shooter?.bow?.triggerSnap?.();
+      }
       const arrow = new Arrow(this, arrowState);
       this.arrows.set(id, arrow);
       $(arrowState).onChange(() => arrow.applyState(arrowState));

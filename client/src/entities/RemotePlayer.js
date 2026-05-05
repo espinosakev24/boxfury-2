@@ -32,6 +32,8 @@ export class RemotePlayer {
     this.faceGfx = scene.add.graphics();
     this._wasGrounded = true;
     this._lastVy = 0;
+    this._walkAmp = 0;
+    this._lastFacing = facing;
     drawFace(this.faceGfx, this.skin, PLAYER.WIDTH, PLAYER.HEIGHT);
     this._postUpdateBound = () => {
       this.syncBodyOverlay();
@@ -133,6 +135,7 @@ export class RemotePlayer {
       isGrounded: this._isGrounded,
       facing: this.facing,
       vyNorm: this._vyNorm ?? 0,
+      walkAmp: this._walkAmp ?? 0,
     });
     gfx.setPosition(this.sprite.x, this.sprite.y);
     gfx.setRotation(this.sprite.rotation);
@@ -164,6 +167,7 @@ export class RemotePlayer {
     const intensity = Math.max(0.25, Math.min(1, impactVy / 600));
     const squashY = 1 - 0.28 * intensity;
     const squashX = 1 + 0.22 * intensity;
+    this._resetScaleTweens();
     this.scene.tweens.add({
       targets: this.sprite,
       scaleX: squashX,
@@ -187,6 +191,7 @@ export class RemotePlayer {
     this.scene.time.delayedCall(HIT.FLASH_MS, () => {
       if (this.bodyGfx) drawBody(this.bodyGfx, this.color, { stroke: true });
     });
+    this._resetScaleTweens();
     this.scene.tweens.add({
       targets: sprite,
       scaleX: 1.25,
@@ -195,6 +200,13 @@ export class RemotePlayer {
       yoyo: true,
       ease: 'Cubic.easeOut',
     });
+  }
+
+  _resetScaleTweens() {
+    if (!this.sprite?.active) return;
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.sprite.scaleX = 1;
+    this.sprite.scaleY = 1;
   }
 
   applyState({ x, y, vy, facing, bowAngle }) {
@@ -256,14 +268,27 @@ export class RemotePlayer {
     this._wasGrounded = grounded;
     this._lastVy = vy;
     const moving = Math.abs(dx) > 0.4 && grounded;
-    if (moving) this.legPhase += Math.abs(dx) * 0.1;
-    else this.legPhase = 0;
-    this._isMoving = moving;
+    const targetAmp = moving ? 1 : 0;
+    this._walkAmp += (targetAmp - this._walkAmp) * 0.18;
+    if (this._walkAmp > 0.05 && grounded) this.legPhase += Math.abs(dx) * 0.1;
+    else if (!grounded) this.legPhase = 0;
+    this._isMoving = this._walkAmp > 0.05;
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
-    this._bobY = (moving && grounded) ? computeWalkBob(this.legPhase) : 0;
+    this._bobY = (moving && grounded) ? computeWalkBob(this.legPhase) * this._walkAmp : 0;
     const vxApprox = dx * 60;
-    this._leanAngle = (moving && grounded) ? computeLean(vxApprox, PLAYER.SPEED) : 0;
+    if (grounded && moving) this._leanAngle = computeLean(vxApprox, PLAYER.SPEED);
+    else if (!grounded) this._leanAngle = computeLean(vxApprox, PLAYER.SPEED) * 0.7;
+    else this._leanAngle = 0;
+    if (this._lastFacing !== this.facing && Math.abs(dx) > 1 && grounded) {
+      this.scene.spawnLandingDust?.(
+        this.sprite.x,
+        this.sprite.y + PLAYER.HEIGHT / 2,
+        this.color,
+        0.45,
+      );
+    }
+    this._lastFacing = this.facing;
   }
 
   destroy() {

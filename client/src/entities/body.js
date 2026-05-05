@@ -10,7 +10,7 @@ const STRIDE = 5;
 const LIFT = 4;
 const KNEE_FWD = 3;
 const KNEE_UP = 2;
-const BOB_AMP = 1.5;
+const BOB_AMP = 3;
 const MAX_TILT = 0.07;
 
 export function computeWalkBob(phase) {
@@ -36,7 +36,7 @@ export function drawBody(gfx, fillColor, { stroke = false } = {}) {
   }
 }
 
-export function drawLegs(gfx, color, phase, { isMoving, isGrounded, facing = 1, vyNorm = 0 }) {
+export function drawLegs(gfx, color, phase, { isMoving, isGrounded, facing = 1, vyNorm = 0, walkAmp = 1 }) {
   gfx.clear();
   const halfH = PLAYER.HEIGHT / 2;
   const hipY = -halfH + BODY_HEIGHT;
@@ -51,14 +51,15 @@ export function drawLegs(gfx, color, phase, { isMoving, isGrounded, facing = 1, 
     return;
   }
 
-  if (!isMoving) {
+  const amp = Math.max(0, Math.min(1, walkAmp));
+  if (!isMoving || amp < 0.05) {
     drawStraightLeg(gfx, -HIP_HALF, hipY, footRestY);
     drawStraightLeg(gfx, HIP_HALF, hipY, footRestY);
     return;
   }
 
-  drawWalkLeg(gfx, -HIP_HALF, hipY, footRestY, phase, dir);
-  drawWalkLeg(gfx, HIP_HALF, hipY, footRestY, phase + Math.PI, dir);
+  drawWalkLeg(gfx, -HIP_HALF, hipY, footRestY, phase, dir, amp);
+  drawWalkLeg(gfx, HIP_HALF, hipY, footRestY, phase + Math.PI, dir, amp);
 }
 
 function drawStraightLeg(gfx, x, hipY, footY) {
@@ -68,11 +69,11 @@ function drawStraightLeg(gfx, x, hipY, footY) {
   gfx.strokePath();
 }
 
-function drawWalkLeg(gfx, hipX, hipY, footRestY, p, dir) {
+function drawWalkLeg(gfx, hipX, hipY, footRestY, p, dir, amp = 1) {
   const cx = Math.cos(p);
   const sn = Math.sin(p);
-  const stride = cx * STRIDE * dir;
-  const lifted = Math.max(0, -sn);
+  const stride = cx * STRIDE * dir * amp;
+  const lifted = Math.max(0, -sn) * amp;
   const footX = hipX + stride;
   const footY = footRestY - lifted * LIFT;
   const baseKneeX = (hipX + footX) / 2;
