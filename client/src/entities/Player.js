@@ -253,6 +253,12 @@ export class Player {
   releaseBow() {
     if (this.carryingFlag || !this.charging) return null;
     this.charging = false;
+    const now = performance.now();
+    if (this._lastShotAt && now - this._lastShotAt < ARROW.COOLDOWN_MS) {
+      this.bow.setAngle(BOW.MIN_ANGLE);
+      return null;
+    }
+    this._lastShotAt = now;
     const rot = this.bow.getRotation();
     const cos = Math.cos(rot);
     const sin = Math.sin(rot);

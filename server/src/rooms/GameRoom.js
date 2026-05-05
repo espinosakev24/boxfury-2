@@ -159,6 +159,11 @@ export class GameRoom extends Room {
     this.onMessage(MESSAGES.SHOOT, (client, payload) => {
       const shooter = this.state.players.get(client.sessionId);
       if (!shooter || !shooter.alive) return;
+      const now = Date.now();
+      const last = this._lastShotAt?.get(client.sessionId) ?? 0;
+      if (now - last < ARROW.COOLDOWN_MS) return;
+      if (!this._lastShotAt) this._lastShotAt = new Map();
+      this._lastShotAt.set(client.sessionId, now);
       const arrow = new Arrow();
       arrow.x = Number(payload.x) || 0;
       arrow.y = Number(payload.y) || 0;
@@ -166,7 +171,7 @@ export class GameRoom extends Room {
       arrow.vy = Number(payload.vy) || 0;
       arrow.shooterId = client.sessionId;
       arrow.shooterTeam = shooter.team || 0;
-      arrow.spawnedAt = Date.now();
+      arrow.spawnedAt = now;
       const id = `${client.sessionId}-${++this.arrowSeq}`;
       this.state.arrows.set(id, arrow);
     });
@@ -440,6 +445,7 @@ export class GameRoom extends Room {
       }
     }
     this.state.players.delete(client.sessionId);
+    this._lastShotAt?.delete(client.sessionId);
     this.updateMetadata();
     if (player) this.logEvent(LOG_EVENTS.LEAVE, { name: player.name });
     console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size})`);

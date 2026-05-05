@@ -39,6 +39,7 @@ export const ARROW = {
   THICKNESS: 2,
   KNOCKBACK_MULT: 0.45,
   KNOCKBACK_UP: 140,
+  COOLDOWN_MS: 300,
 };
 
 export const PHYSICS = {
