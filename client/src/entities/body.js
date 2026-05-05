@@ -12,9 +12,15 @@ const KNEE_FWD = 3;
 const KNEE_UP = 2;
 const BOB_AMP = 3;
 const MAX_TILT = 0.07;
+const IDLE_BREATH_AMP = 0.7;
 
 export function computeWalkBob(phase) {
   return -Math.abs(Math.sin(phase * 0.5)) * BOB_AMP;
+}
+
+export function computeIdleBob(timeMs, intensity = 1) {
+  const period = 350 / Math.max(0.5, intensity);
+  return Math.sin(timeMs / period) * IDLE_BREATH_AMP;
 }
 
 export function computeLean(vx, maxSpeed) {
@@ -28,11 +34,12 @@ export function drawBody(gfx, fillColor, { stroke = false } = {}) {
   const halfW = PLAYER.WIDTH / 2;
   const halfH = PLAYER.HEIGHT / 2;
   const top = -halfH;
+  const radius = 2;
   gfx.fillStyle(fillColor, 1);
-  gfx.fillRect(-halfW, top, PLAYER.WIDTH, BODY_HEIGHT);
+  gfx.fillRoundedRect(-halfW, top, PLAYER.WIDTH, BODY_HEIGHT, radius);
   if (stroke) {
     gfx.lineStyle(1, 0xffffff, 0.4);
-    gfx.strokeRect(-halfW, top, PLAYER.WIDTH, BODY_HEIGHT);
+    gfx.strokeRoundedRect(-halfW, top, PLAYER.WIDTH, BODY_HEIGHT, radius);
   }
 }
 

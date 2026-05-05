@@ -1,6 +1,6 @@
 import { DEFAULT_SKIN, HIT, NETWORK, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
-import { computeLean, computeWalkBob, drawBody, drawLegs } from './body.js';
+import { computeIdleBob, computeLean, computeWalkBob, drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
 
@@ -275,7 +275,14 @@ export class RemotePlayer {
     this._isMoving = this._walkAmp > 0.05;
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
-    this._bobY = (moving && grounded) ? computeWalkBob(this.legPhase) * this._walkAmp : 0;
+    if (grounded) {
+      const breathIntensity = 1 + (this.damageStage ?? 0) * 0.4;
+      const walkBob = (moving ? computeWalkBob(this.legPhase) : 0) * this._walkAmp;
+      const idleBob = computeIdleBob(performance.now(), breathIntensity) * (1 - this._walkAmp);
+      this._bobY = walkBob + idleBob;
+    } else {
+      this._bobY = 0;
+    }
     const vxApprox = dx * 60;
     if (grounded && moving) this._leanAngle = computeLean(vxApprox, PLAYER.SPEED);
     else if (!grounded) this._leanAngle = computeLean(vxApprox, PLAYER.SPEED) * 0.7;
