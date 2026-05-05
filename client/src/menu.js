@@ -70,7 +70,9 @@ export function setupMenu({ onJoin, onCreate, onTest }) {
     const team1 = meta.team1 ?? [];
     const team2 = meta.team2 ?? [];
     const spectators = meta.spectators ?? [];
-    const isFull = room.clients >= room.maxClients;
+    const playerCap = meta.maxPlayers ?? 8;
+    const players = team1.length + team2.length;
+    const playersFull = players >= playerCap;
     const age = ageLabel(meta.createdAt);
     const target = meta.scoreTarget;
     const rosterTooltip = [
@@ -80,26 +82,24 @@ export function setupMenu({ onJoin, onCreate, onTest }) {
     ].filter(Boolean).join('\n');
 
     const card = document.createElement('div');
-    card.className = `room ${isFull ? 'room--full' : ''}`;
+    card.className = 'room';
     if (rosterTooltip) card.title = rosterTooltip;
     card.innerHTML = `
       <span class="room__name">${escapeHtml(name)}</span>
       <span class="room__meta">
         <span class="room__dot room__dot--p1">${team1.length}</span>
         <span class="room__dot room__dot--p2">${team2.length}</span>
-        <span class="room__stat">${room.clients}/${room.maxClients}</span>
+        <span class="room__stat">${players}/${playerCap}${playersFull ? ' · spectate' : ''}</span>
         <span class="room__stat" title="spectators">◐ ${spectators.length}</span>
         ${target ? `<span class="room__stat">${target}p</span>` : ''}
         <span class="room__sub">#${escapeHtml(room.roomId.slice(0, 6))}${age ? ' · ' + escapeHtml(age) : ''}</span>
       </span>
     `;
 
-    if (!isFull) {
-      card.addEventListener('click', () => {
-        closeLobby();
-        onJoin(room.roomId);
-      });
-    }
+    card.addEventListener('click', () => {
+      closeLobby();
+      onJoin(room.roomId);
+    });
 
     return card;
   };

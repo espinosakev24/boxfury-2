@@ -39,7 +39,7 @@ function defaultPlayerName(sessionId) {
 }
 
 export class GameRoom extends Room {
-  maxClients = ROOM.MAX_CLIENTS;
+  maxClients = 999;
   patchRate = 1000 / NETWORK.PATCH_RATE;
   state = new GameState();
 
@@ -47,7 +47,7 @@ export class GameRoom extends Room {
     this.joinCount = 0;
     this.arrowSeq = 0;
     this.displayName = (options?.roomName && String(options.roomName).slice(0, 24)) || randomName();
-    this.maxClients = normalizeMaxPlayers(options?.maxPlayers);
+    this.playerCap = normalizeMaxPlayers(options?.maxPlayers);
     this.scoreTarget = normalizeMaxPoints(options?.maxPoints);
     this.mode = normalizeMode(options?.mode);
     this.state.scoreTarget = this.scoreTarget;
@@ -84,7 +84,7 @@ export class GameRoom extends Room {
       if (team !== 1 && team !== 2) return;
       if (!this.matchEnded && player.team !== 0) return;
       if (player.team === team) return;
-      const cap = Math.floor(this.maxClients / 2);
+      const cap = Math.floor(this.playerCap / 2);
       let count = 0;
       this.state.players.forEach((p) => { if (p.team === team && p !== player) count++; });
       if (count >= cap) {
@@ -437,7 +437,7 @@ export class GameRoom extends Room {
     this.state.players.set(client.sessionId, player);
     this.joinCount++;
     this.updateMetadata();
-    console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size}/${this.maxClients})`);
+    console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size})`);
   }
 
   onLeave(client) {
@@ -453,7 +453,7 @@ export class GameRoom extends Room {
     }
     this.state.players.delete(client.sessionId);
     this.updateMetadata();
-    console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size}/${this.maxClients})`);
+    console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size})`);
   }
 
 
@@ -472,7 +472,7 @@ export class GameRoom extends Room {
       team2,
       spectators,
       createdAt: this.createdAt,
-      maxPlayers: this.maxClients,
+      maxPlayers: this.playerCap,
       scoreTarget: this.scoreTarget,
       mode: this.mode,
     });

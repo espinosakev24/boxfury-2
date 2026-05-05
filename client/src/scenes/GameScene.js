@@ -542,7 +542,7 @@ export class GameScene extends Phaser.Scene {
       if (p.team === 1) t1++;
       else if (p.team === 2) t2++;
     });
-    const cap = Math.floor((this.network?.room?.maxClients ?? 8) / 2);
+    const cap = Math.floor((this.network?.room?.metadata?.maxPlayers ?? 8) / 2);
     const fmt = (n) => `${n}/${cap} ${n === 1 ? t('team.player') : t('team.players')}`;
     const e1 = document.querySelector('[data-me-team="1"]');
     const e2 = document.querySelector('[data-me-team="2"]');
@@ -639,7 +639,7 @@ export class GameScene extends Phaser.Scene {
       if (p.team === 1) t1++;
       else if (p.team === 2) t2++;
     });
-    const cap = Math.floor((this.network?.room?.maxClients ?? ROOM.MAX_CLIENTS) / 2);
+    const cap = Math.floor((this.network?.room?.metadata?.maxPlayers ?? ROOM.MAX_CLIENTS) / 2);
     const apply = (team, count) => {
       const countEl = document.querySelector(`.team-pick__count[data-team="${team}"]`);
       const btn = document.getElementById(`team-pick-${team}`);
