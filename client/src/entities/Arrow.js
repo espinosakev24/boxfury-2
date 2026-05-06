@@ -27,6 +27,8 @@ export class Arrow {
     this.sprite = scene.add.rectangle(state.x, state.y, ARROW.LENGTH, ARROW.THICKNESS, 0xffffff);
     this.sprite.setOrigin(1, 0.5);
     this.sprite.rotation = Math.atan2(state.vy, state.vx);
+    this.trailGfx.setDepth(19);
+    this.sprite.setDepth(this.stuckToId ? 9 : 20);
 
     if (this.stuck) {
       this.stuckRotation = this.sprite.rotation;
@@ -50,6 +52,7 @@ export class Arrow {
       this.y = state.y;
       this.vx = 0;
       this.vy = 0;
+      this.sprite.setDepth(this.stuckToId ? 9 : 20);
       this.snapToAnchor();
       if (!this.stuckToId) {
         this._stuckAt = performance.now();
@@ -86,9 +89,10 @@ export class Arrow {
       const target = this.scene.findPlayer?.(this.stuckToId);
       if (target?.sprite) {
         const flip = (target.facing || 1) !== this.stuckFacing ? -1 : 1;
+        const bob = target._bobY ?? 0;
         this.sprite.setPosition(
           target.sprite.x + this.stuckOffsetX * flip,
-          target.sprite.y + this.stuckOffsetY,
+          target.sprite.y + this.stuckOffsetY + bob,
         );
         this.sprite.rotation = flip === -1 ? Math.PI - this.stuckRotation : this.stuckRotation;
         return;

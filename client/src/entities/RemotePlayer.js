@@ -52,6 +52,12 @@ export class RemotePlayer {
       stroke: '#15151f',
       strokeThickness: 3,
     }).setOrigin(0.5, 1);
+    this.legsGfx.setDepth(10);
+    this.bodyGfx.setDepth(11);
+    this.damageGfx.setDepth(12);
+    this.faceGfx.setDepth(13);
+    this.bow.sprite.setDepth(14);
+    this.nameText.setDepth(14);
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];
   }
 
