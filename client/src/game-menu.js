@@ -45,6 +45,7 @@ export function setupGameMenu({ onLeave, onJoinTeam }) {
     muted = !muted;
     localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
     renderMute();
+    window.dispatchEvent(new CustomEvent('boxfury:mute', { detail: { muted } }));
   });
 
   // Fullscreen — target the canvas only so the chrome doesn't go fullscreen.

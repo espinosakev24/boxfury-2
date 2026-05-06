@@ -53,6 +53,7 @@ export class GameScene extends Phaser.Scene {
       teardownEventLog();
       window.removeEventListener('keydown', this._tabKeydown);
       window.removeEventListener('keyup', this._tabKeyup);
+      if (this._muteListener) window.removeEventListener('boxfury:mute', this._muteListener);
       this.network?.disconnect();
     });
 
@@ -176,6 +177,10 @@ export class GameScene extends Phaser.Scene {
     this.network.onMapChanged((payload) => this.handleMapChanged(payload));
     setupEventLog();
     this.network.onLog((payload) => pushEvent(payload));
+
+    this.sound.mute = !!window.boxfuryMuted;
+    this._muteListener = (e) => { this.sound.mute = !!e.detail?.muted; };
+    window.addEventListener('boxfury:mute', this._muteListener);
 
     $(room.state).listen('mapId', (newId) => {
       if (!newId || !this.level) return;
