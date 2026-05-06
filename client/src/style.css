@@ -56,6 +56,27 @@ html, body {
   background: var(--bf-arena);
   position: relative;
   overflow: hidden;
+  display: grid;
+  grid-template-rows: 2fr 1fr;
+}
+.menu__right-stage {
+  position: relative;
+  overflow: hidden;
+}
+.menu__right-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px;
+  border-top: 1px solid var(--bf-line);
+}
+.menu__right-controls .menu__controls {
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 100%;
+  max-width: 360px;
 }
 
 /* ---------- Type ---------- */
@@ -166,11 +187,47 @@ html, body {
 }
 
 /* ---------- Footer ---------- */
+.menu__controls {
+  margin-top: 32px;
+  padding: 14px 16px;
+  background: rgba(21, 21, 31, 0.4);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+}
+.menu__controls > .eyebrow {
+  margin-bottom: 10px;
+}
+.menu__controls-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.menu__controls-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.menu__controls-keys {
+  display: inline-flex;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 76px;
+}
+.menu__controls-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bf-soft);
+  letter-spacing: 0.04em;
+}
+
 .menu__footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 40px;
+  margin-top: 32px;
 }
 .menu__footer .eyebrow + .eyebrow { margin-left: 16px; }
 
@@ -212,8 +269,9 @@ html, body {
 }
 
 .box {
-  width: 28px;
-  height: 56px;
+  position: relative;
+  width: 24px;
+  height: 38px;
   border-radius: var(--r-tight);
   animation: bob 1.6s ease-in-out infinite;
 }
@@ -221,14 +279,86 @@ html, body {
 .box:nth-child(3) { animation-delay: 0.4s; }
 .box:nth-child(4) { animation-delay: 0.6s; }
 
+.box::before {
+  /* eyes — one square + box-shadow gives the second */
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 7px;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  box-shadow: 8px 0 0 #fff;
+}
+.box::after {
+  /* mouth */
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 8px;
+  width: 8px;
+  height: 1px;
+  background: #fff;
+}
+
 .box--p1 { background: var(--p1); }
 .box--p2 { background: var(--p2); }
 .box--p3 { background: var(--p3); }
 .box--p4 { background: var(--p4); }
 
+.box__legs {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+}
+.box__legs span {
+  width: 2px;
+  height: 8px;
+  background: currentColor;
+}
+.box--p1 .box__legs span { background: var(--p1); }
+.box--p2 .box__legs span { background: var(--p2); }
+.box--p3 .box__legs span { background: var(--p3); }
+.box--p4 .box__legs span { background: var(--p4); }
+
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
+}
+
+.arena__flag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(35% + 8px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.arena__flag-pole {
+  width: 1.5px;
+  height: 32px;
+  background: var(--bf-bone);
+}
+.arena__flag-cloth {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid var(--p4);
+  transform-origin: left center;
+  animation: flag-wave 1.8s ease-in-out infinite;
+}
+@keyframes flag-wave {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.85); }
 }
 
 .arena__caption {
@@ -237,7 +367,8 @@ html, body {
   left: 28px;
   right: 28px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
 }
 
 /* ---------- Game canvas ---------- */

@@ -43,21 +43,66 @@
       </section>
 
       <section class="menu__right">
+        <div class="menu__right-stage">
         <div class="arena">
           <div class="arena__corner arena__corner--tl"></div>
           <div class="arena__corner arena__corner--tr"></div>
           <div class="arena__corner arena__corner--bl"></div>
           <div class="arena__corner arena__corner--br"></div>
+          <div class="arena__flag">
+            <div class="arena__flag-pole"></div>
+            <div class="arena__flag-cloth"></div>
+          </div>
           <div class="arena__line"></div>
           <div class="arena__boxes">
-            <div class="box box--p1"></div>
-            <div class="box box--p2"></div>
-            <div class="box box--p3"></div>
-            <div class="box box--p4"></div>
+            <div class="box box--p1">
+              <div class="box__legs"><span></span><span></span></div>
+            </div>
+            <div class="box box--p2">
+              <div class="box__legs"><span></span><span></span></div>
+            </div>
+            <div class="box box--p3">
+              <div class="box__legs"><span></span><span></span></div>
+            </div>
+            <div class="box box--p4">
+              <div class="box__legs"><span></span><span></span></div>
+            </div>
           </div>
           <div class="arena__caption">
-            <span class="eyebrow">Arena · 1440 × 900</span>
-            <span class="eyebrow">4 players max</span>
+            <span class="eyebrow" data-i18n="menu.arenaCaption">Capture the flag · up to 8 players</span>
+          </div>
+        </div>
+        </div>
+        <div class="menu__right-controls">
+          <div class="menu__controls">
+            <div class="eyebrow" data-i18n="menu.howToPlay">◣ How to play</div>
+            <ul class="menu__controls-list">
+              <li>
+                <span class="menu__controls-keys">
+                  <span class="key-cap">←</span>
+                  <span class="key-cap">→</span>
+                </span>
+                <span class="menu__controls-label" data-i18n="controls.move">Move</span>
+              </li>
+              <li>
+                <span class="menu__controls-keys">
+                  <span class="key-cap">↑</span>
+                </span>
+                <span class="menu__controls-label" data-i18n="controls.jump">Jump</span>
+              </li>
+              <li>
+                <span class="menu__controls-keys">
+                  <span class="key-cap">Space</span>
+                </span>
+                <span class="menu__controls-label" data-i18n="controls.shootShort">Hold to charge, release to shoot</span>
+              </li>
+              <li>
+                <span class="menu__controls-keys">
+                  <span class="key-cap">↓</span>
+                </span>
+                <span class="menu__controls-label" data-i18n="controls.flag">Pick / drop flag</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

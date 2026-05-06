@@ -8,6 +8,9 @@ const TRANSLATIONS = {
     'menu.createGame': 'Create game',
     'menu.settings': 'Settings',
     'menu.test': 'Quick test (jade)',
+    'menu.howToPlay': '◣ How to play',
+    'menu.arenaCaption': 'Capture the flag · up to 8 players',
+    'controls.shootShort': 'Hold to charge, release to shoot',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': '4 players max',
 
@@ -133,6 +136,9 @@ const TRANSLATIONS = {
     'menu.createGame': 'Crear partida',
     'menu.settings': 'Ajustes',
     'menu.test': 'Prueba rápida (jade)',
+    'menu.howToPlay': '◣ Cómo jugar',
+    'menu.arenaCaption': 'Captura la bandera · hasta 8 jugadores',
+    'controls.shootShort': 'Mantén para cargar, suelta para disparar',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': 'Máx 4 jugadores',
 
