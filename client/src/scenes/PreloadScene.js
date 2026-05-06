@@ -6,7 +6,10 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-    // Load sprites, audio, maps from /public/assets here.
+    this.load.audio('bow-aiming', '/assets/audio/bow-aiming.wav');
+    this.load.audio('arrow-shoot', '/assets/audio/arrow-shoot.wav');
+    this.load.audio('arrow-hit', '/assets/audio/arrow-hit.wav');
+    this.load.audio('arrow-vibration', '/assets/audio/arrow-vibration.wav');
   }
 
   create() {

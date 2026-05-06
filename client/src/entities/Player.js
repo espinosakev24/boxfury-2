@@ -1,11 +1,20 @@
 import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
-import { computeIdleBob, computeLean, computeWalkBob, drawBody, drawLegs } from './body.js';
+import {
+  computeIdleBob,
+  computeLean,
+  computeWalkBob,
+  drawBody,
+  drawLegs,
+} from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
 
 export class Player {
-  constructor(scene, { id, x, y, color = 0x4ade80, name = '', skin = DEFAULT_SKIN }) {
+  constructor(
+    scene,
+    { id, x, y, color = 0x4ade80, name = '', skin = DEFAULT_SKIN },
+  ) {
     this.scene = scene;
     this.id = id;
     this.color = color;
@@ -42,14 +51,16 @@ export class Player {
     };
     scene.events.on('postupdate', this._postUpdateBound);
     this.bow = new Bow(scene, this);
-    this.nameText = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
-      fontFamily: 'JetBrains Mono, monospace',
-      fontSize: '11px',
-      fontStyle: 'bold',
-      color: '#' + color.toString(16).padStart(6, '0'),
-      stroke: '#15151f',
-      strokeThickness: 3,
-    }).setOrigin(0.5, 1);
+    this.nameText = scene.add
+      .text(x, y - PLAYER.HEIGHT / 2 - 6, name, {
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        color: '#' + color.toString(16).padStart(6, '0'),
+        stroke: '#15151f',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5, 1);
   }
 
   move({ left, right, lockFacing = false }) {
@@ -76,7 +87,7 @@ export class Player {
     this.scene.tweens.killTweensOf(this.sprite);
     this.scene.tweens.add({
       targets: this.sprite,
-      rotation: fallDir * Math.PI / 2,
+      rotation: (fallDir * Math.PI) / 2,
       y: this.sprite.y + 12,
       alpha: 0.55,
       duration: 360,
@@ -102,7 +113,13 @@ export class Player {
     const stage = damageStageFromHp(hp);
     if (stage === this.damageStage) return;
     this.damageStage = stage;
-    drawCracks(this.damageGfx, stage, PLAYER.WIDTH, PLAYER.HEIGHT * (2 / 3), this.damageSeed);
+    drawCracks(
+      this.damageGfx,
+      stage,
+      PLAYER.WIDTH,
+      PLAYER.HEIGHT * (2 / 3),
+      this.damageSeed,
+    );
   }
 
   syncDamageOverlay() {
@@ -165,7 +182,10 @@ export class Player {
     const lean = this._leanAngle ?? 0;
     gfx.setPosition(this.sprite.x, this.sprite.y + bob);
     gfx.setRotation(this.sprite.rotation + lean);
-    gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
+    gfx.setScale(
+      this.sprite.scaleX * (this.facing < 0 ? -1 : 1),
+      this.sprite.scaleY,
+    );
     gfx.setVisible(this.sprite.visible);
     gfx.setAlpha(this.sprite.alpha);
   }
@@ -270,10 +290,17 @@ export class Player {
     };
     this.bow.setAngle(BOW.MIN_ANGLE);
     this.bow.triggerSnap();
+    if (this.scene.cache?.audio?.exists('arrow-shoot')) {
+      this.scene.sound.play('arrow-shoot', { volume: 0.2 });
+    }
     return shot;
   }
 
   update(dt) {
+    if (this.charging && !this._wasCharging) this._playChargeSfx();
+    else if (!this.charging && this._wasCharging) this._stopChargeSfx();
+    this._wasCharging = this.charging;
+
     if (this.charging) {
       this.bow.setAngle(this.bow.angle + BOW.CHARGE_RATE * dt);
     } else {
@@ -293,15 +320,19 @@ export class Player {
     const moving = Math.abs(vx) > 5 && grounded;
     const targetAmp = moving ? 1 : 0;
     this._walkAmp += (targetAmp - this._walkAmp) * 0.18;
-    if (this._walkAmp > 0.05 && grounded) this.legPhase += Math.abs(vx) * dt * 0.1;
+    if (this._walkAmp > 0.05 && grounded)
+      this.legPhase += Math.abs(vx) * dt * 0.1;
     else if (!grounded) this.legPhase = 0;
     this._isMoving = this._walkAmp > 0.05;
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
     if (grounded) {
       const breathIntensity = 1 + (this.damageStage ?? 0) * 0.4;
-      const walkBob = (moving ? computeWalkBob(this.legPhase) : 0) * this._walkAmp;
-      const idleBob = computeIdleBob(performance.now(), breathIntensity) * (1 - this._walkAmp);
+      const walkBob =
+        (moving ? computeWalkBob(this.legPhase) : 0) * this._walkAmp;
+      const idleBob =
+        computeIdleBob(performance.now(), breathIntensity) *
+        (1 - this._walkAmp);
       this._bobY = walkBob + idleBob;
     } else {
       this._bobY = 0;
@@ -332,11 +363,29 @@ export class Player {
     };
   }
 
+  _playChargeSfx() {
+    const sound = this.scene?.sound;
+    if (!sound) return;
+    if (!this.scene.cache.audio.exists('bow-aiming')) return;
+    this._chargeSfx?.stop();
+    this._chargeSfx?.destroy();
+    this._chargeSfx = sound.add('bow-aiming');
+    this._chargeSfx.play({ volume: 0.2 });
+  }
+
+  _stopChargeSfx() {
+    if (!this._chargeSfx) return;
+    this._chargeSfx.stop();
+    this._chargeSfx.destroy();
+    this._chargeSfx = null;
+  }
+
   destroy() {
     if (this._postUpdateBound) {
       this.scene.events.off('postupdate', this._postUpdateBound);
       this._postUpdateBound = null;
     }
+    this._stopChargeSfx();
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();

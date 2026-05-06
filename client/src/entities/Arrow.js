@@ -3,7 +3,7 @@ import { ARROW, PHYSICS } from '@boxfury/shared';
 const TRAIL_MAX = 8;
 const TRAIL_INTERVAL_MS = 22;
 const TRAIL_LIFETIME_MS = 220;
-const STUCK_VIBRATE_MS = 240;
+const STUCK_VIBRATE_MS = 420;
 
 export class Arrow {
   constructor(scene, state) {
@@ -54,6 +54,15 @@ export class Arrow {
       if (!this.stuckToId) {
         this._stuckAt = performance.now();
         this.scene.spawnArrowSplash?.(state.x, state.y, hitVx, hitVy);
+        if (this.scene.cache?.audio?.exists('arrow-hit')) {
+          this.scene.sound.play('arrow-hit', { volume: 0.4 });
+        }
+        if (this.scene.cache?.audio?.exists('arrow-vibration')) {
+          this.scene.time.delayedCall(50, () => {
+            if (this._destroyed) return;
+            this.scene.sound.play('arrow-vibration', { volume: 0.3 });
+          });
+        }
       }
       this._trail.length = 0;
       this.trailGfx?.clear();
@@ -127,12 +136,14 @@ export class Arrow {
     const elapsed = performance.now() - this._stuckAt;
     if (elapsed > STUCK_VIBRATE_MS) return;
     const t = elapsed / 1000;
-    const decay = Math.exp(-elapsed / 80);
-    const wobble = Math.sin(t * 60) * 2 * decay;
+    const decay = Math.exp(-elapsed / 140);
+    const wobble = Math.sin(t * 75) * 4 * decay;
     const perpX = -Math.sin(this.sprite.rotation);
     const perpY = Math.cos(this.sprite.rotation);
     this.sprite.x += wobble * perpX;
     this.sprite.y += wobble * perpY;
+    const tilt = Math.sin(t * 75) * 0.06 * decay;
+    this.sprite.rotation = (this.stuckRotation || this.sprite.rotation) + tilt;
   }
 
   destroy() {
