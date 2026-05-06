@@ -6,20 +6,20 @@ export const LEG_LENGTH = PLAYER.HEIGHT - BODY_HEIGHT;
 
 const LEG_WIDTH = 2;
 const HIP_HALF = 4;
-const STRIDE = 5;
-const LIFT = 4;
-const KNEE_FWD = 3;
-const KNEE_UP = 2;
-const BOB_AMP = 3;
-const MAX_TILT = 0.07;
-const IDLE_BREATH_AMP = 0.7;
+const STRIDE = 8;
+const LIFT = 7;
+const KNEE_FWD = 5;
+const KNEE_UP = 4;
+const BOB_AMP = 5;
+const MAX_TILT = 0.12;
+const IDLE_BREATH_AMP = 1.8;
 
 export function computeWalkBob(phase) {
   return -Math.abs(Math.sin(phase * 0.5)) * BOB_AMP;
 }
 
 export function computeIdleBob(timeMs, intensity = 1) {
-  const period = 350 / Math.max(0.5, intensity);
+  const period = 260 / Math.max(0.5, intensity);
   return Math.sin(timeMs / period) * IDLE_BREATH_AMP;
 }
 
@@ -46,7 +46,7 @@ export function drawBody(gfx, fillColor, { stroke = false } = {}) {
 export function drawLegs(gfx, color, phase, { isMoving, isGrounded, facing = 1, vyNorm = 0, walkAmp = 1 }) {
   gfx.clear();
   const halfH = PLAYER.HEIGHT / 2;
-  const hipY = -halfH + BODY_HEIGHT;
+  const hipY = -halfH + BODY_HEIGHT - 3;
   const footRestY = halfH;
   const dir = facing >= 0 ? 1 : -1;
 

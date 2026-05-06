@@ -18,8 +18,8 @@ export class RemotePlayer {
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setAllowGravity(false);
     this.sprite.body.setImmovable(true);
-    this.bodyGfx = scene.add.graphics();
     this.legsGfx = scene.add.graphics();
+    this.bodyGfx = scene.add.graphics();
     this.legPhase = 0;
     this._isMoving = false;
     this._isGrounded = true;
