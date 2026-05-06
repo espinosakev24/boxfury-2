@@ -19,6 +19,10 @@ const TRANSLATIONS = {
     'settings.username': 'Username',
     'settings.usernamePlaceholder': 'Pick a name…',
     'settings.language': 'Language',
+    'settings.movement': 'Movement keys',
+    'keys.arrows': 'Arrows',
+    'keys.wasd': 'WASD',
+    'keys.both': 'Both',
     'settings.skin': 'Face',
     'settings.save': 'Save',
     'settings.cancel': 'Cancel',
@@ -64,6 +68,8 @@ const TRANSLATIONS = {
     'log.matchWins': 'wins the match',
     'log.matchTie': 'Match ended in a tie',
     'log.mapChanged': 'changed map to',
+
+    'capture.banner': 'captured the flag',
     'log.matchReset': 'New match starting',
 
     'pause.eyebrow': '◣ Paused',
@@ -147,6 +153,10 @@ const TRANSLATIONS = {
     'settings.username': 'Nombre',
     'settings.usernamePlaceholder': 'Elige un nombre…',
     'settings.language': 'Idioma',
+    'settings.movement': 'Teclas de movimiento',
+    'keys.arrows': 'Flechas',
+    'keys.wasd': 'WASD',
+    'keys.both': 'Ambas',
     'settings.skin': 'Cara',
     'settings.save': 'Guardar',
     'settings.cancel': 'Cancelar',
@@ -192,6 +202,8 @@ const TRANSLATIONS = {
     'log.matchWins': 'gana la partida',
     'log.matchTie': 'La partida terminó en empate',
     'log.mapChanged': 'cambió el mapa a',
+
+    'capture.banner': 'capturó la bandera',
     'log.matchReset': 'Nueva partida iniciando',
 
     'pause.eyebrow': '◣ Pausa',

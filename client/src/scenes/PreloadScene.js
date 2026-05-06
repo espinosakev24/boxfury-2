@@ -12,6 +12,9 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio('arrow-vibration', '/assets/audio/arrow-vibration.wav');
     this.load.audio('body-hit', '/assets/audio/body-hit.wav');
     this.load.audio('player-moan', '/assets/audio/player-moan.wav');
+    this.load.audio('flag-captured', '/assets/audio/flag-captured.wav');
+    this.load.audio('flag-drop', '/assets/audio/flag-drop.wav');
+    this.load.audio('score', '/assets/audio/score.wav');
   }
 
   create() {

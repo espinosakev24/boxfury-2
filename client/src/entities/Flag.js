@@ -14,7 +14,7 @@ export class Flag {
       pos.x + FLAG_OFFSET_X,
       pos.y + FLAG_OFFSET_Y,
       10, 8,
-      COLORS.P2_CRIMSON,
+      COLORS.P4_AMBER,
     );
   }
 

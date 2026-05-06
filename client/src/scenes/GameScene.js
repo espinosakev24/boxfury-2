@@ -6,7 +6,9 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Arrow } from '../entities/Arrow.js';
 import { Level } from '../entities/Level.js';
 import { NetworkManager } from '../network/NetworkManager.js';
+import { LOG_EVENTS } from '@boxfury/shared';
 import { pushEvent, setupEventLog, teardownEventLog } from '../event-log.js';
+import { getKeyScheme } from '../keyscheme.js';
 import { t } from '../i18n.js';
 
 export class GameScene extends Phaser.Scene {
@@ -17,7 +19,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   async create() {
-    this.cursors = this.input.keyboard.createCursorKeys();
+    this._buildKeyMap();
     this.level = new Level(this);
     this.network = new NetworkManager();
 
@@ -55,6 +57,8 @@ export class GameScene extends Phaser.Scene {
       window.removeEventListener('keyup', this._tabKeyup);
       if (this._muteListener)
         window.removeEventListener('boxfury:mute', this._muteListener);
+      if (this._keysListener)
+        window.removeEventListener('boxfury:keys', this._keysListener);
       this.network?.disconnect();
     });
 
@@ -76,6 +80,9 @@ export class GameScene extends Phaser.Scene {
       this.sound.mute = !!e.detail?.muted;
     };
     window.addEventListener('boxfury:mute', this._muteListener);
+
+    this._keysListener = () => this._rebuildKeyMap();
+    window.addEventListener('boxfury:keys', this._keysListener);
 
     this.network.onStatusChange((status, newRoom) => {
       if (status === 'disconnected') this._showReconnectOverlay();
@@ -199,7 +206,10 @@ export class GameScene extends Phaser.Scene {
     this.network.onMatchEnd((payload) => this.showMatchEnd(payload));
     this.network.onMapChanged((payload) => this.handleMapChanged(payload));
     setupEventLog();
-    this.network.onLog((payload) => pushEvent(payload));
+    this.network.onLog((payload) => {
+      pushEvent(payload);
+      if (payload?.type === LOG_EVENTS.CAPTURE) this._showCaptureBanner(payload);
+    });
 
     $(room.state).listen('mapId', (newId) => {
       if (!newId || !this.level) return;
@@ -245,6 +255,86 @@ export class GameScene extends Phaser.Scene {
     this.registry.get('leaveGame')?.();
   }
 
+  _playFlagDropSound() {
+    const now = performance.now();
+    if (this._lastFlagDropAt && now - this._lastFlagDropAt < 220) return;
+    this._lastFlagDropAt = now;
+    if (this.cache?.audio?.exists('flag-drop')) {
+      this.sound.play('flag-drop', { volume: 0.45 });
+    }
+  }
+
+  _showCaptureBanner({ name, team }) {
+    const el = document.getElementById('capture-banner');
+    if (!el) return;
+    if (this.cache?.audio?.exists('score')) {
+      this.sound.play('score', { volume: 0.55 });
+    }
+    const teamName = team === 1 ? 'JADE' : team === 2 ? 'CRIMSON' : '';
+    const teamCls = team === 1 ? 'capture-banner__team--p1' : team === 2 ? 'capture-banner__team--p2' : '';
+    const safeName = String(name ?? '?').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+    el.innerHTML = `<span class="${teamCls}">${teamName}</span> ${t('capture.banner')} <span style="opacity:0.7">· ${safeName}</span>`;
+    el.classList.remove('hidden');
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    if (this._captureBannerTimer) clearTimeout(this._captureBannerTimer);
+    this._captureBannerTimer = setTimeout(() => {
+      el.classList.remove('is-visible');
+      setTimeout(() => el.classList.add('hidden'), 240);
+    }, 1700);
+  }
+
+  _buildKeyMap() {
+    const kb = this.input.keyboard;
+    const KC = Phaser.Input.Keyboard.KeyCodes;
+    const scheme = getKeyScheme();
+    const useArrows = scheme === 'arrows' || scheme === 'both';
+    const useWasd = scheme === 'wasd' || scheme === 'both';
+    const make = (codes) => codes.map((c) => kb.addKey(c));
+    this.keyMap = {
+      left: make([
+        ...(useArrows ? [KC.LEFT] : []),
+        ...(useWasd ? [KC.A] : []),
+      ]),
+      right: make([
+        ...(useArrows ? [KC.RIGHT] : []),
+        ...(useWasd ? [KC.D] : []),
+      ]),
+      up: make([
+        ...(useArrows ? [KC.UP] : []),
+        ...(useWasd ? [KC.W] : []),
+      ]),
+      down: make([
+        ...(useArrows ? [KC.DOWN] : []),
+        ...(useWasd ? [KC.S] : []),
+      ]),
+      space: make([KC.SPACE]),
+    };
+  }
+
+  _rebuildKeyMap() {
+    const kb = this.input.keyboard;
+    for (const action of Object.keys(this.keyMap || {})) {
+      for (const key of this.keyMap[action]) kb.removeKey(key);
+    }
+    this._buildKeyMap();
+  }
+
+  isDown(action) {
+    const keys = this.keyMap?.[action];
+    if (!keys) return false;
+    for (const k of keys) if (k.isDown) return true;
+    return false;
+  }
+
+  justDown(action) {
+    const keys = this.keyMap?.[action];
+    if (!keys) return false;
+    for (const k of keys) if (Phaser.Input.Keyboard.JustDown(k)) return true;
+    return false;
+  }
+
   syncFlag() {
     const flagState = this.network?.room?.state?.flag;
     if (!flagState || !this.level.flag) return;
@@ -253,8 +343,24 @@ export class GameScene extends Phaser.Scene {
       const prev = this.flagCarrierId;
       this.flagCarrierId = carrierId;
       if (prev) this.findPlayer(prev)?.setCarryingFlag?.(false);
-      if (carrierId) this.findPlayer(carrierId)?.setCarryingFlag?.(true);
+      if (carrierId) {
+        this.findPlayer(carrierId)?.setCarryingFlag?.(true);
+        if (this.cache?.audio?.exists('flag-captured')) {
+          this.sound.play('flag-captured', { volume: 0.5 });
+        }
+      } else if (prev) {
+        const atHome =
+          Math.abs(flagState.x - flagState.homeX) < 4 &&
+          Math.abs(flagState.y - flagState.homeY) < 4;
+        if (!atHome) this._playFlagDropSound();
+      }
     }
+    const lastVy = this._lastFlagVy ?? 0;
+    const currVy = flagState.vy ?? 0;
+    if (!carrierId && lastVy > 120 && Math.abs(currVy) < 30) {
+      this._playFlagDropSound();
+    }
+    this._lastFlagVy = currVy;
     if (carrierId) {
       const carrier = this.findPlayer(carrierId);
       if (carrier?.sprite) {
@@ -882,16 +988,16 @@ export class GameScene extends Phaser.Scene {
     this.syncDeath();
     if (this.player && !this.deathState) {
       this.player.move({
-        left: this.cursors.left.isDown,
-        right: this.cursors.right.isDown,
-        lockFacing: this.cursors.up.isDown,
+        left: this.isDown('left'),
+        right: this.isDown('right'),
+        lockFacing: this.isDown('up'),
       });
-      if (this.cursors.up.isDown) this.player.jump();
+      if (this.isDown('up')) this.player.jump();
 
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+      if (this.justDown('down')) {
         this.toggleFlag();
       }
-      if (this.cursors.space.isDown) {
+      if (this.isDown('space')) {
         this.player.chargeBow();
       } else {
         const shot = this.player.releaseBow();

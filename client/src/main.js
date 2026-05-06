@@ -65,7 +65,7 @@ async function leaveGame() {
   document.getElementById('game').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
   // Belt-and-suspenders: ensure all in-game DOM overlays are hidden
-  ['hud', 'death-overlay', 'team-picker', 'scoreboard', 'match-end', 'reconnect-overlay']
+  ['hud', 'death-overlay', 'team-picker', 'scoreboard', 'match-end', 'reconnect-overlay', 'capture-banner']
     .forEach((id) => document.getElementById(id)?.classList.add('hidden'));
 }
 

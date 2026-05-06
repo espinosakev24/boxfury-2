@@ -637,6 +637,35 @@ html, body {
 }
 
 /* ---------- Death overlay ---------- */
+.capture-banner {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  padding: 12px 24px;
+  background: rgba(21, 21, 31, 0.85);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  color: var(--bf-bone);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 8;
+  opacity: 0;
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+.capture-banner.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.capture-banner__team--p1 { color: var(--p1); }
+.capture-banner__team--p2 { color: var(--p2); }
+
 .reconnect-overlay {
   position: fixed;
   inset: 0;
