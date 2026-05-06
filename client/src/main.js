@@ -9,6 +9,7 @@ import { setupGameMenu } from './game-menu.js';
 import { setupSettings } from './settings.js';
 import { openCreateRoom, setupCreateRoom } from './create-room.js';
 import { setupMapPicker } from './map-picker.js';
+import { setupUiSounds } from './ui-sounds.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
@@ -18,6 +19,43 @@ let game = null;
 applyLocale();
 setupSettings();
 setupMapPicker();
+setupUiSounds();
+
+const bgMusic = new Audio('/assets/audio/arena-drift.ogg');
+bgMusic.loop = true;
+bgMusic.volume = 0.18;
+bgMusic.muted = !!window.boxfuryMuted;
+let bgMusicWanted = true;
+
+function tryPlayBgMusic() {
+  if (!bgMusicWanted) return;
+  bgMusic.play().catch(() => {});
+}
+
+function pauseBgMusic() {
+  bgMusicWanted = false;
+  bgMusic.pause();
+}
+
+function resumeBgMusic() {
+  bgMusicWanted = true;
+  tryPlayBgMusic();
+}
+
+tryPlayBgMusic();
+const unlockBgMusic = () => {
+  if (bgMusicWanted && bgMusic.paused) tryPlayBgMusic();
+  if (!bgMusic.paused) {
+    window.removeEventListener('pointerdown', unlockBgMusic);
+    window.removeEventListener('keydown', unlockBgMusic);
+  }
+};
+window.addEventListener('pointerdown', unlockBgMusic);
+window.addEventListener('keydown', unlockBgMusic);
+
+window.addEventListener('boxfury:mute', (e) => {
+  bgMusic.muted = !!e.detail?.muted;
+});
 
 function buildOptions(extra = {}) {
   const name = getUsername();
@@ -36,6 +74,7 @@ function startGame(connectOptions = {}) {
 }
 
 function doStartGame(connectOptions) {
+  pauseBgMusic();
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
   game = new Phaser.Game({
@@ -64,6 +103,7 @@ async function leaveGame() {
   }
   document.getElementById('game').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
+  resumeBgMusic();
   // Belt-and-suspenders: ensure all in-game DOM overlays are hidden
   ['hud', 'death-overlay', 'team-picker', 'scoreboard', 'match-end', 'reconnect-overlay', 'capture-banner']
     .forEach((id) => document.getElementById(id)?.classList.add('hidden'));
