@@ -467,7 +467,21 @@ export class GameRoom extends Room {
     console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size})`);
   }
 
-  onLeave(client) {
+  async onLeave(client, consented) {
+    const player = this.state.players.get(client.sessionId);
+    if (consented || !player) {
+      this._cleanupClient(client);
+      return;
+    }
+    try {
+      await this.allowReconnection(client, 15);
+      console.log(`[room ${this.displayName}] reconnected ${player.name}`);
+    } catch (e) {
+      this._cleanupClient(client);
+    }
+  }
+
+  _cleanupClient(client) {
     const player = this.state.players.get(client.sessionId);
     if (this.state.flag.carrierId === client.sessionId) {
       this.state.flag.carrierId = '';

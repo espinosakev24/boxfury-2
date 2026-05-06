@@ -71,6 +71,22 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.sound.mute = !!window.boxfuryMuted;
+    this._muteListener = (e) => {
+      this.sound.mute = !!e.detail?.muted;
+    };
+    window.addEventListener('boxfury:mute', this._muteListener);
+
+    this.network.onStatusChange((status, newRoom) => {
+      if (status === 'disconnected') this._showReconnectOverlay();
+      else if (status === 'reconnected') this._handleReconnected(newRoom);
+      else if (status === 'failed') this._handleReconnectFailed();
+    });
+
+    this._bindRoomState(room);
+  }
+
+  _bindRoomState(room) {
     const $ = this.network.$;
 
     const spawnRemote = (sessionId, player) => {
@@ -185,12 +201,6 @@ export class GameScene extends Phaser.Scene {
     setupEventLog();
     this.network.onLog((payload) => pushEvent(payload));
 
-    this.sound.mute = !!window.boxfuryMuted;
-    this._muteListener = (e) => {
-      this.sound.mute = !!e.detail?.muted;
-    };
-    window.addEventListener('boxfury:mute', this._muteListener);
-
     $(room.state).listen('mapId', (newId) => {
       if (!newId || !this.level) return;
       if (this.level.mapId === newId) return;
@@ -200,6 +210,39 @@ export class GameScene extends Phaser.Scene {
 
     this.flagCarrierId = '';
     if (this.level.flag) this.level.flag.applyState(room.state.flag);
+  }
+
+  _showReconnectOverlay() {
+    document.getElementById('reconnect-overlay')?.classList.remove('hidden');
+  }
+
+  _hideReconnectOverlay() {
+    document.getElementById('reconnect-overlay')?.classList.add('hidden');
+  }
+
+  _teardownEntities() {
+    if (this.player) {
+      this.player.destroy();
+      this.player = null;
+    }
+    for (const remote of this.remotes.values()) remote.destroy();
+    this.remotes.clear();
+    for (const arrow of this.arrows.values()) arrow.destroy();
+    this.arrows.clear();
+    this.flagCarrierId = '';
+    this.deathState = null;
+    this.hideDeathOverlay();
+  }
+
+  _handleReconnected(newRoom) {
+    this._hideReconnectOverlay();
+    this._teardownEntities();
+    this._bindRoomState(newRoom);
+  }
+
+  _handleReconnectFailed() {
+    this._hideReconnectOverlay();
+    this.registry.get('leaveGame')?.();
   }
 
   syncFlag() {

@@ -506,6 +506,59 @@ html, body {
 }
 
 /* ---------- Death overlay ---------- */
+.reconnect-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 30;
+  background: rgba(21, 21, 31, 0.78);
+  backdrop-filter: blur(4px);
+}
+.reconnect-overlay__inner {
+  text-align: center;
+  font-family: var(--font-display);
+  background: var(--bf-deep);
+  padding: 32px 48px;
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+}
+.reconnect-overlay__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bf-bone);
+  letter-spacing: 0.08em;
+}
+.reconnect-overlay__sub {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--bf-soft);
+  letter-spacing: 0.04em;
+}
+.reconnect-overlay__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.reconnect-overlay__dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bf-bone);
+  opacity: 0.3;
+  animation: reconnect-pulse 1.2s infinite ease-in-out;
+}
+.reconnect-overlay__dots span:nth-child(2) { animation-delay: 0.15s; }
+.reconnect-overlay__dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes reconnect-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.9); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
 .death-overlay {
   position: fixed;
   inset: 0;

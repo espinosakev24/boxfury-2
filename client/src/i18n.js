@@ -120,6 +120,9 @@ const TRANSLATIONS = {
     'death.title': 'YOU DIED',
     'death.respawnIn': 'Respawning in',
 
+    'reconnect.title': 'RECONNECTING',
+    'reconnect.sub': 'Hold tight — restoring connection…',
+
     'hud.watching': 'watching',
     'hud.noSpectators': 'no spectators',
   },
@@ -241,6 +244,9 @@ const TRANSLATIONS = {
 
     'death.title': 'HAS MUERTO',
     'death.respawnIn': 'Reapareciendo en',
+
+    'reconnect.title': 'RECONECTANDO',
+    'reconnect.sub': 'Un momento — restaurando conexión…',
 
     'hud.watching': 'mirando',
     'hud.noSpectators': 'sin espectadores',
