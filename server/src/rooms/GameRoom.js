@@ -439,6 +439,14 @@ export class GameRoom extends Room {
       });
     }
 
+    if (this.state.flag.carrierId === targetId) {
+      this.state.flag.carrierId = '';
+      this.state.flag.x = target.x;
+      this.state.flag.y = target.y;
+      this.state.flag.vx = arrow.vx * 0.35;
+      this.state.flag.vy = -220;
+    }
+
     const knockX = arrow.vx * ARROW.KNOCKBACK_MULT;
     const knockY = arrow.vy * ARROW.KNOCKBACK_MULT - ARROW.KNOCKBACK_UP;
 
