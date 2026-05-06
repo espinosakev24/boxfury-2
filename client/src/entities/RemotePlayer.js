@@ -188,6 +188,9 @@ export class RemotePlayer {
       this.color,
       intensity,
     );
+    if (this.scene.cache?.audio?.exists('player-landing')) {
+      this.scene.sound.play('player-landing', { volume: 0.18 + intensity * 0.22 });
+    }
   }
 
   flashHit() {

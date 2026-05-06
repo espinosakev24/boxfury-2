@@ -234,6 +234,9 @@ export class Player {
     if (this.sprite.body.blocked.down || this.sprite.body.touching.down) {
       this.sprite.body.setVelocityY(-PLAYER.JUMP_SPEED);
       this.playJumpCrouch();
+      if (this.scene.cache?.audio?.exists('jump')) {
+        this.scene.sound.play('jump', { volume: 0.1 });
+      }
     }
   }
 
@@ -269,6 +272,11 @@ export class Player {
       this.color,
       intensity,
     );
+    if (this.scene.cache?.audio?.exists('player-landing')) {
+      this.scene.sound.play('player-landing', {
+        volume: 0.05 + intensity * 0.1,
+      });
+    }
   }
 
   chargeBow() {
@@ -329,6 +337,11 @@ export class Player {
     if (this._walkAmp > 0.05 && grounded)
       this.legPhase += Math.abs(vx) * dt * 0.1;
     else if (!grounded) this.legPhase = 0;
+    const shouldWalk =
+      moving && grounded && performance.now() >= this.inputLockedUntil;
+    if (shouldWalk && !this._wasWalking) this._playWalkSfx();
+    else if (!shouldWalk && this._wasWalking) this._stopWalkSfx();
+    this._wasWalking = shouldWalk;
     this._isMoving = this._walkAmp > 0.05;
     this._isGrounded = grounded;
     this._vyNorm = Math.max(-1, Math.min(1, vy / 400));
@@ -369,6 +382,23 @@ export class Player {
     };
   }
 
+  _playWalkSfx() {
+    const sound = this.scene?.sound;
+    if (!sound) return;
+    if (!this.scene.cache.audio.exists('player-walking')) return;
+    this._walkSfx?.stop();
+    this._walkSfx?.destroy();
+    this._walkSfx = sound.add('player-walking');
+    this._walkSfx.play({ loop: true, volume: 0.2 });
+  }
+
+  _stopWalkSfx() {
+    if (!this._walkSfx) return;
+    this._walkSfx.stop();
+    this._walkSfx.destroy();
+    this._walkSfx = null;
+  }
+
   _playChargeSfx() {
     const sound = this.scene?.sound;
     if (!sound) return;
@@ -392,6 +422,7 @@ export class Player {
       this._postUpdateBound = null;
     }
     this._stopChargeSfx();
+    this._stopWalkSfx();
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();

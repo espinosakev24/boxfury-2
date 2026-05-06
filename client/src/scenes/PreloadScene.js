@@ -15,6 +15,9 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio('flag-captured', '/assets/audio/flag-captured.wav');
     this.load.audio('flag-drop', '/assets/audio/flag-drop.wav');
     this.load.audio('score', '/assets/audio/score.wav');
+    this.load.audio('jump', '/assets/audio/jump.wav');
+    this.load.audio('player-landing', '/assets/audio/player-landing.wav');
+    this.load.audio('player-walking', '/assets/audio/player-walking.wav');
   }
 
   create() {

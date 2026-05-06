@@ -208,7 +208,8 @@ export class GameScene extends Phaser.Scene {
     setupEventLog();
     this.network.onLog((payload) => {
       pushEvent(payload);
-      if (payload?.type === LOG_EVENTS.CAPTURE) this._showCaptureBanner(payload);
+      if (payload?.type === LOG_EVENTS.CAPTURE)
+        this._showCaptureBanner(payload);
     });
 
     $(room.state).listen('mapId', (newId) => {
@@ -271,10 +272,23 @@ export class GameScene extends Phaser.Scene {
       this.sound.play('score', { volume: 0.55 });
     }
     const teamName = team === 1 ? 'JADE' : team === 2 ? 'CRIMSON' : '';
-    const teamCls = team === 1 ? 'capture-banner__team--p1' : team === 2 ? 'capture-banner__team--p2' : '';
-    const safeName = String(name ?? '?').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[c]));
+    const teamCls =
+      team === 1
+        ? 'capture-banner__team--p1'
+        : team === 2
+          ? 'capture-banner__team--p2'
+          : '';
+    const safeName = String(name ?? '?').replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[c],
+    );
     el.innerHTML = `<span class="${teamCls}">${teamName}</span> ${t('capture.banner')} <span style="opacity:0.7">· ${safeName}</span>`;
     el.classList.remove('hidden');
     requestAnimationFrame(() => el.classList.add('is-visible'));
@@ -293,22 +307,13 @@ export class GameScene extends Phaser.Scene {
     const useWasd = scheme === 'wasd' || scheme === 'both';
     const make = (codes) => codes.map((c) => kb.addKey(c));
     this.keyMap = {
-      left: make([
-        ...(useArrows ? [KC.LEFT] : []),
-        ...(useWasd ? [KC.A] : []),
-      ]),
+      left: make([...(useArrows ? [KC.LEFT] : []), ...(useWasd ? [KC.A] : [])]),
       right: make([
         ...(useArrows ? [KC.RIGHT] : []),
         ...(useWasd ? [KC.D] : []),
       ]),
-      up: make([
-        ...(useArrows ? [KC.UP] : []),
-        ...(useWasd ? [KC.W] : []),
-      ]),
-      down: make([
-        ...(useArrows ? [KC.DOWN] : []),
-        ...(useWasd ? [KC.S] : []),
-      ]),
+      up: make([...(useArrows ? [KC.UP] : []), ...(useWasd ? [KC.W] : [])]),
+      down: make([...(useArrows ? [KC.DOWN] : []), ...(useWasd ? [KC.S] : [])]),
       space: make([KC.SPACE]),
     };
   }
@@ -346,18 +351,13 @@ export class GameScene extends Phaser.Scene {
       if (carrierId) {
         this.findPlayer(carrierId)?.setCarryingFlag?.(true);
         if (this.cache?.audio?.exists('flag-captured')) {
-          this.sound.play('flag-captured', { volume: 0.5 });
+          this.sound.play('flag-captured', { volume: 0.4 });
         }
-      } else if (prev) {
-        const atHome =
-          Math.abs(flagState.x - flagState.homeX) < 4 &&
-          Math.abs(flagState.y - flagState.homeY) < 4;
-        if (!atHome) this._playFlagDropSound();
       }
     }
     const lastVy = this._lastFlagVy ?? 0;
     const currVy = flagState.vy ?? 0;
-    if (!carrierId && lastVy > 120 && Math.abs(currVy) < 30) {
+    if (!carrierId && lastVy > 60 && Math.abs(currVy) < 20) {
       this._playFlagDropSound();
     }
     this._lastFlagVy = currVy;
@@ -381,7 +381,7 @@ export class GameScene extends Phaser.Scene {
     this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
     if (typeof hp === 'number') target.setDamageFromHp(hp);
     if (this.cache?.audio?.exists('body-hit')) {
-      this.sound.play('body-hit', { volume: 0.5 });
+      this.sound.play('body-hit', { volume: 0.6 });
     }
     if (this.cache?.audio?.exists('player-moan')) {
       this.time.delayedCall(40, () => {
