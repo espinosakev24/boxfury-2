@@ -38,7 +38,10 @@ export class Bow {
 
   update() {
     this.sprite.x = this.owner.sprite.x;
-    this.sprite.y = this.owner.sprite.y + (this.owner._bobY ?? 0);
+    this.sprite.y =
+      this.owner.sprite.y +
+      (this.owner._bobY ?? 0) +
+      (this.owner._crouchAmp ?? 0) * 7;
     this.sprite.rotation = this.getRotation();
     this._draw();
   }

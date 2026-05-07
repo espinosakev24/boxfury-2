@@ -315,6 +315,7 @@ export class GameScene extends Phaser.Scene {
       up: make([...(useArrows ? [KC.UP] : []), ...(useWasd ? [KC.W] : [])]),
       down: make([...(useArrows ? [KC.DOWN] : []), ...(useWasd ? [KC.S] : [])]),
       space: make([KC.SPACE]),
+      flag: make([KC.X]),
     };
   }
 
@@ -987,6 +988,7 @@ export class GameScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.syncDeath();
     if (this.player && !this.deathState) {
+      this.player.setCrouching(this.isDown('down'));
       this.player.move({
         left: this.isDown('left'),
         right: this.isDown('right'),
@@ -994,7 +996,7 @@ export class GameScene extends Phaser.Scene {
       });
       if (this.isDown('up')) this.player.jump();
 
-      if (this.justDown('down')) {
+      if (this.justDown('flag')) {
         this.toggleFlag();
       }
       if (this.isDown('space')) {

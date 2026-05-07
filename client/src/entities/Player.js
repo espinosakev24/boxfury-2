@@ -72,9 +72,15 @@ export class Player {
   move({ left, right, lockFacing = false }) {
     if (performance.now() < this.inputLockedUntil) return;
     const vx = (right ? 1 : 0) - (left ? 1 : 0);
-    const speed = this.carryingFlag ? PLAYER.CARRY_SPEED : PLAYER.SPEED;
+    const baseSpeed = this.carryingFlag ? PLAYER.CARRY_SPEED : PLAYER.SPEED;
+    const speed = this._crouchInput ? baseSpeed * 0.55 : baseSpeed;
     this.sprite.body.setVelocityX(vx * speed);
     if (vx !== 0 && !lockFacing) this.facing = vx;
+  }
+
+  setCrouching(active) {
+    const grounded = this.sprite.body.blocked.down || this.sprite.body.touching.down;
+    this._crouchInput = !!active && grounded;
   }
 
   applyKnockback(vx, vy) {
@@ -137,9 +143,10 @@ export class Player {
     const sy = this.sprite.scaleY;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
+    const crouch = (this._crouchAmp ?? 0) * 7;
     gfx.setPosition(
       this.sprite.x - offsetY * sin * sy,
-      this.sprite.y + offsetY * cos * sy + bob,
+      this.sprite.y + offsetY * cos * sy + bob + crouch,
     );
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
@@ -151,7 +158,8 @@ export class Player {
     if (!gfx) return;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
-    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
+    const crouch = (this._crouchAmp ?? 0) * 7;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob + crouch);
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
@@ -186,7 +194,8 @@ export class Player {
     if (!gfx) return;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
-    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
+    const crouch = (this._crouchAmp ?? 0) * 7;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob + crouch);
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(
       this.sprite.scaleX * (this.facing < 0 ? -1 : 1),
@@ -334,6 +343,8 @@ export class Player {
     const moving = Math.abs(vx) > 5 && grounded;
     const targetAmp = moving ? 1 : 0;
     this._walkAmp += (targetAmp - this._walkAmp) * 0.18;
+    const targetCrouch = this._crouchInput && grounded ? 1 : 0;
+    this._crouchAmp = (this._crouchAmp ?? 0) + (targetCrouch - (this._crouchAmp ?? 0)) * 0.22;
     if (this._walkAmp > 0.05 && grounded)
       this.legPhase += Math.abs(vx) * dt * 0.1;
     else if (!grounded) this.legPhase = 0;
