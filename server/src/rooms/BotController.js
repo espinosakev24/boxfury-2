@@ -11,6 +11,8 @@ const HALF_W = PLAYER.WIDTH / 2;
 const HALF_H = PLAYER.HEIGHT / 2;
 const RAD = Math.PI / 180;
 const DEG = 180 / Math.PI;
+const JUMP_PEAK =
+  (PLAYER.JUMP_SPEED * PLAYER.JUMP_SPEED) / (2 * PHYSICS.GRAVITY);
 
 export class BotController {
   constructor(room, sessionId, player) {
@@ -28,7 +30,8 @@ export class BotController {
     this.nextThinkAt = 0;
     this.nextStrafeAt = 0;
     this.strafeBias = 0;
-    this._wasOnGround = true;
+    this.mode = 'engage';
+    this.climbTarget = null;
   }
 
   findTarget() {
@@ -71,6 +74,7 @@ export class BotController {
       this.inputX = 0;
       this.wantJump = false;
       this.charging = false;
+      this.climbTarget = null;
       return;
     }
 
@@ -85,6 +89,38 @@ export class BotController {
         now + BOT.STRAFE_DECISION_MS * (0.7 + Math.random() * 0.6);
     }
 
+    const targetFootY = target.y + HALF_H;
+    const botFootY = this.player.y + HALF_H;
+    const altitudeGap = botFootY - targetFootY;
+    const wantsHighGround = altitudeGap < -PLAYER.HEIGHT * 0.6;
+
+    let climb = null;
+    if (wantsHighGround) {
+      climb = this._findClimbTarget(target);
+    }
+    this.climbTarget = climb;
+
+    if (climb) {
+      this.mode = 'climb';
+      this._driveClimb(climb, target, now);
+    } else {
+      this.mode = 'engage';
+      this._driveEngage(dx, absDx, now);
+    }
+
+    if (this.player.x < 60) this.inputX = 1;
+    else if (this.player.x > this.room.map.pixelWidth - 60) this.inputX = -1;
+
+    if (this.player.spawnProtectionUntil && Date.now() < this.player.spawnProtectionUntil) {
+      this.charging = false;
+      return;
+    }
+
+    if (this.mode === 'engage') this._maybeStartCharge(dx, dy, now);
+    if (this.charging) this._aimAt(target);
+  }
+
+  _driveEngage(dx, absDx, now) {
     if (absDx > BOT.IDEAL_GAP + 30) {
       this.inputX = Math.sign(dx);
     } else if (absDx < BOT.IDEAL_GAP - 30) {
@@ -93,55 +129,120 @@ export class BotController {
       this.inputX = this.strafeBias;
     }
 
-    if (this.player.x < 60) this.inputX = 1;
-    else if (this.player.x > this.room.map.pixelWidth - 60) this.inputX = -1;
-
     if (
       this.grounded &&
       now - this.lastJumpAt > BOT.JUMP_COOLDOWN_MS &&
-      (this._shouldJumpForTarget(dy, absDx) || this._wallAhead())
+      this._shouldHopForwardLedge()
+    ) {
+      this.wantJump = true;
+    }
+  }
+
+  _driveClimb(climb, target, now) {
+    const bx = this.player.x;
+    const reach = jumpReach(climb.dyUp);
+    const closestX = clamp(bx, climb.left + 4, climb.right - 4);
+    const horizDist = Math.abs(closestX - bx);
+    const inLaunchZone = reach && horizDist <= reach.horizontal * 0.85;
+
+    if (horizDist < 2) {
+      this.inputX = Math.sign(target.x - bx) || 1;
+    } else {
+      this.inputX = Math.sign(closestX - bx);
+    }
+
+    if (
+      this.grounded &&
+      inLaunchZone &&
+      now - this.lastJumpAt > BOT.JUMP_COOLDOWN_MS
     ) {
       this.wantJump = true;
     }
 
-    if (this.player.spawnProtectionUntil && Date.now() < this.player.spawnProtectionUntil) {
-      this.charging = false;
-      return;
-    }
+    this.charging = false;
+  }
 
+  _maybeStartCharge(dx, dy, now) {
     const dist = Math.hypot(dx, dy);
-    const inRange = dist < BOT.SHOOT_RANGE && Math.abs(dy) < BOT.SHOOT_VERT_TOLERANCE * 1.6;
-    if (!this.charging && inRange && now - this.lastShotAt > ARROW.COOLDOWN_MS + BOT.REACTION_MS) {
+    const inRange =
+      dist < BOT.SHOOT_RANGE &&
+      Math.abs(dy) < BOT.SHOOT_VERT_TOLERANCE * 1.6;
+    if (
+      !this.charging &&
+      inRange &&
+      now - this.lastShotAt > ARROW.COOLDOWN_MS + BOT.REACTION_MS
+    ) {
       this.charging = true;
       this.chargeStartAt = now;
       this.chargeTargetMs =
         BOT.CHARGE_TIME_MS + (Math.random() * 2 - 1) * BOT.CHARGE_VARIANCE_MS;
     }
-
-    if (this.charging) {
-      this._aimAt(target);
-    }
   }
 
-  _shouldJumpForTarget(dy, absDx) {
-    if (dy < -PLAYER.HEIGHT * 1.2 && absDx < BOT.SHOOT_RANGE) return Math.random() < 0.55;
-    return false;
-  }
-
-  _wallAhead() {
+  _shouldHopForwardLedge() {
     const p = this.player;
+    if (this.inputX === 0) return false;
     const probeX = p.x + this.inputX * (HALF_W + 6);
     if (probeX <= HALF_W || probeX >= this.room.map.pixelWidth - HALF_W) return false;
+    const botFoot = p.y + HALF_H;
     for (const wall of this.room.map.walls) {
       const top = wall.y - wall.h / 2;
       const left = wall.x - wall.w / 2;
       const right = wall.x + wall.w / 2;
-      if (probeX > left && probeX < right) {
-        const dy = top - (p.y + HALF_H);
-        if (dy < -2 && dy > -PLAYER.HEIGHT * 1.5) return true;
-      }
+      if (probeX <= left || probeX >= right) continue;
+      const dyUp = botFoot - top;
+      if (dyUp < 4) continue;
+      if (dyUp > JUMP_PEAK - 8) continue;
+      const reach = jumpReach(dyUp);
+      if (!reach) continue;
+      return Math.random() < 0.85;
     }
     return false;
+  }
+
+  _findClimbTarget(target) {
+    const bx = this.player.x;
+    const botFoot = this.player.y + HALF_H;
+    const targetFoot = target.y + HALF_H;
+    const dirToTarget = Math.sign(target.x - bx) || 1;
+
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (const wall of this.room.map.walls) {
+      const top = wall.y - wall.h / 2;
+      const left = wall.x - wall.w / 2;
+      const right = wall.x + wall.w / 2;
+      const dyUp = botFoot - top;
+      if (dyUp < 6) continue;
+      if (dyUp > JUMP_PEAK - 4) continue;
+
+      const reach = jumpReach(dyUp);
+      if (!reach) continue;
+
+      const closestX = clamp(bx, left, right);
+      const horizDist = Math.abs(closestX - bx);
+      const horizBudget = reach.horizontal + HALF_W * 0.5;
+      if (horizDist > horizBudget) continue;
+
+      const altitudeGain = botFoot - top;
+      const altitudeOvershoot = Math.max(0, top - targetFoot - PLAYER.HEIGHT);
+      const platformCenter = (left + right) / 2;
+      const platformDir = Math.sign(platformCenter - bx);
+      const dirAlign =
+        platformDir === 0 || platformDir === dirToTarget ? 60 : -25;
+      const reachEase = (1 - horizDist / Math.max(1, horizBudget)) * 30;
+
+      const score =
+        altitudeGain - altitudeOvershoot * 1.2 + dirAlign + reachEase;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = { top, left, right, dyUp };
+      }
+    }
+
+    return best;
   }
 
   _aimAt(target) {
@@ -237,6 +338,15 @@ export class BotController {
 
     this.grounded = landed;
   }
+}
+
+function jumpReach(dyUp) {
+  const j = PLAYER.JUMP_SPEED;
+  const g = PHYSICS.GRAVITY;
+  const disc = j * j - 2 * g * dyUp;
+  if (disc < 0) return null;
+  const t = (j + Math.sqrt(disc)) / g;
+  return { t, horizontal: PLAYER.SPEED * t };
 }
 
 function solveLaunchAngleDeg(dx, dy) {
