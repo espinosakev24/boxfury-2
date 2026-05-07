@@ -83,6 +83,30 @@ export class Player {
     this._crouchInput = !!active && grounded;
   }
 
+  dropThrough() {
+    const body = this.sprite.body;
+    if (!body) return;
+    body.checkCollision.down = false;
+    body.setVelocityY(110);
+    this._resetScaleTweens();
+    this.scene.tweens.chain({
+      targets: this.sprite,
+      tweens: [
+        { scaleX: 1.15, scaleY: 0.78, duration: 80, ease: 'Quad.easeOut' },
+        { scaleX: 1, scaleY: 1, duration: 120, ease: 'Quad.easeIn' },
+      ],
+    });
+    this.scene.spawnLandingDust?.(
+      this.sprite.x,
+      this.sprite.y + PLAYER.HEIGHT / 2,
+      this.color,
+      0.5,
+    );
+    this.scene.time.delayedCall(240, () => {
+      if (this.sprite?.body) this.sprite.body.checkCollision.down = true;
+    });
+  }
+
   applyKnockback(vx, vy) {
     this.sprite.body.setVelocity(vx, vy);
     this.inputLockedUntil = performance.now() + HIT.INPUT_LOCK_MS;

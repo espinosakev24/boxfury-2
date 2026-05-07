@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FLAG, GAME, PLAYER, ROOM, WORLD } from '@boxfury/shared';
+import { FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
 import { openMapPicker } from '../map-picker.js';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
@@ -339,6 +339,29 @@ export class GameScene extends Phaser.Scene {
     if (!keys) return false;
     for (const k of keys) if (Phaser.Input.Keyboard.JustDown(k)) return true;
     return false;
+  }
+
+  _handleDownTap() {
+    const now = performance.now();
+    if (this._lastDownTapAt && now - this._lastDownTapAt < 350) {
+      this._lastDownTapAt = 0;
+      this._tryDropThrough();
+    } else {
+      this._lastDownTapAt = now;
+    }
+  }
+
+  _tryDropThrough() {
+    if (!this.player) return;
+    const body = this.player.sprite.body;
+    if (!(body.blocked.down || body.touching.down)) return;
+    const walls = this.level?.map?.walls ?? [];
+    if (!walls.length) return;
+    const floorWallY = walls.reduce((m, w) => Math.max(m, w.y), -Infinity);
+    const floorTop = floorWallY - TILE.WALL_THICKNESS / 2;
+    const playerBottom = this.player.sprite.y + PLAYER.HEIGHT / 2;
+    if (Math.abs(playerBottom - floorTop) < 6) return;
+    this.player.dropThrough();
   }
 
   syncFlag() {
@@ -989,6 +1012,7 @@ export class GameScene extends Phaser.Scene {
     this.syncDeath();
     if (this.player && !this.deathState) {
       this.player.setCrouching(this.isDown('down'));
+      if (this.justDown('down')) this._handleDownTap();
       this.player.move({
         left: this.isDown('left'),
         right: this.isDown('right'),
