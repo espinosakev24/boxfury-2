@@ -12,6 +12,7 @@ import {
   PLAYER_COLORS,
   RESPAWN,
   SCORE,
+  SPAWN_PROTECTION,
   TILE,
   LOG_EVENTS,
   getMap,
@@ -96,6 +97,7 @@ export class GameRoom extends Room {
       player.alive = true;
       player.hp = PLAYER.MAX_HP;
       player.respawnAt = 0;
+      player.spawnProtectionUntil = Date.now() + SPAWN_PROTECTION.DURATION_MS;
       const base = this.bases?.[team];
       if (base) {
         player.x = base.x;
@@ -167,6 +169,7 @@ export class GameRoom extends Room {
       if (now - last < ARROW.COOLDOWN_MS) return;
       if (!this._lastShotAt) this._lastShotAt = new Map();
       this._lastShotAt.set(client.sessionId, now);
+      shooter.spawnProtectionUntil = 0;
       const arrow = new Arrow();
       arrow.x = Number(payload.x) || 0;
       arrow.y = Number(payload.y) || 0;
@@ -318,6 +321,7 @@ export class GameRoom extends Room {
         if (pid === arrow.shooterId) continue;
         if (!target.alive) continue;
         if (arrow.shooterTeam !== 0 && target.team === arrow.shooterTeam) continue;
+        if (target.spawnProtectionUntil && now < target.spawnProtectionUntil) continue;
         if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
         if (this.hitsPlayer(arrow, target)) {
           arrow.stuckToId = pid;
@@ -355,6 +359,7 @@ export class GameRoom extends Room {
       p.hp = PLAYER.MAX_HP;
       p.alive = true;
       p.respawnAt = 0;
+      p.spawnProtectionUntil = now + SPAWN_PROTECTION.DURATION_MS;
     });
   }
 

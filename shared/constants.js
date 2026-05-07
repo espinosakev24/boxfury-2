@@ -57,6 +57,10 @@ export const RESPAWN = {
   COOLDOWN_MS: 5000,
 };
 
+export const SPAWN_PROTECTION = {
+  DURATION_MS: 5000,
+};
+
 export const FLAG = {
   POLE_HEIGHT: 34,
   POLE_WIDTH: 2,

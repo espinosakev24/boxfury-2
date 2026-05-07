@@ -21,6 +21,7 @@ export class Player extends Schema {
     this.captures = 0;
     this.kills = 0;
     this.respawnAt = 0;
+    this.spawnProtectionUntil = 0;
   }
 }
 
@@ -42,4 +43,5 @@ defineTypes(Player, {
   captures: 'number',
   kills: 'number',
   respawnAt: 'number',
+  spawnProtectionUntil: 'number',
 });

@@ -1,5 +1,6 @@
 import { DEFAULT_SKIN, HIT, NETWORK, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
+import { SpawnShield } from './SpawnShield.js';
 import { computeIdleBob, computeLean, computeWalkBob, drawBody, drawLegs } from './body.js';
 import { damageStageFromHp, drawCracks, hashSeed } from './cracks.js';
 import { drawFace } from './faces.js';
@@ -58,6 +59,8 @@ export class RemotePlayer {
     this.faceGfx.setDepth(13);
     this.bow.sprite.setDepth(14);
     this.nameText.setDepth(14);
+
+    this.spawnShield = new SpawnShield(scene, color);
 
     this.chatBubble = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 22, '', {
       fontFamily: 'JetBrains Mono, monospace',
@@ -264,6 +267,10 @@ export class RemotePlayer {
   }
 
   update() {
+    const nowT = performance.now();
+    const dt = this._lastUpdateAt ? Math.min(0.05, (nowT - this._lastUpdateAt) / 1000) : 0;
+    this._lastUpdateAt = nowT;
+    this.spawnShield?.update(dt, this.sprite.x, this.sprite.y);
     if (this.dead) {
       this.bow.update();
       return;
@@ -360,5 +367,6 @@ export class RemotePlayer {
       this._chatBubbleTimer = null;
     }
     this.chatBubble?.destroy();
+    this.spawnShield?.destroy();
   }
 }

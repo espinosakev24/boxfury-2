@@ -761,6 +761,21 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  syncSpawnShields() {
+    const players = this.network?.room?.state?.players;
+    if (!players) return;
+    const myId = this.network.sessionId;
+    const now = Date.now();
+    players.forEach((p, sessionId) => {
+      const protectedNow = !!(p.alive && p.spawnProtectionUntil && now < p.spawnProtectionUntil);
+      if (sessionId === myId) {
+        this.player?.spawnShield?.setActive(protectedNow);
+      } else {
+        this.remotes.get(sessionId)?.spawnShield?.setActive(protectedNow);
+      }
+    });
+  }
+
   enterDeath(me) {
     this.deathState = { respawnAt: me.respawnAt };
     this.player.playDeathAnim();
@@ -1090,6 +1105,7 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     const dt = delta / 1000;
     this.syncDeath();
+    this.syncSpawnShields();
     if (this.player && !this.deathState) {
       if (!this._chatOpen) {
         this.player.setCrouching(this.isDown('down'));

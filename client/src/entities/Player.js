@@ -1,5 +1,6 @@
 import { ARROW, BOW, DEFAULT_SKIN, HIT, PLAYER } from '@boxfury/shared';
 import { Bow } from './Bow.js';
+import { SpawnShield } from './SpawnShield.js';
 import {
   computeIdleBob,
   computeLean,
@@ -67,6 +68,8 @@ export class Player {
     this.faceGfx.setDepth(13);
     this.bow.sprite.setDepth(14);
     this.nameText.setDepth(14);
+
+    this.spawnShield = new SpawnShield(scene, color);
 
     this.chatBubble = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 22, '', {
       fontFamily: 'JetBrains Mono, monospace',
@@ -375,6 +378,7 @@ export class Player {
   }
 
   update(dt) {
+    this.spawnShield?.update(dt, this.sprite.x, this.sprite.y);
     if (this.charging && !this._wasCharging) this._playChargeSfx();
     else if (!this.charging && this._wasCharging) this._stopChargeSfx();
     this._wasCharging = this.charging;
@@ -494,6 +498,7 @@ export class Player {
       this._chatBubbleTimer = null;
     }
     this.chatBubble?.destroy();
+    this.spawnShield?.destroy();
     this.bow.destroy();
     this.sprite.destroy();
     this.nameText?.destroy();
