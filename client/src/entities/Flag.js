@@ -24,10 +24,18 @@ export class Flag {
     this.x = state.x;
     this.y = state.y;
     this.pole.setPosition(state.x, state.y);
+    const visible = !state.disabled;
+    this.pole.setVisible(visible);
+    this.cloth.setVisible(visible);
+    this.disabled = !!state.disabled;
   }
 
   _drawCloth() {
     if (!this.cloth?.active) return;
+    if (this.disabled) {
+      this.cloth.clear();
+      return;
+    }
     const t = this.scene.time?.now ?? 0;
     const phase = t * WAVE_SPEED;
     const waveTop = Math.sin(phase) * WAVE_AMP;

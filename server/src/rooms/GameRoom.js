@@ -1,7 +1,9 @@
 import { Room } from 'colyseus';
 import {
   ARROW,
+  BOT,
   COLORS,
+  DEATHMATCH,
   FLAG,
   GAME,
   HIT,
@@ -26,6 +28,7 @@ import {
 import { GameState } from '../schemas/GameState.js';
 import { Player } from '../schemas/Player.js';
 import { Arrow } from '../schemas/Arrow.js';
+import { BotController } from './BotController.js';
 
 const ADJECTIVES = ['Jade', 'Crimson', 'Azure', 'Amber', 'Bone', 'Void', 'Deep', 'Mute', 'Neon', 'Hollow'];
 const NOUNS = ['Arena', 'Drift', 'Lab', 'Vault', 'Cell', 'Spire', 'Gate', 'Yard', 'Crater', 'Stack'];
@@ -67,6 +70,7 @@ export class GameRoom extends Room {
       this.state.flag.homeX = this.map.flag.x;
       this.state.flag.homeY = this.map.flag.y;
     }
+    this.state.flag.disabled = this.mode === 'dm-bot';
     this.updateMetadata();
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
@@ -111,6 +115,7 @@ export class GameRoom extends Room {
     });
 
     this.onMessage(MESSAGES.FLAG_TOGGLE, (client) => {
+      if (this.mode === 'dm-bot') return;
       const flag = this.state.flag;
       const player = this.state.players.get(client.sessionId);
       if (!player || !player.alive) {
@@ -229,6 +234,30 @@ export class GameRoom extends Room {
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / PHYSICS.TICK_HZ);
 
     if (GAME.DEBUG_DUMMY) this.spawnDummy();
+    if (this.mode === 'dm-bot') {
+      this.setPrivate(true);
+      this.spawnBot();
+    }
+  }
+
+  spawnBot() {
+    const sessionId = `bot-${Math.random().toString(36).slice(2, 8)}`;
+    const bot = new Player(PLAYER_COLORS[1]);
+    bot.name = BOT.NAME;
+    bot.team = 2;
+    bot.bot = true;
+    bot.alive = true;
+    bot.hp = PLAYER.MAX_HP;
+    const base = this.bases?.[2];
+    if (base) {
+      bot.x = base.x;
+      bot.y = base.y;
+    }
+    bot.spawnProtectionUntil = Date.now() + SPAWN_PROTECTION.DURATION_MS;
+    this.state.players.set(sessionId, bot);
+    if (!this.bots) this.bots = new Map();
+    this.bots.set(sessionId, new BotController(this, sessionId, bot));
+    this.botSessionId = sessionId;
   }
 
   endMatch() {
@@ -340,8 +369,30 @@ export class GameRoom extends Room {
 
     for (const id of remove) this.state.arrows.delete(id);
 
-    this.tickFlag(dt);
+    if (this.bots) {
+      this.bots.forEach((ctrl) => ctrl.tick(dt, now));
+    }
+
+    if (this.mode !== 'dm-bot') this.tickFlag(dt);
     this.tickRespawns(now);
+    if (this.mode === 'dm-bot') this.tickDeathmatch();
+  }
+
+  tickDeathmatch() {
+    if (this._matchEnded) return;
+    let humanKills = 0;
+    let botKills = 0;
+    this.state.players.forEach((p) => {
+      if (p.bot) botKills = Math.max(botKills, p.kills);
+      else humanKills = Math.max(humanKills, p.kills);
+    });
+    this.state.scoreTeam1 = humanKills;
+    this.state.scoreTeam2 = botKills;
+    if (humanKills >= DEATHMATCH.KILLS_TO_WIN || botKills >= DEATHMATCH.KILLS_TO_WIN) {
+      this._matchEnded = true;
+      this.endMatch();
+      this._matchEnded = false;
+    }
   }
 
   tickRespawns(now) {
@@ -457,7 +508,7 @@ export class GameRoom extends Room {
       });
     }
 
-    if (this.state.flag.carrierId === targetId) {
+    if (this.mode !== 'dm-bot' && this.state.flag.carrierId === targetId) {
       this.state.flag.carrierId = '';
       this.state.flag.x = target.x;
       this.state.flag.y = target.y;
@@ -488,14 +539,33 @@ export class GameRoom extends Room {
     player.alive = false;
     this.state.players.set(client.sessionId, player);
     this.joinCount++;
+    if (this.mode === 'dm-bot') this._autoAssignDmBot(player);
     this.updateMetadata();
     this.logEvent(LOG_EVENTS.JOIN, { name });
     console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size})`);
   }
 
+  _autoAssignDmBot(player) {
+    player.team = 1;
+    player.color = PLAYER_COLORS[0];
+    player.alive = true;
+    player.hp = PLAYER.MAX_HP;
+    player.respawnAt = 0;
+    player.kills = 0;
+    player.deaths = 0;
+    player.spawnProtectionUntil = Date.now() + SPAWN_PROTECTION.DURATION_MS;
+    const base = this.bases?.[1];
+    if (base) {
+      player.x = base.x;
+      player.y = base.y;
+      player.vx = 0;
+      player.vy = 0;
+    }
+  }
+
   async onLeave(client, consented) {
     const player = this.state.players.get(client.sessionId);
-    if (consented || !player) {
+    if (consented || !player || this.mode === 'dm-bot') {
       this._cleanupClient(client);
       return;
     }

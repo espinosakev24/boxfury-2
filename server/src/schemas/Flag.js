@@ -10,6 +10,7 @@ export class Flag extends Schema {
     this.carrierId = '';
     this.homeX = 0;
     this.homeY = 0;
+    this.disabled = false;
   }
 }
 
@@ -21,4 +22,5 @@ defineTypes(Flag, {
   carrierId: 'string',
   homeX: 'number',
   homeY: 'number',
+  disabled: 'boolean',
 });
