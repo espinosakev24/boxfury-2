@@ -179,6 +179,19 @@ export class GameRoom extends Room {
       this.state.arrows.set(id, arrow);
     });
 
+    this.onMessage(MESSAGES.CHAT, (client, payload) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      const now = Date.now();
+      const last = this._lastChatAt?.get(client.sessionId) ?? 0;
+      if (now - last < 500) return;
+      if (!this._lastChatAt) this._lastChatAt = new Map();
+      this._lastChatAt.set(client.sessionId, now);
+      const text = String(payload?.text ?? '').replace(/[\r\n\t]/g, ' ').trim().slice(0, 40);
+      if (!text) return;
+      this.broadcast(MESSAGES.CHAT, { sessionId: client.sessionId, text });
+    });
+
     this.onMessage(MESSAGES.CHANGE_MAP, (client, payload) => {
       let anyOnTeam = false;
       this.state.players.forEach((p) => { if (p.team !== 0) anyOnTeam = true; });
@@ -502,6 +515,7 @@ export class GameRoom extends Room {
     }
     this.state.players.delete(client.sessionId);
     this._lastShotAt?.delete(client.sessionId);
+    this._lastChatAt?.delete(client.sessionId);
     this.updateMetadata();
     if (player) this.logEvent(LOG_EVENTS.LEAVE, { name: player.name });
     console.log(`[room ${this.displayName}] -${client.sessionId} (${this.state.players.size})`);

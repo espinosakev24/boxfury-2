@@ -58,7 +58,39 @@ export class RemotePlayer {
     this.faceGfx.setDepth(13);
     this.bow.sprite.setDepth(14);
     this.nameText.setDepth(14);
+
+    this.chatBubble = scene.add.text(x, y - PLAYER.HEIGHT / 2 - 22, '', {
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '9px',
+      color: '#f5f5f0',
+      backgroundColor: 'rgba(21,21,31,0.9)',
+      padding: { x: 6, y: 3 },
+      align: 'center',
+      wordWrap: { width: 160 },
+    }).setOrigin(0.5, 1).setDepth(16).setVisible(false);
+
     this.buffer = [{ t: performance.now(), x, y, facing, bowAngle }];
+  }
+
+  showChatBubble(text) {
+    if (!this.chatBubble) return;
+    if (this._chatBubbleTimer) {
+      clearTimeout(this._chatBubbleTimer);
+      this._chatBubbleTimer = null;
+    }
+    this.chatBubble.setText(text);
+    this.chatBubble.setVisible(true);
+    this.chatBubble.setAlpha(1);
+    this._chatBubbleTimer = setTimeout(() => {
+      if (!this.chatBubble?.active) return;
+      this.scene.tweens.add({
+        targets: this.chatBubble,
+        alpha: 0,
+        duration: 250,
+        onComplete: () => this.chatBubble?.setVisible(false),
+      });
+      this._chatBubbleTimer = null;
+    }, 4000);
   }
 
   setCarryingFlag(carrying) {
@@ -266,6 +298,10 @@ export class RemotePlayer {
       const bob = this._bobY ?? 0;
       this.nameText.setPosition(this.sprite.x, this.sprite.y - PLAYER.HEIGHT / 2 - 6 + bob);
     }
+    if (this.chatBubble?.visible) {
+      const bob = this._bobY ?? 0;
+      this.chatBubble.setPosition(this.sprite.x, this.sprite.y - PLAYER.HEIGHT / 2 - 22 + bob);
+    }
 
     const dx = this.sprite.x - this._lastSyncX;
     this._lastSyncX = this.sprite.x;
@@ -319,5 +355,10 @@ export class RemotePlayer {
     this.legsGfx?.destroy();
     this.damageGfx?.destroy();
     this.faceGfx?.destroy();
+    if (this._chatBubbleTimer) {
+      clearTimeout(this._chatBubbleTimer);
+      this._chatBubbleTimer = null;
+    }
+    this.chatBubble?.destroy();
   }
 }

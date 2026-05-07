@@ -71,6 +71,8 @@ const TRANSLATIONS = {
     'log.mapChanged': 'changed map to',
 
     'capture.banner': 'captured the flag',
+
+    'chat.placeholder': 'Press Enter to send · Esc to cancel',
     'log.matchReset': 'New match starting',
 
     'pause.eyebrow': '◣ Paused',
@@ -206,6 +208,8 @@ const TRANSLATIONS = {
     'log.mapChanged': 'cambió el mapa a',
 
     'capture.banner': 'capturó la bandera',
+
+    'chat.placeholder': 'Enter para enviar · Esc para cancelar',
     'log.matchReset': 'Nueva partida iniciando',
 
     'pause.eyebrow': '◣ Pausa',

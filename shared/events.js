@@ -10,6 +10,7 @@ export const MESSAGES = {
   CHANGE_MAP: 'change_map',
   MAP_CHANGED: 'map_changed',
   LOG: 'log',
+  CHAT: 'chat',
 };
 
 export const LOG_EVENTS = {

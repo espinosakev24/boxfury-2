@@ -33,18 +33,41 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0);
 
     this._tabKeydown = (e) => {
+      if (this._chatOpen) return;
       if (e.key !== 'Tab') return;
       e.preventDefault();
       if (e.repeat) return;
       this.showScoreboard();
     };
     this._tabKeyup = (e) => {
+      if (this._chatOpen) return;
       if (e.key !== 'Tab') return;
       e.preventDefault();
       this.hideScoreboard();
     };
     window.addEventListener('keydown', this._tabKeydown);
     window.addEventListener('keyup', this._tabKeyup);
+
+    this._chatKeydown = (e) => {
+      if (this._chatOpen) return;
+      if (e.key !== 't' && e.key !== 'T') return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      this._openChat();
+    };
+    window.addEventListener('keydown', this._chatKeydown);
+
+    const chatInput = document.getElementById('chat-input');
+    chatInput?.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        const text = chatInput.value.trim();
+        if (text) this.network?.sendChat(text);
+        this._closeChat();
+      } else if (e.key === 'Escape') {
+        this._closeChat();
+      }
+    });
 
     this.events.once('shutdown', () => {
       this.hideTeamPicker();
@@ -55,6 +78,8 @@ export class GameScene extends Phaser.Scene {
       teardownEventLog();
       window.removeEventListener('keydown', this._tabKeydown);
       window.removeEventListener('keyup', this._tabKeyup);
+      if (this._chatKeydown)
+        window.removeEventListener('keydown', this._chatKeydown);
       if (this._muteListener)
         window.removeEventListener('boxfury:mute', this._muteListener);
       if (this._keysListener)
@@ -211,6 +236,7 @@ export class GameScene extends Phaser.Scene {
       if (payload?.type === LOG_EVENTS.CAPTURE)
         this._showCaptureBanner(payload);
     });
+    this.network.onChat((payload) => this._handleChat(payload));
 
     $(room.state).listen('mapId', (newId) => {
       if (!newId || !this.level) return;
@@ -254,6 +280,57 @@ export class GameScene extends Phaser.Scene {
   _handleReconnectFailed() {
     this._hideReconnectOverlay();
     this.registry.get('leaveGame')?.();
+  }
+
+  _openChat() {
+    const wrap = document.getElementById('chat-input-wrap');
+    const input = document.getElementById('chat-input');
+    if (!wrap || !input) return;
+    this._chatOpen = true;
+    if (this.player?.sprite?.body) {
+      this.player.sprite.body.setVelocityX(0);
+    }
+    if (this.player) {
+      this.player.charging = false;
+      this.player.setCrouching?.(false);
+    }
+    if (this.input?.keyboard) {
+      this.input.keyboard.resetKeys();
+      this.input.keyboard.enabled = false;
+    }
+    wrap.classList.remove('hidden');
+    input.value = '';
+    input.focus();
+  }
+
+  _closeChat() {
+    const wrap = document.getElementById('chat-input-wrap');
+    const input = document.getElementById('chat-input');
+    if (input) {
+      input.value = '';
+      input.blur();
+    }
+    if (wrap) wrap.classList.add('hidden');
+    this._chatOpen = false;
+    if (this.input?.keyboard) {
+      this.input.keyboard.enabled = true;
+      this.input.keyboard.resetKeys();
+    }
+    if (this.player?.sprite?.body) {
+      this.player.sprite.body.setVelocityX(0);
+    }
+  }
+
+  _handleChat(payload) {
+    if (!payload?.text) return;
+    const target = this.findPlayer(payload.sessionId);
+    target?.showChatBubble?.(payload.text);
+  }
+
+  _playDeathSound(volume = 0.5) {
+    if (this.cache?.audio?.exists('player-death')) {
+      this.sound.play('player-death', { volume });
+    }
   }
 
   _playFlagDropSound() {
@@ -677,14 +754,17 @@ export class GameScene extends Phaser.Scene {
       }
       const remote = this.remotes.get(sessionId);
       if (!remote) return;
-      if (!p.alive && !remote.dead) remote.playDeathAnim();
-      else if (p.alive && remote.dead) remote.resetVisual();
+      if (!p.alive && !remote.dead) {
+        remote.playDeathAnim();
+        this._playDeathSound(0.35);
+      } else if (p.alive && remote.dead) remote.resetVisual();
     });
   }
 
   enterDeath(me) {
     this.deathState = { respawnAt: me.respawnAt };
     this.player.playDeathAnim();
+    this._playDeathSound(0.6);
     this.player.sprite.body.setVelocity(0, 0);
     this.player.sprite.body.enable = false;
     const cam = this.cameras.main;
@@ -1011,23 +1091,27 @@ export class GameScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.syncDeath();
     if (this.player && !this.deathState) {
-      this.player.setCrouching(this.isDown('down'));
-      if (this.justDown('down')) this._handleDownTap();
-      this.player.move({
-        left: this.isDown('left'),
-        right: this.isDown('right'),
-        lockFacing: this.isDown('up'),
-      });
-      if (this.isDown('up')) this.player.jump();
+      if (!this._chatOpen) {
+        this.player.setCrouching(this.isDown('down'));
+        if (this.justDown('down')) this._handleDownTap();
+        this.player.move({
+          left: this.isDown('left'),
+          right: this.isDown('right'),
+          lockFacing: this.isDown('up'),
+        });
+        if (this.isDown('up')) this.player.jump();
 
-      if (this.justDown('flag')) {
-        this.toggleFlag();
-      }
-      if (this.isDown('space')) {
-        this.player.chargeBow();
+        if (this.justDown('flag')) {
+          this.toggleFlag();
+        }
+        if (this.isDown('space')) {
+          this.player.chargeBow();
+        } else {
+          const shot = this.player.releaseBow();
+          if (shot) this.network.sendShoot(shot);
+        }
       } else {
-        const shot = this.player.releaseBow();
-        if (shot) this.network.sendShoot(shot);
+        this.player.sprite.body.setVelocityX(0);
       }
 
       this.player.update(dt);
@@ -1037,6 +1121,13 @@ export class GameScene extends Phaser.Scene {
         this.player.nameText.setPosition(
           this.player.sprite.x,
           this.player.sprite.y - PLAYER.HEIGHT / 2 - 6 + bob,
+        );
+      }
+      if (this.player.chatBubble?.visible) {
+        const bob = this.player._bobY ?? 0;
+        this.player.chatBubble.setPosition(
+          this.player.sprite.x,
+          this.player.sprite.y - PLAYER.HEIGHT / 2 - 22 + bob,
         );
       }
     }

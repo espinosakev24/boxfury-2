@@ -107,6 +107,10 @@ export class NetworkManager {
     this.room?.send(MESSAGES.CHANGE_MAP, { mapId });
   }
 
+  sendChat(text) {
+    this.room?.send(MESSAGES.CHAT, { text });
+  }
+
   onHit(cb) {
     this.room?.onMessage(MESSAGES.HIT, cb);
   }
@@ -121,6 +125,10 @@ export class NetworkManager {
 
   onLog(cb) {
     this.room?.onMessage(MESSAGES.LOG, cb);
+  }
+
+  onChat(cb) {
+    this.room?.onMessage(MESSAGES.CHAT, cb);
   }
 
   async disconnect() {
