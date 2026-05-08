@@ -216,10 +216,16 @@ export class GameScene extends Phaser.Scene {
       if (arrowState.shooterId !== this.network.sessionId) {
         const shooter = this.findPlayer(arrowState.shooterId);
         shooter?.bow?.triggerSnap?.();
+        const arrow = new Arrow(this, arrowState);
+        this.arrows.set(id, arrow);
+        $(arrowState).onChange(() => arrow.applyState(arrowState));
+        return;
       }
       const adopted = this._adoptGhostFor(arrowState, id);
       if (adopted) {
-        $(arrowState).onChange(() => adopted.applyState(arrowState));
+        $(arrowState).onChange(() => {
+          if (arrowState.stuck && !adopted.stuck) adopted.applyState(arrowState);
+        });
         return;
       }
       const arrow = new Arrow(this, arrowState);
@@ -533,7 +539,7 @@ export class GameScene extends Phaser.Scene {
     this.arrows.delete(pending.id);
     this.arrows.set(serverId, ghost);
     ghost._isGhost = false;
-    ghost.applyState(arrowState);
+    if (arrowState.stuck) ghost.applyState(arrowState);
     return ghost;
   }
 
