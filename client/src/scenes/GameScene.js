@@ -16,6 +16,8 @@ export class GameScene extends Phaser.Scene {
     super('GameScene');
     this.remotes = new Map();
     this.arrows = new Map();
+    this._pendingGhosts = [];
+    this._ghostSeq = 0;
   }
 
   async create() {
@@ -215,6 +217,11 @@ export class GameScene extends Phaser.Scene {
         const shooter = this.findPlayer(arrowState.shooterId);
         shooter?.bow?.triggerSnap?.();
       }
+      const adopted = this._adoptGhostFor(arrowState, id);
+      if (adopted) {
+        $(arrowState).onChange(() => adopted.applyState(arrowState));
+        return;
+      }
       const arrow = new Arrow(this, arrowState);
       this.arrows.set(id, arrow);
       $(arrowState).onChange(() => arrow.applyState(arrowState));
@@ -266,6 +273,7 @@ export class GameScene extends Phaser.Scene {
     this.remotes.clear();
     for (const arrow of this.arrows.values()) arrow.destroy();
     this.arrows.clear();
+    this._pendingGhosts.length = 0;
     this.flagCarrierId = '';
     this.deathState = null;
     this.hideDeathOverlay();
@@ -492,6 +500,53 @@ export class GameScene extends Phaser.Scene {
     if (target === this.player) {
       this.player.applyKnockback(knockX, knockY);
       this.cameras.main.shake(140, 0.006);
+    }
+  }
+
+  _spawnGhostArrow(shot) {
+    const ghostId = `ghost-${++this._ghostSeq}`;
+    const ghostState = {
+      shooterId: this.network.sessionId,
+      x: shot.x,
+      y: shot.y,
+      vx: shot.vx,
+      vy: shot.vy,
+      stuck: false,
+      stuckToId: '',
+      stuckOffsetX: 0,
+      stuckOffsetY: 0,
+      stuckFacing: 1,
+    };
+    const ghost = new Arrow(this, ghostState);
+    ghost._isGhost = true;
+    ghost._ghostBornAt = performance.now();
+    this.arrows.set(ghostId, ghost);
+    this._pendingGhosts.push({ id: ghostId, t: ghost._ghostBornAt });
+  }
+
+  _adoptGhostFor(arrowState, serverId) {
+    if (arrowState.shooterId !== this.network.sessionId) return null;
+    const pending = this._pendingGhosts.shift();
+    if (!pending) return null;
+    const ghost = this.arrows.get(pending.id);
+    if (!ghost) return null;
+    this.arrows.delete(pending.id);
+    this.arrows.set(serverId, ghost);
+    ghost._isGhost = false;
+    ghost.applyState(arrowState);
+    return ghost;
+  }
+
+  _expireOrphanGhosts(now) {
+    if (this._pendingGhosts.length === 0) return;
+    const STALE_MS = 1500;
+    while (this._pendingGhosts.length && now - this._pendingGhosts[0].t > STALE_MS) {
+      const stale = this._pendingGhosts.shift();
+      const ghost = this.arrows.get(stale.id);
+      if (ghost) {
+        ghost.destroy();
+        this.arrows.delete(stale.id);
+      }
     }
   }
 
@@ -1124,7 +1179,10 @@ export class GameScene extends Phaser.Scene {
           this.player.chargeBow();
         } else {
           const shot = this.player.releaseBow();
-          if (shot) this.network.sendShoot(shot);
+          if (shot) {
+            this.network.sendShoot(shot);
+            this._spawnGhostArrow(shot);
+          }
         }
       } else {
         this.player.sprite.body.setVelocityX(0);
@@ -1153,6 +1211,7 @@ export class GameScene extends Phaser.Scene {
     if (this.scoreboardOpen) this.renderScoreboard();
     for (const r of this.remotes.values()) r.update();
     for (const a of this.arrows.values()) a.update(dt);
+    this._expireOrphanGhosts(performance.now());
   }
 }
 
