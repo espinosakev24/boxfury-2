@@ -3,15 +3,11 @@ export const WORLD = {
   HEIGHT: 720,
 };
 
-export const TICK_RATE = 30;
-
 export const NETWORK = {
-  SEND_RATE: 30,
-  PATCH_RATE: 30,
-  INTERP_DELAY_MS: 100,
+  SEND_RATE: 60,
+  PATCH_RATE: 60,
+  INTERP_DELAY_MS: 60,
 };
-
-// export const COLORS = [0x4ade80, 0xf87171, 0x60a5fa, 0xfbbf24, 0xa78bfa, 0xf472b6];
 
 export const PLAYER = {
   SPEED: 270,
@@ -115,5 +111,4 @@ export const GAME = {
   ZOOM_ENABLED: true,
   ZOOM: 1.8,
   CAMERA_LERP: 0.12,
-  DEBUG_DUMMY: false,
 };

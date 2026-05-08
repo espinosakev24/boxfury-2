@@ -69,6 +69,12 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
+    this._visibilityHandler = () => {
+      if (document.hidden) this._onTabHidden();
+      else this._onTabVisible();
+    };
+    document.addEventListener('visibilitychange', this._visibilityHandler);
+
     this.events.once('shutdown', () => {
       this.hideTeamPicker();
       this.hideHud();
@@ -84,6 +90,8 @@ export class GameScene extends Phaser.Scene {
         window.removeEventListener('boxfury:mute', this._muteListener);
       if (this._keysListener)
         window.removeEventListener('boxfury:keys', this._keysListener);
+      if (this._visibilityHandler)
+        document.removeEventListener('visibilitychange', this._visibilityHandler);
       this.network?.disconnect();
     });
 
@@ -246,7 +254,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.flagCarrierId = '';
-    if (this.level.flag) this.level.flag.applyState(room.state.flag);
+    if (this.level.flag && room.state.flag) this.level.flag.applyState(room.state.flag);
   }
 
   _showReconnectOverlay() {
@@ -319,6 +327,20 @@ export class GameScene extends Phaser.Scene {
     if (this.player?.sprite?.body) {
       this.player.sprite.body.setVelocityX(0);
     }
+  }
+
+  _onTabHidden() {
+    this.player?._stopWalkSfx?.();
+    this.player?._stopChargeSfx?.();
+    if (this.input?.keyboard) this.input.keyboard.resetKeys();
+    if (this.sound) this.sound.mute = true;
+  }
+
+  _onTabVisible() {
+    if (this.input?.keyboard) this.input.keyboard.resetKeys();
+    this.time.delayedCall(200, () => {
+      if (this.sound) this.sound.mute = !!window.boxfuryMuted;
+    });
   }
 
   _handleChat(payload) {

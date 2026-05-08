@@ -2,10 +2,8 @@ import { Room } from 'colyseus';
 import {
   ARROW,
   BOT,
-  COLORS,
   DEATHMATCH,
   FLAG,
-  GAME,
   HIT,
   MESSAGES,
   NETWORK,
@@ -233,7 +231,6 @@ export class GameRoom extends Room {
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / PHYSICS.TICK_HZ);
 
-    if (GAME.DEBUG_DUMMY) this.spawnDummy();
     if (this.mode === 'dm-bot') {
       this.setPrivate(true);
       this.spawnBot();
@@ -306,16 +303,6 @@ export class GameRoom extends Room {
       p.captures = 0;
     });
     this.updateMetadata();
-  }
-
-  spawnDummy() {
-    const dummy = new Player(COLORS.P3_AZURE);
-    dummy.name = 'DUMMY';
-    dummy.team = 0;
-    dummy.x = 640;
-    dummy.y = 648;
-    dummy.facing = -1;
-    this.state.players.set('dummy', dummy);
   }
 
   tick(dtMs) {
