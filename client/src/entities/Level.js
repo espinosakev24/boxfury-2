@@ -5,6 +5,7 @@ export class Level {
   constructor(scene, mapId = DEFAULT_MAP_ID) {
     this.scene = scene;
     this.platforms = scene.physics.add.staticGroup();
+    this.solids = scene.physics.add.staticGroup();
     this.markers = [];
     this.flag = null;
     this.mapId = mapId;
@@ -18,6 +19,7 @@ export class Level {
   rebuild(mapId) {
     this.mapId = mapId;
     this.platforms.clear(true, true);
+    this.solids.clear(true, true);
     for (const m of this.markers) m.destroy?.();
     this.markers = [];
     if (this.flag) {
@@ -48,6 +50,12 @@ export class Level {
         COLORS.BONE,
       );
       this.platforms.add(line);
+    }
+    if (this.map.solidWalls) {
+      for (const w of this.map.solidWalls) {
+        const block = this.scene.add.rectangle(w.x, w.y, w.w, w.h, COLORS.BONE);
+        this.solids.add(block);
+      }
     }
   }
 

@@ -462,6 +462,15 @@ export class GameRoom extends Room {
       const right = wall.x + wall.w / 2;
       if (x >= left && x <= right && y >= top && y <= bottom) return true;
     }
+    if (this.map.solidWalls) {
+      for (const w of this.map.solidWalls) {
+        const top = w.y - w.h / 2;
+        const bottom = w.y + w.h / 2;
+        const left = w.x - w.w / 2;
+        const right = w.x + w.w / 2;
+        if (x >= left && x <= right && y >= top && y <= bottom) return true;
+      }
+    }
     return false;
   }
 

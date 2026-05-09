@@ -11,6 +11,7 @@ export const TILE = {
 export const TILES = {
   EMPTY: '.',
   WALL: '=',
+  SOLID: '#',
   TEAM1_BASE: 'J',
   TEAM2_BASE: 'C',
   FLAG: 'F',
@@ -24,13 +25,13 @@ export const MAPS = {
     '....J............................................C...',
     '...===.........................................===...',
     '.....................................................',
-    '..........====.........................====..........',
+    '..........====...........#.............====..........',
+    '.........................#...........................',
+    '................====.....#.......====................',
+    '.........................#...........................',
+    '.........====............#............====...........',
     '.....................................................',
-    '................====.............====................',
-    '.....................................................',
-    '.........====.........................====...........',
-    '.....................................................',
-    '....====.................................====........',
+    '....====...........###.........###.......====........',
     '.....................................................',
     '..............====.............====..................',
     '..........................F..........................',
@@ -94,22 +95,31 @@ export function parseMap(mapString = DEFAULT_MAP) {
   const width = rows.reduce((m, r) => Math.max(m, r.length), 0);
 
   const walls = [];
+  const solidWalls = [];
   const bases = { team1: null, team2: null };
   let flag = null;
 
   for (let y = 0; y < height; y++) {
     const row = rows[y];
-    let runStart = -1;
+    let wallRunStart = -1;
+    let solidRunStart = -1;
     for (let x = 0; x <= width; x++) {
       const ch = row[x];
+
       if (ch === TILES.WALL) {
-        if (runStart === -1) runStart = x;
-        continue;
+        if (wallRunStart === -1) wallRunStart = x;
+      } else if (wallRunStart !== -1) {
+        walls.push(makeWall(wallRunStart, x - 1, y));
+        wallRunStart = -1;
       }
-      if (runStart !== -1) {
-        walls.push(makeWall(runStart, x - 1, y));
-        runStart = -1;
+
+      if (ch === TILES.SOLID) {
+        if (solidRunStart === -1) solidRunStart = x;
+      } else if (solidRunStart !== -1) {
+        solidWalls.push(makeSolid(solidRunStart, x - 1, y));
+        solidRunStart = -1;
       }
+
       if (ch === TILES.TEAM1_BASE) bases.team1 = tileCenter(x, y);
       else if (ch === TILES.TEAM2_BASE) bases.team2 = tileCenter(x, y);
       else if (ch === TILES.FLAG) flag = tileCenter(x, y);
@@ -123,6 +133,7 @@ export function parseMap(mapString = DEFAULT_MAP) {
     pixelWidth: width * TILE.WIDTH,
     pixelHeight: height * TILE.HEIGHT,
     walls,
+    solidWalls,
     bases,
     flag,
   };
@@ -136,6 +147,18 @@ function tileCenter(tx, ty) {
 }
 
 function makeWall(startX, endX, ty) {
+  const tiles = endX - startX + 1;
+  const w = tiles * TILE.WIDTH;
+  const h = TILE.HEIGHT;
+  return {
+    x: startX * TILE.WIDTH + w / 2,
+    y: ty * TILE.HEIGHT + h / 2,
+    w,
+    h,
+  };
+}
+
+function makeSolid(startX, endX, ty) {
   const tiles = endX - startX + 1;
   const w = tiles * TILE.WIDTH;
   const h = TILE.HEIGHT;

@@ -625,7 +625,8 @@ export class GameScene extends Phaser.Scene {
       name,
       skin,
     });
-    this.physics.add.collider(this.player.sprite, this.level.platforms);
+    this.player._platformCollider = this.physics.add.collider(this.player.sprite, this.level.platforms);
+    if (this.level.solids) this.physics.add.collider(this.player.sprite, this.level.solids);
 
     const cam = this.cameras.main;
     const mapBiggerThanViewport =

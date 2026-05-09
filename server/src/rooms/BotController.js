@@ -308,8 +308,29 @@ export class BotController {
 
     const map = this.room.map;
     const prevBottom = p.y + HALF_H;
+    const prevX = p.x;
+
     p.x += p.vx * dt;
     p.x = clamp(p.x, HALF_W, map.pixelWidth - HALF_W);
+    if (map.solidWalls) {
+      for (const w of map.solidWalls) {
+        const wLeft = w.x - w.w / 2;
+        const wRight = w.x + w.w / 2;
+        const wTop = w.y - w.h / 2;
+        const wBottom = w.y + w.h / 2;
+        const top = p.y - HALF_H;
+        const bottom = p.y + HALF_H;
+        if (top >= wBottom || bottom <= wTop) continue;
+        if (p.x + HALF_W > wLeft && p.x - HALF_W < wRight) {
+          if (p.vx > 0) p.x = wLeft - HALF_W;
+          else if (p.vx < 0) p.x = wRight + HALF_W;
+          else p.x = prevX;
+          p.vx = 0;
+          break;
+        }
+      }
+    }
+
     p.y += p.vy * dt;
 
     let landed = false;
@@ -327,6 +348,28 @@ export class BotController {
           landed = true;
           break;
         }
+      }
+    }
+
+    if (!landed && map.solidWalls) {
+      for (const w of map.solidWalls) {
+        const wLeft = w.x - w.w / 2;
+        const wRight = w.x + w.w / 2;
+        const wTop = w.y - w.h / 2;
+        const wBottom = w.y + w.h / 2;
+        if (p.x + HALF_W <= wLeft || p.x - HALF_W >= wRight) continue;
+        const top = p.y - HALF_H;
+        const bottom = p.y + HALF_H;
+        if (top >= wBottom || bottom <= wTop) continue;
+        if (p.vy > 0) {
+          p.y = wTop - HALF_H;
+          p.vy = 0;
+          landed = true;
+        } else if (p.vy < 0) {
+          p.y = wBottom + HALF_H;
+          p.vy = 0;
+        }
+        break;
       }
     }
 

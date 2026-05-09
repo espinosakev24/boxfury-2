@@ -120,7 +120,7 @@ export class Player {
   dropThrough() {
     const body = this.sprite.body;
     if (!body) return;
-    body.checkCollision.down = false;
+    if (this._platformCollider) this._platformCollider.active = false;
     body.setVelocityY(110);
     this._resetScaleTweens();
     this.scene.tweens.chain({
@@ -137,7 +137,7 @@ export class Player {
       0.5,
     );
     this.scene.time.delayedCall(240, () => {
-      if (this.sprite?.body) this.sprite.body.checkCollision.down = true;
+      if (this._platformCollider) this._platformCollider.active = true;
     });
   }
 
