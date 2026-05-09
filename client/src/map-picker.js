@@ -71,38 +71,54 @@ function drawPreview(canvas, mapId) {
   ctx.clearRect(0, 0, PREVIEW_W, PREVIEW_H);
 
   const data = parseMap(getMap(mapId));
-  const sx = PREVIEW_W / WORLD.WIDTH;
-  const sy = PREVIEW_H / WORLD.HEIGHT;
+  const fit = Math.min(PREVIEW_W / data.pixelWidth, PREVIEW_H / data.pixelHeight);
+  const drawW = data.pixelWidth * fit;
+  const drawH = data.pixelHeight * fit;
+  const ox = (PREVIEW_W - drawW) / 2;
+  const oy = (PREVIEW_H - drawH) / 2;
 
   ctx.fillStyle = '#15151f';
   ctx.fillRect(0, 0, PREVIEW_W, PREVIEW_H);
 
+  ctx.fillStyle = '#1f1f2c';
+  ctx.fillRect(ox, oy, drawW, drawH);
+
   ctx.fillStyle = '#f5f5f0';
   for (const wall of data.walls) {
-    const x = (wall.x - wall.w / 2) * sx;
-    const y = (wall.y - wall.h / 2) * sy;
-    const w = Math.max(1, wall.w * sx);
-    const h = Math.max(1.5, wall.h * sy);
+    const x = ox + (wall.x - wall.w / 2) * fit;
+    const y = oy + (wall.y - wall.h / 2) * fit;
+    const w = Math.max(1, wall.w * fit);
+    const h = Math.max(1.5, wall.h * fit);
     ctx.fillRect(x, y, w, h);
   }
 
-  if (data.bases.team1) drawBase(ctx, data.bases.team1, '#4ee08a', sx, sy);
-  if (data.bases.team2) drawBase(ctx, data.bases.team2, '#ff5470', sx, sy);
-  if (data.flag) drawFlag(ctx, data.flag, sx, sy);
+  if (data.solidWalls) {
+    for (const w of data.solidWalls) {
+      const x = ox + (w.x - w.w / 2) * fit;
+      const y = oy + (w.y - w.h / 2) * fit;
+      const ww = Math.max(1, w.w * fit);
+      const hh = Math.max(1, w.h * fit);
+      ctx.fillRect(x, y, ww, hh);
+    }
+  }
+
+  if (data.bases.team1) drawBase(ctx, data.bases.team1, '#4ee08a', fit, ox, oy);
+  if (data.bases.team2) drawBase(ctx, data.bases.team2, '#ff5470', fit, ox, oy);
+  if (data.flag) drawFlag(ctx, data.flag, fit, ox, oy);
 }
 
-function drawBase(ctx, pos, color, sx, sy) {
+function drawBase(ctx, pos, color, fit, ox, oy) {
   const size = 6;
-  const x = pos.x * sx - size / 2;
-  const y = pos.y * sy - size / 2;
+  const x = ox + pos.x * fit - size / 2;
+  const y = oy + pos.y * fit - size / 2;
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.5;
   ctx.strokeRect(x, y, size, size);
 }
 
-function drawFlag(ctx, pos, sx, sy) {
-  const x = pos.x * sx;
-  const y = pos.y * sy;
+function drawFlag(ctx, pos, fit, ox, oy) {
+  const x = ox + pos.x * fit;
+  const y = oy + pos.y * fit;
   ctx.strokeStyle = '#ffd84e';
   ctx.lineWidth = 1.5;
   ctx.beginPath();

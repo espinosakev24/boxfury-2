@@ -1,11 +1,10 @@
 import { NetworkManager } from './network/NetworkManager.js';
 
-export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
+export function setupMenu({ onJoin, onCreate, onTest }) {
   const menu = document.getElementById('menu');
   const findBtn = document.getElementById('btn-find');
   const createBtn = document.getElementById('btn-create');
   const testBtn = document.getElementById('btn-test');
-  const soloBtn = document.getElementById('btn-solo');
 
   const lobby = document.getElementById('lobby-overlay');
   const lobbyClose = document.getElementById('lobby-close');
@@ -112,10 +111,6 @@ export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
 
   findBtn.addEventListener('click', openLobby);
   createBtn.addEventListener('click', create);
-  soloBtn?.addEventListener('click', () => {
-    closeLobby();
-    onSolo?.();
-  });
   testBtn?.addEventListener('click', () => {
     closeLobby();
     onTest?.();
@@ -133,10 +128,6 @@ export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
     if (!menu.classList.contains('hidden') && lobby.classList.contains('hidden') && !createOpen) {
       if (e.key === 'Enter') openLobby();
       else if (e.key === 'c' || e.key === 'C') create();
-      else if (e.key === 'p' || e.key === 'P') {
-        closeLobby();
-        onSolo?.();
-      }
       else if (e.key === 't' || e.key === 'T') {
         closeLobby();
         onTest?.();

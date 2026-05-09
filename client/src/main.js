@@ -122,15 +122,6 @@ setupCreateRoom({
 setupMenu({
   onJoin: (roomId) => startGame({ mode: 'join', roomId }),
   onCreate: () => openCreateRoom(),
-  onSolo: () => startGame({
-    mode: 'create',
-    options: {
-      roomName: 'SOLO',
-      mode: 'dm-bot',
-      maxPlayers: 2,
-      maxPoints: 5,
-    },
-  }),
   onTest: () => startGame({
     mode: 'create',
     autoTeam: 1,

@@ -183,11 +183,18 @@ function syncTextarea() {
 }
 
 function exportText() {
-  return state.grid.map((row) => row.join('')).join('\n');
+  const rows = state.grid.map((row) => `  '${row.join('')}',`).join('\n');
+  return `[\n${rows}\n].join('\\n')`;
 }
 
 function loadFromText(text) {
-  const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
+  let lines;
+  const quoted = [...text.matchAll(/'([^'\n]*)'/g)].map((m) => m[1]);
+  if (quoted.length > 0) {
+    lines = quoted.filter((l) => l.length > 0);
+  } else {
+    lines = text.split(/\r?\n/).filter((l) => l.length > 0);
+  }
   if (lines.length === 0) return false;
   const cols = Math.max(...lines.map((l) => l.length));
   const rows = lines.length;

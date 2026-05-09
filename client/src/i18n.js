@@ -6,7 +6,6 @@ const TRANSLATIONS = {
     'menu.tagline': 'Up to four boxes. One line. Last shape standing wins.',
     'menu.findGame': 'Find game',
     'menu.createGame': 'Create game',
-    'menu.solo': 'Single player (1v1 bot)',
     'rotate.title': 'Rotate your device',
     'rotate.sub': 'Boxfury is best in landscape.',
     'menu.settings': 'Settings',
@@ -54,6 +53,7 @@ const TRANSLATIONS = {
     'createRoom.submit': 'Create room',
 
     'mode.ctf': 'Capture the flag',
+    'mode.dm': 'Deathmatch',
 
     'map.default': 'Classic',
     'map.open': 'Open arena',
@@ -146,7 +146,6 @@ const TRANSLATIONS = {
     'menu.tagline': 'Hasta cuatro cajas. Una línea. La última en pie gana.',
     'menu.findGame': 'Buscar partida',
     'menu.createGame': 'Crear partida',
-    'menu.solo': 'Un jugador (1v1 bot)',
     'rotate.title': 'Gira tu dispositivo',
     'rotate.sub': 'Boxfury se juega mejor en horizontal.',
     'menu.settings': 'Ajustes',
@@ -194,6 +193,7 @@ const TRANSLATIONS = {
     'createRoom.submit': 'Crear sala',
 
     'mode.ctf': 'Captura la bandera',
+    'mode.dm': 'Combate a muerte',
 
     'map.default': 'Clásico',
     'map.open': 'Arena abierta',
