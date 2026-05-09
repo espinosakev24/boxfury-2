@@ -1364,7 +1364,7 @@ input, textarea {
   position: fixed;
   inset: auto 0 0 0;
   padding: 12px 14px max(12px, env(safe-area-inset-bottom)) 14px;
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: flex-end;
   gap: 12px;
@@ -1373,6 +1373,9 @@ input, textarea {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+}
+@media (pointer: coarse), (max-width: 900px), (max-height: 600px) {
+  #touch-controls:not(.hidden) { display: flex; }
 }
 
 .touch__cluster {
@@ -1432,6 +1435,50 @@ input, textarea {
 .touch__btn--jump {
   width: 70px;
   height: 70px;
+}
+
+.joystick {
+  pointer-events: auto;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(21, 21, 31, 0.45);
+  border: 1.5px solid rgba(245, 245, 240, 0.35);
+  backdrop-filter: blur(2px);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.joystick__label {
+  position: absolute;
+  font-size: 14px;
+  color: rgba(245, 245, 240, 0.55);
+  pointer-events: none;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+.joystick__label--up    { top: 6px;    left: 50%; transform: translateX(-50%); }
+.joystick__label--right { right: 6px;  top: 50%;  transform: translateY(-50%); }
+.joystick__label--down  { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.joystick__label--left  { left: 6px;   top: 50%;  transform: translateY(-50%); }
+.joystick__knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  background: rgba(245, 245, 240, 0.18);
+  border: 1.5px solid rgba(245, 245, 240, 0.5);
+  pointer-events: none;
+  transition: transform 80ms ease, background 80ms ease;
+  will-change: transform;
+}
+.joystick.is-active .joystick__knob {
+  background: rgba(78, 224, 138, 0.35);
+  border-color: var(--p1);
+  transition: background 80ms ease;
 }
 
 .touch__menu {
