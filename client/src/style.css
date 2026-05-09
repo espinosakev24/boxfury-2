@@ -1538,11 +1538,55 @@ input, textarea {
 }
 
 /* Phone landscape (short height) */
-@media (max-height: 480px) and (orientation: landscape) {
+@media (max-height: 600px) and (orientation: landscape) {
   .menu__left { padding: 16px 24px; }
   .wordmark { font-size: clamp(48px, 7vw, 96px); margin: 8px 0 12px; }
   .menu__actions { margin-top: 12px; gap: 6px; }
   .btn { padding: 10px 14px; }
   .menu__footer { display: none; }
+
+  /* Two-column layout inside overlay panels so fields fit landscape without scroll */
+  .overlay { padding: 12px 16px; }
+  .overlay__panel {
+    max-width: 720px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 18px;
+    row-gap: 0;
+  }
+  .overlay__panel--wide { max-width: 820px; }
+  .overlay__header,
+  .overlay__title,
+  .settings__actions,
+  .map-picker__grid,
+  .skin-picker__grid {
+    grid-column: 1 / -1;
+  }
+  .overlay__title {
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+  .settings__field { margin-bottom: 10px; }
+  .settings__label { margin-bottom: 4px; }
+  .settings__input { padding: 8px 10px; }
+  .settings__radio { padding: 8px 10px; font-size: 12px; }
+  .settings__skin-trigger { padding: 8px 12px; }
+  .settings__actions {
+    margin-top: 8px;
+    flex-direction: row;
+  }
+  .settings__actions .btn { padding: 10px 14px; }
+
+  /* Pause menu: 2-column action list */
+  #game-menu .overlay__panel { max-width: 640px; }
+  .overlay__actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .overlay__actions .btn { padding: 10px 14px; }
 }
 .room__sub { color: var(--bf-mute); font-size: 10px; margin-left: auto; }
