@@ -48,11 +48,16 @@ export function setupUiSounds() {
   });
 }
 
+function isExcluded(el) {
+  return !!el && (el.closest('#touch-controls') || el.closest('#hud') || el.closest('#event-log'));
+}
+
 function onMouseOver(e) {
   const target = e.target?.closest?.(SELECTOR);
   if (!target || target === lastHoverEl) return;
   lastHoverEl = target;
   if (target.disabled) return;
+  if (isExcluded(target)) return;
   const now = performance.now();
   if (now - lastHoverAt < HOVER_DEBOUNCE_MS) return;
   lastHoverAt = now;
@@ -70,6 +75,7 @@ function onMouseOut(e) {
 function onClick(e) {
   const target = e.target?.closest?.(SELECTOR);
   if (!target || target.disabled) return;
+  if (isExcluded(target)) return;
   play(clickAudio);
 }
 

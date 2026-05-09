@@ -5,6 +5,7 @@ const KEY_CODES = {
   ArrowDown: 40,
   ' ': 32,
   x: 88,
+  Escape: 27,
 };
 
 function dispatchKey(type, key) {
@@ -16,18 +17,36 @@ function dispatchKey(type, key) {
     bubbles: true,
     cancelable: true,
   };
-  window.dispatchEvent(new KeyboardEvent(type, opts));
   document.dispatchEvent(new KeyboardEvent(type, opts));
 }
 
 function isTouchDevice() {
-  return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  return (
+    navigator.maxTouchPoints > 0 ||
+    matchMedia('(pointer: coarse)').matches ||
+    'ontouchstart' in window
+  );
+}
+
+function preventZoomGestures() {
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('gesturechange', (e) => e.preventDefault());
+  document.addEventListener('gestureend', (e) => e.preventDefault());
+  document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 350) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
 }
 
 export function setupTouchControls() {
   const wrap = document.getElementById('touch-controls');
   if (!wrap) return;
   if (!isTouchDevice()) return;
+
+  preventZoomGestures();
 
   const game = document.getElementById('game');
   if (!game) return;

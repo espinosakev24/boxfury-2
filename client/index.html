@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Boxfury</title>
   </head>
   <body>
@@ -120,7 +120,16 @@
 
     <div id="game" class="hidden"></div>
 
+    <div id="rotate-overlay" class="rotate-overlay">
+      <div class="rotate-overlay__inner">
+        <div class="rotate-overlay__icon">⟳</div>
+        <div class="rotate-overlay__title" data-i18n="rotate.title">Rotate your device</div>
+        <div class="rotate-overlay__sub" data-i18n="rotate.sub">Boxfury is best in landscape.</div>
+      </div>
+    </div>
+
     <div id="touch-controls" class="touch hidden" aria-hidden="true">
+      <button id="touch-menu-btn" class="touch__menu" data-touch-key="Escape" aria-label="Open menu">☰</button>
       <div class="touch__cluster touch__cluster--left">
         <button class="touch__btn touch__btn--dir" data-touch-key="ArrowLeft" aria-label="Move left">◀</button>
         <button class="touch__btn touch__btn--dir" data-touch-key="ArrowRight" aria-label="Move right">▶</button>
