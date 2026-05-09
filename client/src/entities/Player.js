@@ -298,7 +298,10 @@ export class Player {
   }
 
   jump() {
+    const now = performance.now();
+    if (this._lastJumpAt && now - this._lastJumpAt < PLAYER.JUMP_COOLDOWN_MS) return;
     if (this.sprite.body.blocked.down || this.sprite.body.touching.down) {
+      this._lastJumpAt = now;
       this.sprite.body.setVelocityY(-PLAYER.JUMP_SPEED);
       this.playJumpCrouch();
       if (this.scene.cache?.audio?.exists('jump')) {

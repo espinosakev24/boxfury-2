@@ -316,6 +316,9 @@ export class GameRoom extends Room {
         return;
       }
 
+      const prevX = arrow.x;
+      const prevY = arrow.y;
+
       arrow.vy += PHYSICS.GRAVITY * dt;
       arrow.x += arrow.vx * dt;
       arrow.y += arrow.vy * dt;
@@ -325,7 +328,18 @@ export class GameRoom extends Room {
         return;
       }
 
-      if (this.hitsWall(arrow.x, arrow.y)) {
+      const playerHit = this.sweepArrowAgainstPlayers(arrow, prevX, prevY, now);
+      const wallHit = this.sweepArrowAgainstWalls(prevX, prevY, arrow.x, arrow.y);
+
+      if (playerHit && (!wallHit || playerHit.t <= wallHit.t)) {
+        const { target, pid, x, y } = playerHit;
+        arrow.x = x;
+        arrow.y = y;
+        arrow.stuckToId = pid;
+        arrow.stuckOffsetX = x - target.x;
+        arrow.stuckOffsetY = y - target.y;
+        arrow.stuckFacing = target.facing || 1;
+        this.applyHit(arrow, target, pid);
         arrow.stuck = true;
         arrow.vx = 0;
         arrow.vy = 0;
@@ -333,24 +347,13 @@ export class GameRoom extends Room {
         return;
       }
 
-      for (const [pid, target] of this.state.players) {
-        if (pid === arrow.shooterId) continue;
-        if (!target.alive) continue;
-        if (arrow.shooterTeam !== 0 && target.team === arrow.shooterTeam) continue;
-        if (target.spawnProtectionUntil && now < target.spawnProtectionUntil) continue;
-        if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
-        if (this.hitsPlayer(arrow, target)) {
-          arrow.stuckToId = pid;
-          arrow.stuckOffsetX = arrow.x - target.x;
-          arrow.stuckOffsetY = arrow.y - target.y;
-          arrow.stuckFacing = target.facing || 1;
-          this.applyHit(arrow, target, pid);
-          arrow.stuck = true;
-          arrow.vx = 0;
-          arrow.vy = 0;
-          arrow.spawnedAt = now;
-          break;
-        }
+      if (wallHit) {
+        arrow.x = wallHit.x;
+        arrow.y = wallHit.y;
+        arrow.stuck = true;
+        arrow.vx = 0;
+        arrow.vy = 0;
+        arrow.spawnedAt = now;
       }
     });
 
@@ -483,6 +486,52 @@ export class GameRoom extends Room {
       arrow.y >= player.y - halfH &&
       arrow.y <= player.y + halfH
     );
+  }
+
+  sweepArrowAgainstWalls(x1, y1, x2, y2) {
+    let best = null;
+    for (const wall of this.map.walls) {
+      const top = wall.y - wall.h / 2;
+      const bottom = top + TILE.WALL_THICKNESS;
+      const left = wall.x - wall.w / 2;
+      const right = wall.x + wall.w / 2;
+      const hit = segmentVsAabb(x1, y1, x2, y2, left, top, right, bottom);
+      if (hit && (!best || hit.t < best.t)) best = hit;
+    }
+    if (this.map.solidWalls) {
+      for (const w of this.map.solidWalls) {
+        const top = w.y - w.h / 2;
+        const bottom = w.y + w.h / 2;
+        const left = w.x - w.w / 2;
+        const right = w.x + w.w / 2;
+        const hit = segmentVsAabb(x1, y1, x2, y2, left, top, right, bottom);
+        if (hit && (!best || hit.t < best.t)) best = hit;
+      }
+    }
+    return best;
+  }
+
+  sweepArrowAgainstPlayers(arrow, prevX, prevY, now) {
+    const halfW = PLAYER.WIDTH / 2;
+    const halfH = PLAYER.HEIGHT / 2;
+    let best = null;
+    for (const [pid, target] of this.state.players) {
+      if (pid === arrow.shooterId) continue;
+      if (!target.alive) continue;
+      if (arrow.shooterTeam !== 0 && target.team === arrow.shooterTeam) continue;
+      if (target.spawnProtectionUntil && now < target.spawnProtectionUntil) continue;
+      if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
+      const hit = segmentVsAabb(
+        prevX, prevY,
+        arrow.x, arrow.y,
+        target.x - halfW,
+        target.y - halfH,
+        target.x + halfW,
+        target.y + halfH,
+      );
+      if (hit && (!best || hit.t < best.t)) best = { target, pid, x: hit.x, y: hit.y, t: hit.t };
+    }
+    return best;
   }
 
   applyHit(arrow, target, targetId) {
@@ -618,4 +667,44 @@ export class GameRoom extends Room {
       mapId: this.mapId,
     });
   }
+}
+
+function segmentVsAabb(x1, y1, x2, y2, left, top, right, bottom) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  let tmin = 0;
+  let tmax = 1;
+
+  if (Math.abs(dx) < 1e-9) {
+    if (x1 < left || x1 > right) return null;
+  } else {
+    const t1 = (left - x1) / dx;
+    const t2 = (right - x1) / dx;
+    const lo = Math.min(t1, t2);
+    const hi = Math.max(t1, t2);
+    if (lo > tmin) tmin = lo;
+    if (hi < tmax) tmax = hi;
+    if (tmin > tmax) return null;
+  }
+
+  if (Math.abs(dy) < 1e-9) {
+    if (y1 < top || y1 > bottom) return null;
+  } else {
+    const t1 = (top - y1) / dy;
+    const t2 = (bottom - y1) / dy;
+    const lo = Math.min(t1, t2);
+    const hi = Math.max(t1, t2);
+    if (lo > tmin) tmin = lo;
+    if (hi < tmax) tmax = hi;
+    if (tmin > tmax) return null;
+  }
+
+  if (tmin < 0) tmin = 0;
+  if (tmin > 1) return null;
+
+  return {
+    t: tmin,
+    x: x1 + tmin * dx,
+    y: y1 + tmin * dy,
+  };
 }
