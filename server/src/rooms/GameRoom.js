@@ -438,6 +438,7 @@ export class GameRoom extends Room {
     }
 
     const flagBottom = flag.y + FLAG.POLE_HEIGHT / 2;
+    const flagTop = flag.y - FLAG.POLE_HEIGHT / 2;
     for (const wall of this.map.walls) {
       const top = wall.y - wall.h / 2;
       const left = wall.x - wall.w / 2;
@@ -453,6 +454,50 @@ export class GameRoom extends Room {
         flag.vy = 0;
         flag.vx *= 0.4;
         break;
+      }
+    }
+
+    if (this.map.solidWalls) {
+      for (const w of this.map.solidWalls) {
+        const wTop = w.y - w.h / 2;
+        const wBottom = w.y + w.h / 2;
+        const wLeft = w.x - w.w / 2;
+        const wRight = w.x + w.w / 2;
+        const overlapY = flagBottom > wTop && flagTop < wBottom;
+        const overlapX = flag.x > wLeft && flag.x < wRight;
+
+        if (
+          flag.vy > 0 &&
+          overlapX &&
+          flagBottom >= wTop &&
+          flagBottom <= wTop + Math.abs(flag.vy * dt) + 6
+        ) {
+          flag.y = wTop - FLAG.POLE_HEIGHT / 2;
+          flag.vy = 0;
+          flag.vx *= 0.4;
+          continue;
+        }
+
+        if (
+          flag.vy < 0 &&
+          overlapX &&
+          flagTop <= wBottom &&
+          flagTop >= wBottom - Math.abs(flag.vy * dt) - 6
+        ) {
+          flag.y = wBottom + FLAG.POLE_HEIGHT / 2;
+          flag.vy = 0;
+          continue;
+        }
+
+        if (overlapY && overlapX) {
+          if (flag.vx > 0) {
+            flag.x = wLeft;
+            flag.vx = 0;
+          } else if (flag.vx < 0) {
+            flag.x = wRight;
+            flag.vx = 0;
+          }
+        }
       }
     }
   }
