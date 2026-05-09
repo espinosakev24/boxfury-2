@@ -49,7 +49,14 @@ export class GameScene extends Phaser.Scene {
     window.addEventListener('keyup', this._tabKeyup);
 
     this._chatKeydown = (e) => {
-      if (this._chatOpen) return;
+      if (this._chatOpen) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          this._closeChat();
+        }
+        return;
+      }
       if (e.key !== 't' && e.key !== 'T') return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       e.preventDefault();
@@ -67,6 +74,9 @@ export class GameScene extends Phaser.Scene {
       } else if (e.key === 'Escape') {
         this._closeChat();
       }
+    });
+    chatInput?.addEventListener('blur', () => {
+      if (this._chatOpen) this._closeChat();
     });
 
     this._visibilityHandler = () => {
