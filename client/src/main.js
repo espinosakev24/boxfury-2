@@ -10,6 +10,7 @@ import { setupSettings } from './settings.js';
 import { openCreateRoom, setupCreateRoom } from './create-room.js';
 import { setupMapPicker } from './map-picker.js';
 import { setupUiSounds } from './ui-sounds.js';
+import { setupTouchControls } from './touch-controls.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
@@ -20,6 +21,7 @@ applyLocale();
 setupSettings();
 setupMapPicker();
 setupUiSounds();
+setupTouchControls();
 
 const bgMusic = new Audio('/assets/audio/arena-drift.ogg');
 bgMusic.loop = true;

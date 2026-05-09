@@ -120,6 +120,23 @@
 
     <div id="game" class="hidden"></div>
 
+    <div id="touch-controls" class="touch hidden" aria-hidden="true">
+      <div class="touch__cluster touch__cluster--left">
+        <button class="touch__btn touch__btn--dir" data-touch-key="ArrowLeft" aria-label="Move left">◀</button>
+        <button class="touch__btn touch__btn--dir" data-touch-key="ArrowRight" aria-label="Move right">▶</button>
+      </div>
+      <div class="touch__cluster touch__cluster--right">
+        <div class="touch__row touch__row--top">
+          <button class="touch__btn touch__btn--small" data-touch-key="ArrowDown" aria-label="Crouch">▼</button>
+          <button class="touch__btn touch__btn--small" data-touch-key="x" aria-label="Pick or drop flag">⚑</button>
+        </div>
+        <div class="touch__row">
+          <button class="touch__btn touch__btn--jump" data-touch-key="ArrowUp" aria-label="Jump">▲</button>
+          <button class="touch__btn touch__btn--shoot" data-touch-key=" " aria-label="Hold to charge bow">●</button>
+        </div>
+      </div>
+    </div>
+
     <div id="death-overlay" class="death-overlay hidden">
       <div class="death-overlay__inner">
         <div class="death-overlay__title">YOU DIED</div>

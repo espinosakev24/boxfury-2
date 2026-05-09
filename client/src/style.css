@@ -1298,6 +1298,81 @@ html, body {
 .room__dot--p2 { color: var(--p2); }
 .room__stat { color: var(--bf-bone); }
 
+/* ---------- Touch controls ---------- */
+.touch {
+  position: fixed;
+  inset: auto 0 0 0;
+  padding: 12px 14px max(12px, env(safe-area-inset-bottom)) 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 8;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.touch__cluster {
+  display: flex;
+  gap: 14px;
+  pointer-events: none;
+}
+.touch__cluster--right { flex-direction: column; align-items: flex-end; }
+
+.touch__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.touch__row--top { gap: 10px; opacity: 0.85; }
+
+.touch__btn {
+  pointer-events: auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(245, 245, 240, 0.35);
+  background: rgba(21, 21, 31, 0.55);
+  color: var(--bf-bone);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 80ms ease, transform 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(2px);
+}
+.touch__btn.is-active {
+  background: rgba(78, 224, 138, 0.35);
+  border-color: var(--p1);
+  transform: scale(0.94);
+}
+.touch__btn--small {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+}
+.touch__btn--shoot {
+  width: 80px;
+  height: 80px;
+  font-size: 28px;
+  background: rgba(255, 84, 112, 0.25);
+  border-color: rgba(255, 84, 112, 0.6);
+}
+.touch__btn--shoot.is-active {
+  background: rgba(255, 84, 112, 0.55);
+  border-color: var(--p2);
+}
+.touch__btn--jump {
+  width: 70px;
+  height: 70px;
+}
+
 /* ---------- Responsive ---------- */
 
 /* Tablet / narrow landscape */
