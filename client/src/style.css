@@ -376,7 +376,9 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ---------- Overlay (in-game menu, controls help) ---------- */
@@ -1295,4 +1297,46 @@ html, body {
 .room__dot--p1 { color: var(--p1); }
 .room__dot--p2 { color: var(--p2); }
 .room__stat { color: var(--bf-bone); }
+
+/* ---------- Responsive ---------- */
+
+/* Tablet / narrow landscape */
+@media (max-width: 900px) {
+  .menu { grid-template-columns: 1fr; }
+  .menu__left { padding: 32px 28px; }
+  .menu__right { display: none; }
+  .menu__actions { max-width: none; margin-top: 24px; }
+  .wordmark { margin: 16px 0 24px; }
+  .menu__footer { margin-top: 24px; }
+}
+
+/* Phone portrait */
+@media (max-width: 560px) {
+  .menu__left { padding: 20px 18px; }
+  .tagline { font-size: 13px; }
+  .btn { padding: 14px 16px; font-size: 13px; }
+  .btn__index { display: none; }
+  .btn__key { display: none; }
+
+  .hud { top: 8px; gap: 8px; padding: 6px 12px; }
+  .hud__score { font-size: 16px; min-width: 18px; }
+  .hud__sep { font-size: 12px; }
+  .hud__spectators { display: none; }
+
+  .overlay__panel { padding: 20px 18px; max-width: 92vw; }
+  .overlay__title { font-size: 26px; margin-bottom: 16px; }
+
+  .chat-input-wrap { width: 92vw; }
+
+  .match-end__score .hud__score { font-size: 28px; }
+}
+
+/* Phone landscape (short height) */
+@media (max-height: 480px) and (orientation: landscape) {
+  .menu__left { padding: 16px 24px; }
+  .wordmark { font-size: clamp(48px, 7vw, 96px); margin: 8px 0 12px; }
+  .menu__actions { margin-top: 12px; gap: 6px; }
+  .btn { padding: 10px 14px; }
+  .menu__footer { display: none; }
+}
 .room__sub { color: var(--bf-mute); font-size: 10px; margin-left: auto; }

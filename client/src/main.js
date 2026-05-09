@@ -80,10 +80,14 @@ function doStartGame(connectOptions) {
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    width: WORLD.WIDTH,
-    height: WORLD.HEIGHT,
     backgroundColor: COLORS.ARENA,
     pixelArt: true,
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: WORLD.WIDTH,
+      height: WORLD.HEIGHT,
+    },
     physics: {
       default: 'arcade',
       arcade: { gravity: { y: 900 }, debug: false },
