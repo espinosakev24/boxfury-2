@@ -20,6 +20,10 @@ const state = {
   selected: TILES.WALL,
   dragging: false,
   dragValue: null,
+  mirrorX: false,
+  rectMode: false,
+  rectStart: null,
+  rectEnd: null,
 };
 
 const canvas = document.getElementById('editor-canvas');
@@ -92,6 +96,34 @@ function render() {
       drawTile(ctx, x * CELL, y * CELL, ch);
     }
   }
+  if (state.rectMode && state.rectStart && state.rectEnd) {
+    drawRectPreview(state.rectStart, state.rectEnd, state.dragValue);
+    if (state.mirrorX && state.dragValue !== TILES.FLAG) {
+      const ms = { x: state.cols - 1 - state.rectStart.x, y: state.rectStart.y };
+      const me = { x: state.cols - 1 - state.rectEnd.x, y: state.rectEnd.y };
+      drawRectPreview(ms, me, mirrorValue(state.dragValue));
+    }
+  }
+}
+
+function drawRectPreview(start, end, value) {
+  const x1 = Math.min(start.x, end.x);
+  const y1 = Math.min(start.y, end.y);
+  const x2 = Math.max(start.x, end.x);
+  const y2 = Math.max(start.y, end.y);
+  const p = paletteFor(value);
+  const px = x1 * CELL;
+  const py = y1 * CELL;
+  const pw = (x2 - x1 + 1) * CELL;
+  const ph = (y2 - y1 + 1) * CELL;
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = p.fill;
+  ctx.fillRect(px, py, pw, ph);
+  ctx.restore();
+  ctx.strokeStyle = p.fill;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
 }
 
 function drawTile(ctx, cx, cy, ch) {
@@ -121,50 +153,101 @@ function drawTile(ctx, cx, cy, ch) {
 }
 
 function bindCanvas() {
-  const setAt = (clientX, clientY, value) => {
+  const cellAt = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor(((clientX - rect.left) / rect.width) * state.cols);
     const y = Math.floor(((clientY - rect.top) / rect.height) * state.rows);
-    if (x < 0 || x >= state.cols || y < 0 || y >= state.rows) return;
-    paint(x, y, value);
+    if (x < 0 || x >= state.cols || y < 0 || y >= state.rows) return null;
+    return { x, y };
+  };
+
+  const startDrag = (clientX, clientY, value) => {
+    state.dragging = true;
+    state.dragValue = value;
+    const c = cellAt(clientX, clientY);
+    if (state.rectMode) {
+      if (!c) return;
+      state.rectStart = c;
+      state.rectEnd = c;
+      render();
+    } else if (c) {
+      paint(c.x, c.y, value);
+    }
+  };
+
+  const moveDrag = (clientX, clientY) => {
+    if (!state.dragging) return;
+    const c = cellAt(clientX, clientY);
+    if (!c) return;
+    if (state.rectMode) {
+      if (state.rectEnd && state.rectEnd.x === c.x && state.rectEnd.y === c.y) return;
+      state.rectEnd = c;
+      render();
+    } else {
+      paint(c.x, c.y, state.dragValue);
+    }
+  };
+
+  const endDrag = () => {
+    if (state.rectMode && state.rectStart && state.rectEnd) {
+      paintRect(state.rectStart.x, state.rectStart.y, state.rectEnd.x, state.rectEnd.y, state.dragValue);
+    }
+    state.dragging = false;
+    state.dragValue = null;
+    state.rectStart = null;
+    state.rectEnd = null;
   };
 
   canvas.addEventListener('mousedown', (e) => {
     e.preventDefault();
-    state.dragging = true;
-    state.dragValue = e.button === 2 ? TILES.EMPTY : state.selected;
-    setAt(e.clientX, e.clientY, state.dragValue);
+    const value = e.button === 2 ? TILES.EMPTY : state.selected;
+    startDrag(e.clientX, e.clientY, value);
   });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!state.dragging) return;
-    setAt(e.clientX, e.clientY, state.dragValue);
-  });
-  window.addEventListener('mouseup', () => {
-    state.dragging = false;
-    state.dragValue = null;
-  });
+  canvas.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const t = e.touches[0];
-    state.dragging = true;
-    state.dragValue = state.selected;
-    setAt(t.clientX, t.clientY, state.dragValue);
+    startDrag(t.clientX, t.clientY, state.selected);
   }, { passive: false });
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const t = e.touches[0];
-    setAt(t.clientX, t.clientY, state.dragValue);
+    moveDrag(t.clientX, t.clientY);
   }, { passive: false });
-  canvas.addEventListener('touchend', () => {
-    state.dragging = false;
-    state.dragValue = null;
-  });
+  canvas.addEventListener('touchend', endDrag);
 }
 
-function paint(x, y, value) {
-  if (state.grid[y][x] === value) return;
+function paintRect(x1, y1, x2, y2, value) {
+  if (UNIQUE_TILES.has(value)) {
+    paint(x1, y1, value);
+    return;
+  }
+  const lo = { x: Math.min(x1, x2), y: Math.min(y1, y2) };
+  const hi = { x: Math.max(x1, x2), y: Math.max(y1, y2) };
+  let changed = false;
+  for (let y = lo.y; y <= hi.y; y++) {
+    for (let x = lo.x; x <= hi.x; x++) {
+      if (setCell(x, y, value)) changed = true;
+      if (state.mirrorX) {
+        const mx = state.cols - 1 - x;
+        if (mx !== x && setCell(mx, y, mirrorValue(value))) changed = true;
+      }
+    }
+  }
+  if (!changed) {
+    render();
+    return;
+  }
+  render();
+  syncTextarea();
+  saveToStorage();
+}
+
+function setCell(x, y, value) {
+  if (state.grid[y][x] === value) return false;
   if (UNIQUE_TILES.has(value)) {
     for (let yy = 0; yy < state.rows; yy++) {
       for (let xx = 0; xx < state.cols; xx++) {
@@ -173,6 +256,24 @@ function paint(x, y, value) {
     }
   }
   state.grid[y][x] = value;
+  return true;
+}
+
+function mirrorValue(value) {
+  if (value === TILES.TEAM1_BASE) return TILES.TEAM2_BASE;
+  if (value === TILES.TEAM2_BASE) return TILES.TEAM1_BASE;
+  return value;
+}
+
+function paint(x, y, value) {
+  let changed = setCell(x, y, value);
+  if (state.mirrorX && value !== TILES.FLAG) {
+    const mx = state.cols - 1 - x;
+    if (mx !== x) {
+      changed = setCell(mx, y, mirrorValue(value)) || changed;
+    }
+  }
+  if (!changed) return;
   render();
   syncTextarea();
   saveToStorage();
@@ -230,6 +331,20 @@ function bindButtons() {
     render();
     syncTextarea();
     saveToStorage();
+  });
+
+  const mirrorBtn = document.getElementById('btn-mirror');
+  mirrorBtn.addEventListener('click', () => {
+    state.mirrorX = !state.mirrorX;
+    mirrorBtn.classList.toggle('is-active', state.mirrorX);
+    mirrorBtn.setAttribute('aria-pressed', String(state.mirrorX));
+  });
+
+  const rectBtn = document.getElementById('btn-rect');
+  rectBtn.addEventListener('click', () => {
+    state.rectMode = !state.rectMode;
+    rectBtn.classList.toggle('is-active', state.rectMode);
+    rectBtn.setAttribute('aria-pressed', String(state.rectMode));
   });
 
   document.getElementById('btn-clear').addEventListener('click', () => {

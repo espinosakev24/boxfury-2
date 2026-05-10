@@ -58,6 +58,10 @@ const TRANSLATIONS = {
     'map.default': 'Classic',
     'map.open': 'Open arena',
     'map.stacks': 'Stacks',
+    'map.twinRaise': 'Twin Raise',
+    'map.tunnels': 'Tunnels',
+    'map.ravine': 'Bridge Ravine',
+    'map.islands': 'Sky Islands',
 
     'mapPicker.eyebrow': '◣ Map',
     'mapPicker.title': 'CHOOSE A MAP',
@@ -198,6 +202,10 @@ const TRANSLATIONS = {
     'map.default': 'Clásico',
     'map.open': 'Arena abierta',
     'map.stacks': 'Plataformas',
+    'map.twinRaise': 'Cumbre gemela',
+    'map.tunnels': 'Túneles',
+    'map.ravine': 'Puentes',
+    'map.islands': 'Islas flotantes',
 
     'mapPicker.eyebrow': '◣ Mapa',
     'mapPicker.title': 'ELIGE UN MAPA',

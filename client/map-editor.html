@@ -69,6 +69,11 @@
       }
       .tool:hover { border-color: var(--bf-bone); }
       .tool--primary { background: var(--bf-bone); color: var(--bf-deep); border-color: var(--bf-bone); }
+      .tool.is-active {
+        border-color: var(--p1);
+        background: rgba(78, 224, 138, 0.18);
+        color: var(--bf-bone);
+      }
       .editor__size { display: flex; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--bf-soft); }
       .editor__size input {
         background: var(--bf-arena);
@@ -135,6 +140,8 @@
           <button class="tool" id="apply-size">Apply</button>
         </div>
         <div class="editor__tools">
+          <button class="tool" id="btn-mirror" aria-pressed="false" title="Mirror paint across the X axis">Mirror ⇿</button>
+          <button class="tool" id="btn-rect" aria-pressed="false" title="Rectangle paint (drag to size a block)">Rect ▭</button>
           <button class="tool" id="btn-fill-floor">Floor row</button>
           <button class="tool" id="btn-clear">Clear</button>
           <button class="tool" id="btn-load">Load from text</button>
