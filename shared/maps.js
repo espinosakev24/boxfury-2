@@ -22,6 +22,8 @@ export const TILES = {
 export const MAPS = {
   default: [
     '................................................................................',
+    '................................................................................',
+    '................................................................................',
     '.........====.........................====.........................====.........',
     '.................=.................=........=...................................',
     '........=.............====.....=...............=......====....==.=......=.......',
@@ -221,7 +223,9 @@ function makeSolidRect(sx, ex, sy, ey) {
 }
 
 function decomposeSolids(rows, height, width) {
-  const grid = Array.from({ length: height }, () => new Array(width).fill(false));
+  const grid = Array.from({ length: height }, () =>
+    new Array(width).fill(false),
+  );
   for (let y = 0; y < height; y++) {
     const row = rows[y];
     for (let x = 0; x < width; x++) {
@@ -229,7 +233,9 @@ function decomposeSolids(rows, height, width) {
     }
   }
 
-  const used = Array.from({ length: height }, () => new Array(width).fill(false));
+  const used = Array.from({ length: height }, () =>
+    new Array(width).fill(false),
+  );
   const rects = [];
 
   for (let y = 0; y < height; y++) {
