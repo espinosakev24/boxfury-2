@@ -22,6 +22,7 @@ export class Player extends Schema {
     this.kills = 0;
     this.respawnAt = 0;
     this.spawnProtectionUntil = 0;
+    this.crouching = false;
   }
 }
 
@@ -44,4 +45,5 @@ defineTypes(Player, {
   kills: 'number',
   respawnAt: 'number',
   spawnProtectionUntil: 'number',
+  crouching: 'boolean',
 });

@@ -211,6 +211,7 @@ export class GameScene extends Phaser.Scene {
             vy: player.vy,
             facing: player.facing,
             bowAngle: player.bowAngle,
+            crouching: player.crouching,
           });
         }
         this.updateTeamCounts();

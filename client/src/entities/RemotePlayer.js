@@ -152,9 +152,10 @@ export class RemotePlayer {
     const sy = this.sprite.scaleY;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
+    const crouch = (this._crouchAmp ?? 0) * 7;
     gfx.setPosition(
       this.sprite.x - offsetY * sin * sy,
-      this.sprite.y + offsetY * cos * sy + bob,
+      this.sprite.y + offsetY * cos * sy + bob + crouch,
     );
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
@@ -166,7 +167,8 @@ export class RemotePlayer {
     if (!gfx) return;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
-    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
+    const crouch = (this._crouchAmp ?? 0) * 7;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob + crouch);
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX, this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
@@ -201,7 +203,8 @@ export class RemotePlayer {
     if (!gfx) return;
     const bob = this._bobY ?? 0;
     const lean = this._leanAngle ?? 0;
-    gfx.setPosition(this.sprite.x, this.sprite.y + bob);
+    const crouch = (this._crouchAmp ?? 0) * 7;
+    gfx.setPosition(this.sprite.x, this.sprite.y + bob + crouch);
     gfx.setRotation(this.sprite.rotation + lean);
     gfx.setScale(this.sprite.scaleX * (this.facing < 0 ? -1 : 1), this.sprite.scaleY);
     gfx.setVisible(this.sprite.visible);
@@ -258,7 +261,7 @@ export class RemotePlayer {
     this.sprite.scaleY = 1;
   }
 
-  applyState({ x, y, vy, facing, bowAngle }) {
+  applyState({ x, y, vy, facing, bowAngle, crouching }) {
     const last = this.buffer[this.buffer.length - 1];
     this.buffer.push({
       t: performance.now(),
@@ -269,6 +272,7 @@ export class RemotePlayer {
       bowAngle: typeof bowAngle === 'number' ? bowAngle : last.bowAngle,
     });
     if (this.buffer.length > 30) this.buffer.shift();
+    if (typeof crouching === 'boolean') this._crouchInput = crouching;
   }
 
   update() {
@@ -325,6 +329,8 @@ export class RemotePlayer {
     const moving = Math.abs(dx) > 0.4 && grounded;
     const targetAmp = moving ? 1 : 0;
     this._walkAmp += (targetAmp - this._walkAmp) * 0.18;
+    const targetCrouch = this._crouchInput && grounded ? 1 : 0;
+    this._crouchAmp = (this._crouchAmp ?? 0) + (targetCrouch - (this._crouchAmp ?? 0)) * 0.22;
     if (this._walkAmp > 0.05 && grounded) this.legPhase += Math.abs(dx) * 0.1;
     else if (!grounded) this.legPhase = 0;
     this._isMoving = this._walkAmp > 0.05;

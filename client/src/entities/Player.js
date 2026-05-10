@@ -465,6 +465,7 @@ export class Player {
       facing: this.facing,
       bowAngle: this.bow.angle,
       dead: !!this.dead,
+      crouching: !!this._crouchInput,
     };
   }
 

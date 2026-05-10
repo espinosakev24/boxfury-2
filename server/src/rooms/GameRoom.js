@@ -80,6 +80,7 @@ export class GameRoom extends Room {
       if (typeof payload.vy === 'number') player.vy = payload.vy;
       if (typeof payload.facing === 'number') player.facing = payload.facing;
       if (typeof payload.bowAngle === 'number') player.bowAngle = payload.bowAngle;
+      if (typeof payload.crouching === 'boolean') player.crouching = payload.crouching;
     });
 
     this.onMessage(MESSAGES.CHOOSE_TEAM, (client, payload) => {
