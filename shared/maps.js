@@ -151,14 +151,12 @@ export function parseMap(mapString = DEFAULT_MAP) {
   const width = rows.reduce((m, r) => Math.max(m, r.length), 0);
 
   const walls = [];
-  const solidWalls = [];
   const bases = { team1: null, team2: null };
   let flag = null;
 
   for (let y = 0; y < height; y++) {
     const row = rows[y];
     let wallRunStart = -1;
-    let solidRunStart = -1;
     for (let x = 0; x <= width; x++) {
       const ch = row[x];
 
@@ -169,18 +167,13 @@ export function parseMap(mapString = DEFAULT_MAP) {
         wallRunStart = -1;
       }
 
-      if (ch === TILES.SOLID) {
-        if (solidRunStart === -1) solidRunStart = x;
-      } else if (solidRunStart !== -1) {
-        solidWalls.push(makeSolid(solidRunStart, x - 1, y));
-        solidRunStart = -1;
-      }
-
       if (ch === TILES.TEAM1_BASE) bases.team1 = tileCenter(x, y);
       else if (ch === TILES.TEAM2_BASE) bases.team2 = tileCenter(x, y);
       else if (ch === TILES.FLAG) flag = tileCenter(x, y);
     }
   }
+
+  const solidWalls = decomposeSolids(rows, height, width);
 
   return {
     rows,
@@ -214,14 +207,52 @@ function makeWall(startX, endX, ty) {
   };
 }
 
-function makeSolid(startX, endX, ty) {
-  const tiles = endX - startX + 1;
-  const w = tiles * TILE.WIDTH;
-  const h = TILE.HEIGHT;
+function makeSolidRect(sx, ex, sy, ey) {
+  const tilesW = ex - sx + 1;
+  const tilesH = ey - sy + 1;
+  const w = tilesW * TILE.WIDTH;
+  const h = tilesH * TILE.HEIGHT;
   return {
-    x: startX * TILE.WIDTH + w / 2,
-    y: ty * TILE.HEIGHT + h / 2,
+    x: sx * TILE.WIDTH + w / 2,
+    y: sy * TILE.HEIGHT + h / 2,
     w,
     h,
   };
+}
+
+function decomposeSolids(rows, height, width) {
+  const grid = Array.from({ length: height }, () => new Array(width).fill(false));
+  for (let y = 0; y < height; y++) {
+    const row = rows[y];
+    for (let x = 0; x < width; x++) {
+      if (row[x] === TILES.SOLID) grid[y][x] = true;
+    }
+  }
+
+  const used = Array.from({ length: height }, () => new Array(width).fill(false));
+  const rects = [];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!grid[y][x] || used[y][x]) continue;
+
+      let w = 0;
+      while (x + w < width && grid[y][x + w] && !used[y][x + w]) w++;
+
+      let h = 1;
+      outer: while (y + h < height) {
+        for (let dx = 0; dx < w; dx++) {
+          if (!grid[y + h][x + dx] || used[y + h][x + dx]) break outer;
+        }
+        h++;
+      }
+
+      for (let dy = 0; dy < h; dy++) {
+        for (let dx = 0; dx < w; dx++) used[y + dy][x + dx] = true;
+      }
+      rects.push(makeSolidRect(x, x + w - 1, y, y + h - 1));
+    }
+  }
+
+  return rects;
 }

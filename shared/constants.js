@@ -16,6 +16,7 @@ export const PLAYER = {
   JUMP_COOLDOWN_MS: 280,
   WIDTH: 24,
   HEIGHT: 48,
+  BODY_SLACK_X: 2,
   MAX_HP: 100,
   PICKUP_RADIUS: 56,
 };

@@ -27,6 +27,7 @@ export class Player {
     this.sprite = scene.add.rectangle(x, y, PLAYER.WIDTH, PLAYER.HEIGHT, color);
     this.sprite.setFillStyle(color, 0);
     scene.physics.add.existing(this.sprite);
+    this.sprite.body.setSize(PLAYER.WIDTH - PLAYER.BODY_SLACK_X * 2, PLAYER.HEIGHT, true);
     this.sprite.body.setCollideWorldBounds(true);
     this.legsGfx = scene.add.graphics();
     this.bodyGfx = scene.add.graphics();
@@ -429,9 +430,13 @@ export class Player {
     } else {
       this._bobY = 0;
     }
-    if (grounded && moving) this._leanAngle = computeLean(vx, PLAYER.SPEED);
-    else if (!grounded) this._leanAngle = computeLean(vx, PLAYER.SPEED) * 0.7;
-    else this._leanAngle = 0;
+    let lean = 0;
+    if (grounded && moving) lean = computeLean(vx, PLAYER.SPEED);
+    else if (!grounded) lean = computeLean(vx, PLAYER.SPEED) * 0.7;
+    const touchingLeft = body.blocked.left || body.touching.left;
+    const touchingRight = body.blocked.right || body.touching.right;
+    if ((touchingLeft && lean < 0) || (touchingRight && lean > 0)) lean = 0;
+    this._leanAngle = lean;
     if (this._lastFacing !== this.facing && Math.abs(vx) > 60 && grounded) {
       this.scene.spawnLandingDust?.(
         this.sprite.x,
