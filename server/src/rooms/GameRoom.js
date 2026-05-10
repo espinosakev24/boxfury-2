@@ -71,7 +71,9 @@ export class GameRoom extends Room {
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
       const player = this.state.players.get(client.sessionId);
-      if (!player || !player.alive) return;
+      if (!player) return;
+      const clientWantsAlive = !payload.dead;
+      if (player.alive !== clientWantsAlive) return;
       if (typeof payload.x === 'number') player.x = payload.x;
       if (typeof payload.y === 'number') player.y = payload.y;
       if (typeof payload.vx === 'number') player.vx = payload.vx;

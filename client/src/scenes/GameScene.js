@@ -510,7 +510,7 @@ export class GameScene extends Phaser.Scene {
   handleHit({ targetId, knockX, knockY, hp }) {
     const target = this.findPlayer(targetId);
     if (!target) return;
-    target.flashHit();
+    if (!target.dead) target.flashHit();
     this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
     if (typeof hp === 'number') target.setDamageFromHp(hp);
     if (this.cache?.audio?.exists('body-hit')) {
@@ -813,13 +813,7 @@ export class GameScene extends Phaser.Scene {
     this.deathState = { respawnAt: me.respawnAt };
     this.player.playDeathAnim();
     this._playDeathSound(0.6);
-    this.player.sprite.body.setVelocity(0, 0);
-    this.player.sprite.body.enable = false;
-    const cam = this.cameras.main;
-    cam.stopFollow();
-    cam.setZoom(1);
-    const m = this.level.map;
-    cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
+    this.player.sprite.body.setVelocityX(0);
     document.getElementById('death-overlay')?.classList.remove('hidden');
     this.updateDeathTimer(me.respawnAt);
   }
@@ -1139,31 +1133,32 @@ export class GameScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.syncDeath();
     this.syncSpawnShields();
-    if (this.player && !this.deathState) {
-      if (!this._chatOpen) {
-        this.player.setCrouching(this.isDown('down'));
-        if (this.justDown('down')) this._handleDownTap();
-        this.player.move({
-          left: this.isDown('left'),
-          right: this.isDown('right'),
-          lockFacing: this.player.charging,
-        });
-        if (this.isDown('up')) this.player.jump();
+    if (this.player) {
+      if (!this.deathState) {
+        if (!this._chatOpen) {
+          this.player.setCrouching(this.isDown('down'));
+          if (this.justDown('down')) this._handleDownTap();
+          this.player.move({
+            left: this.isDown('left'),
+            right: this.isDown('right'),
+            lockFacing: this.player.charging,
+          });
+          if (this.isDown('up')) this.player.jump();
 
-        if (this.justDown('flag')) {
-          this.toggleFlag();
-        }
-        if (this.isDown('space')) {
-          this.player.chargeBow();
+          if (this.justDown('flag')) {
+            this.toggleFlag();
+          }
+          if (this.isDown('space')) {
+            this.player.chargeBow();
+          } else {
+            const shot = this.player.releaseBow();
+            if (shot) this.network.sendShoot(shot);
+          }
         } else {
-          const shot = this.player.releaseBow();
-          if (shot) this.network.sendShoot(shot);
+          this.player.sprite.body.setVelocityX(0);
         }
-      } else {
-        this.player.sprite.body.setVelocityX(0);
+        this.player.update(dt);
       }
-
-      this.player.update(dt);
       this.network.sendState(this.player.getState());
       if (this.player.nameText) {
         const bob = this.player._bobY ?? 0;

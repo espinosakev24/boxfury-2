@@ -156,10 +156,14 @@ export class Player {
     if (this.nameText) this.nameText.setVisible(false);
     const fallDir = this.facing >= 0 ? 1 : -1;
     this.scene.tweens.killTweensOf(this.sprite);
+    this.sprite.scaleX = 1;
+    this.sprite.scaleY = 1;
+    if (this.sprite.body) {
+      this.sprite.body.setSize(PLAYER.WIDTH - PLAYER.BODY_SLACK_X * 2, PLAYER.WIDTH, true);
+    }
     this.scene.tweens.add({
       targets: this.sprite,
       rotation: (fallDir * Math.PI) / 2,
-      y: this.sprite.y + 12,
       alpha: 0.55,
       duration: 360,
       ease: 'Cubic.easeOut',
@@ -174,6 +178,9 @@ export class Player {
     this.sprite.scaleX = 1;
     this.sprite.scaleY = 1;
     this.sprite.setVisible(true);
+    if (this.sprite.body) {
+      this.sprite.body.setSize(PLAYER.WIDTH - PLAYER.BODY_SLACK_X * 2, PLAYER.HEIGHT, true);
+    }
     this.bow.sprite.setVisible(!this.carryingFlag);
     if (this.nameText) this.nameText.setVisible(true);
     drawBody(this.bodyGfx, this.color);
@@ -457,6 +464,7 @@ export class Player {
       vy: b.velocity.y,
       facing: this.facing,
       bowAngle: this.bow.angle,
+      dead: !!this.dead,
     };
   }
 

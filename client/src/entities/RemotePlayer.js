@@ -105,12 +105,17 @@ export class RemotePlayer {
     this.dead = true;
     this.bow.sprite.setVisible(false);
     if (this.nameText) this.nameText.setVisible(false);
+    this._walkAmp = 0;
+    this._bobY = 0;
+    this._isMoving = false;
+    this._leanAngle = 0;
     const fallDir = this.facing >= 0 ? 1 : -1;
     this.scene.tweens.killTweensOf(this.sprite);
+    this.sprite.scaleX = 1;
+    this.sprite.scaleY = 1;
     this.scene.tweens.add({
       targets: this.sprite,
       rotation: fallDir * Math.PI / 2,
-      y: this.sprite.y + 12,
       alpha: 0.55,
       duration: 360,
       ease: 'Cubic.easeOut',
@@ -271,10 +276,6 @@ export class RemotePlayer {
     const dt = this._lastUpdateAt ? Math.min(0.05, (nowT - this._lastUpdateAt) / 1000) : 0;
     this._lastUpdateAt = nowT;
     this.spawnShield?.update(dt, this.sprite.x, this.sprite.y);
-    if (this.dead) {
-      this.bow.update();
-      return;
-    }
     const renderTime = performance.now() - NETWORK.INTERP_DELAY_MS;
 
     while (this.buffer.length > 2 && this.buffer[1].t <= renderTime) {
@@ -309,6 +310,8 @@ export class RemotePlayer {
       const bob = this._bobY ?? 0;
       this.chatBubble.setPosition(this.sprite.x, this.sprite.y - PLAYER.HEIGHT / 2 - 22 + bob);
     }
+
+    if (this.dead) return;
 
     const dx = this.sprite.x - this._lastSyncX;
     this._lastSyncX = this.sprite.x;
