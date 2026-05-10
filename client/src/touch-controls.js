@@ -7,6 +7,9 @@ const KEY_CODES = {
   x: 88,
   Escape: 27,
   Shift: 16,
+  q: 81,
+  e: 69,
+  f: 70,
 };
 
 function dispatchKey(type, key) {

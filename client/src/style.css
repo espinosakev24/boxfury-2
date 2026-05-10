@@ -1398,6 +1398,10 @@ input, textarea {
   align-items: center;
 }
 .touch__row--top { gap: 10px; opacity: 0.85; }
+.touch__row--spectator { display: none; }
+#touch-controls.is-spectator .touch__row--play { display: none; }
+#touch-controls.is-spectator .touch__row--spectator { display: flex; }
+#touch-controls.is-spectator .joystick--lock { display: none; }
 
 .touch__btn {
   pointer-events: auto;

@@ -427,6 +427,9 @@ export class GameScene extends Phaser.Scene {
       space: make([KC.SPACE]),
       flag: make([KC.X]),
       lock: make([KC.SHIFT]),
+      zoomIn: make([KC.PLUS, KC.NUMPAD_ADD, KC.E]),
+      zoomOut: make([KC.MINUS, KC.NUMPAD_SUBTRACT, KC.Q]),
+      follow: make([KC.F]),
     };
   }
 
@@ -605,6 +608,9 @@ export class GameScene extends Phaser.Scene {
   spawnLocalPlayer(color, team = 1, name = '', skin = undefined) {
     this.statusText?.destroy();
     this.statusText = null;
+    this.isSpectator = false;
+    this._spectatorFollowId = null;
+    document.getElementById('touch-controls')?.classList.remove('is-spectator');
     const baseKey = team === 2 ? 'team2' : 'team1';
     const map = this.level.map;
     const spawn = map.bases[baseKey] ??
@@ -687,10 +693,81 @@ export class GameScene extends Phaser.Scene {
     this.spectatorCameraSet = true;
     const cam = this.cameras.main;
     cam.stopFollow();
-    cam.setZoom(1);
+    this._spectatorZoom = 1;
+    this._spectatorFollowId = null;
+    cam.setZoom(this._spectatorZoom);
     const m = this.level.map;
     cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
+    this._bindSpectatorWheel();
+    document.getElementById('touch-controls')?.classList.add('is-spectator');
     this.showHud();
+  }
+
+  _bindSpectatorWheel() {
+    if (this._spectatorWheelBound) return;
+    this._spectatorWheelBound = true;
+    this.input.on('wheel', (_pointer, _gameObjects, _dx, dy) => {
+      if (!this.isSpectator || this.player) return;
+      const step = dy > 0 ? -0.1 : 0.1;
+      this._setSpectatorZoom((this._spectatorZoom ?? 1) + step);
+    });
+  }
+
+  _setSpectatorZoom(z) {
+    const clamped = Math.max(0.35, Math.min(2.5, z));
+    this._spectatorZoom = clamped;
+    this.cameras.main.setZoom(clamped);
+  }
+
+  _cycleSpectatorFollow() {
+    const players = this.network?.room?.state?.players;
+    if (!players) return;
+    const ids = [];
+    players.forEach((p, id) => {
+      if (p.team !== 0) ids.push(id);
+    });
+    if (ids.length === 0) {
+      this._spectatorFollowId = null;
+      this.cameras.main.stopFollow();
+      return;
+    }
+    const idx = this._spectatorFollowId ? ids.indexOf(this._spectatorFollowId) : -1;
+    const nextIdx = idx + 1;
+    if (nextIdx >= ids.length) {
+      this._spectatorFollowId = null;
+      this.cameras.main.stopFollow();
+    } else {
+      this._spectatorFollowId = ids[nextIdx];
+    }
+  }
+
+  _updateSpectator(dt) {
+    if (this._chatOpen) return;
+    const cam = this.cameras.main;
+
+    if (this.justDown('follow')) this._cycleSpectatorFollow();
+    if (this.isDown('zoomIn')) this._setSpectatorZoom((this._spectatorZoom ?? 1) + 1.2 * dt);
+    if (this.isDown('zoomOut')) this._setSpectatorZoom((this._spectatorZoom ?? 1) - 1.2 * dt);
+
+    if (this._spectatorFollowId) {
+      const target = this.findPlayer(this._spectatorFollowId);
+      if (target?.sprite) {
+        if (cam._follow !== target.sprite) {
+          cam.startFollow(target.sprite, true, 0.12, 0.12);
+        }
+        return;
+      }
+      this._spectatorFollowId = null;
+      cam.stopFollow();
+    }
+
+    const PAN_SPEED = 600 / (this._spectatorZoom ?? 1);
+    const dx = ((this.isDown('right') ? 1 : 0) - (this.isDown('left') ? 1 : 0)) * PAN_SPEED * dt;
+    const dy = ((this.isDown('down') ? 1 : 0) - (this.isDown('up') ? 1 : 0)) * PAN_SPEED * dt;
+    if (dx !== 0 || dy !== 0) {
+      cam.scrollX += dx;
+      cam.scrollY += dy;
+    }
   }
 
   showTeamPicker() {
@@ -967,13 +1044,11 @@ export class GameScene extends Phaser.Scene {
 
   _enterSpectatorView() {
     if (!this.player) {
-      const cam = this.cameras.main;
-      cam.stopFollow();
-      cam.setZoom(1);
-      const m = this.level.map;
-      cam.centerOn(m.pixelWidth / 2, m.pixelHeight / 2);
+      this.isSpectator = true;
+      this.setupSpectatorCamera();
+    } else {
+      this.showHud();
     }
-    this.showHud();
   }
 
   _highlightMatchEndTeam(team) {
@@ -1135,6 +1210,10 @@ export class GameScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.syncDeath();
     this.syncSpawnShields();
+    if (!this.player && this.isSpectator) {
+      this._updateSpectator(dt);
+    }
+
     if (this.player) {
       if (!this.deathState) {
         if (!this._chatOpen) {
