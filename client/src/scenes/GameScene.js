@@ -426,6 +426,7 @@ export class GameScene extends Phaser.Scene {
       down: make([...(useArrows ? [KC.DOWN] : []), ...(useWasd ? [KC.S] : [])]),
       space: make([KC.SPACE]),
       flag: make([KC.X]),
+      lock: make([KC.SHIFT]),
     };
   }
 
@@ -1142,7 +1143,7 @@ export class GameScene extends Phaser.Scene {
           this.player.move({
             left: this.isDown('left'),
             right: this.isDown('right'),
-            lockFacing: this.player.charging,
+            lockFacing: this.player.charging || this.isDown('lock'),
           });
           if (this.isDown('up')) this.player.jump();
 

@@ -6,6 +6,7 @@ const KEY_CODES = {
   ' ': 32,
   x: 88,
   Escape: 27,
+  Shift: 16,
 };
 
 function dispatchKey(type, key) {
@@ -82,6 +83,64 @@ export function setupTouchControls() {
   }
 
   setupJoystick();
+  const lockLeft = wrap.querySelector('.touch__lock--left');
+  const lockRight = wrap.querySelector('.touch__lock--right');
+  if (lockLeft) setupLockBar(lockLeft, 'ArrowLeft');
+  if (lockRight) setupLockBar(lockRight, 'ArrowRight');
+}
+
+function setupLockBar(bar, directionKey) {
+  const heldKeys = new Set();
+  let pointerId = null;
+
+  const setKey = (key, shouldBeDown) => {
+    const isDown = heldKeys.has(key);
+    if (shouldBeDown && !isDown) {
+      heldKeys.add(key);
+      dispatchKey('keydown', key);
+    } else if (!shouldBeDown && isDown) {
+      heldKeys.delete(key);
+      dispatchKey('keyup', key);
+    }
+  };
+
+  const releaseAll = () => {
+    for (const key of Array.from(heldKeys)) setKey(key, false);
+  };
+
+  const update = (clientY) => {
+    const rect = bar.getBoundingClientRect();
+    const relY = (clientY - rect.top) / rect.height;
+    const inJumpZone = relY < 0.35;
+    setKey('Shift', true);
+    setKey(directionKey, true);
+    setKey('ArrowUp', inJumpZone);
+    bar.classList.toggle('touch__lock--jump-active', inJumpZone);
+  };
+
+  bar.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pointerId !== null) return;
+    pointerId = e.pointerId;
+    bar.classList.add('is-active');
+    try { bar.setPointerCapture(pointerId); } catch {}
+    update(e.clientY);
+  });
+  bar.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pointerId) return;
+    update(e.clientY);
+  });
+  const end = (e) => {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    pointerId = null;
+    bar.classList.remove('is-active');
+    bar.classList.remove('touch__lock--jump-active');
+    try { bar.releasePointerCapture(e.pointerId); } catch {}
+    releaseAll();
+  };
+  bar.addEventListener('pointerup', end);
+  bar.addEventListener('pointercancel', end);
+  bar.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function setupJoystick() {
