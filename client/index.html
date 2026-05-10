@@ -126,15 +126,15 @@
 
     <div id="touch-controls" class="touch hidden" aria-hidden="true">
       <button id="touch-menu-btn" class="touch__menu" data-touch-key="Escape" aria-label="Open menu">☰</button>
-      <button class="touch__lock touch__lock--left" aria-label="Walk left locked; tap top to jump">
-        <span class="touch__lock-jump">▲</span>
-        <span class="touch__lock-icon">◀⇋</span>
-      </button>
-      <button class="touch__lock touch__lock--right" aria-label="Walk right locked; tap top to jump">
-        <span class="touch__lock-jump">▲</span>
-        <span class="touch__lock-icon">⇋▶</span>
-      </button>
       <div class="touch__cluster touch__cluster--left">
+        <div id="touch-joystick-lock" class="joystick joystick--lock" aria-label="Movement (flip locked)">
+          <span class="joystick__label joystick__label--up">▲</span>
+          <span class="joystick__label joystick__label--right">▶</span>
+          <span class="joystick__label joystick__label--down">▼</span>
+          <span class="joystick__label joystick__label--left">◀</span>
+          <span class="joystick__badge">⇋</span>
+          <div id="touch-joystick-lock-knob" class="joystick__knob"></div>
+        </div>
         <div id="touch-joystick" class="joystick" aria-label="Movement">
           <span class="joystick__label joystick__label--up">▲</span>
           <span class="joystick__label joystick__label--right">▶</span>

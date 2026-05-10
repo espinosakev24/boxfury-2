@@ -82,74 +82,21 @@ export function setupTouchControls() {
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  setupJoystick();
-  const lockLeft = wrap.querySelector('.touch__lock--left');
-  const lockRight = wrap.querySelector('.touch__lock--right');
-  if (lockLeft) setupLockBar(lockLeft, 'ArrowLeft');
-  if (lockRight) setupLockBar(lockRight, 'ArrowRight');
+  setupJoystick(
+    document.getElementById('touch-joystick'),
+    document.getElementById('touch-joystick-knob'),
+  );
+  setupJoystick(
+    document.getElementById('touch-joystick-lock'),
+    document.getElementById('touch-joystick-lock-knob'),
+    { alwaysKeys: ['Shift'] },
+  );
 }
 
-function setupLockBar(bar, directionKey) {
-  const heldKeys = new Set();
-  let pointerId = null;
-
-  const setKey = (key, shouldBeDown) => {
-    const isDown = heldKeys.has(key);
-    if (shouldBeDown && !isDown) {
-      heldKeys.add(key);
-      dispatchKey('keydown', key);
-    } else if (!shouldBeDown && isDown) {
-      heldKeys.delete(key);
-      dispatchKey('keyup', key);
-    }
-  };
-
-  const releaseAll = () => {
-    for (const key of Array.from(heldKeys)) setKey(key, false);
-  };
-
-  const update = (clientY) => {
-    const rect = bar.getBoundingClientRect();
-    const relY = (clientY - rect.top) / rect.height;
-    const inJumpZone = relY < 0.35;
-    setKey('Shift', true);
-    setKey(directionKey, true);
-    setKey('ArrowUp', inJumpZone);
-    bar.classList.toggle('touch__lock--jump-active', inJumpZone);
-  };
-
-  bar.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (pointerId !== null) return;
-    pointerId = e.pointerId;
-    bar.classList.add('is-active');
-    try { bar.setPointerCapture(pointerId); } catch {}
-    update(e.clientY);
-  });
-  bar.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== pointerId) return;
-    update(e.clientY);
-  });
-  const end = (e) => {
-    if (pointerId !== null && e.pointerId !== pointerId) return;
-    pointerId = null;
-    bar.classList.remove('is-active');
-    bar.classList.remove('touch__lock--jump-active');
-    try { bar.releasePointerCapture(e.pointerId); } catch {}
-    releaseAll();
-  };
-  bar.addEventListener('pointerup', end);
-  bar.addEventListener('pointercancel', end);
-  bar.addEventListener('contextmenu', (e) => e.preventDefault());
-}
-
-function setupJoystick() {
-  const base = document.getElementById('touch-joystick');
-  const knob = document.getElementById('touch-joystick-knob');
+function setupJoystick(base, knob, { alwaysKeys = [] } = {}) {
   if (!base || !knob) return;
 
   const DEADZONE = 14;
-  const MAX_RADIUS = 44;
   const heldKeys = new Set();
   let pointerId = null;
 
@@ -172,6 +119,7 @@ function setupJoystick() {
     const rect = base.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
+    const MAX_RADIUS = Math.min(rect.width, rect.height) / 2 - 16;
     let dx = clientX - cx;
     let dy = clientY - cy;
     const dist = Math.hypot(dx, dy);
@@ -188,6 +136,7 @@ function setupJoystick() {
     setKey('ArrowRight', dx >  DEADZONE && ax >= ay * 0.6);
     setKey('ArrowUp',    dy < -DEADZONE && ay >= ax * 0.6);
     setKey('ArrowDown',  dy >  DEADZONE && ay >= ax * 0.6);
+    for (const k of alwaysKeys) setKey(k, true);
   };
 
   base.addEventListener('pointerdown', (e) => {
