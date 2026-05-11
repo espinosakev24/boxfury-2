@@ -20,6 +20,7 @@ export class Bee {
 
     this.buffer = [{ t: performance.now(), x, y }];
     this.dead = false;
+    this._wingPhase = Math.random() * Math.PI * 2;
 
     this.buzz = null;
     if (scene.cache?.audio?.exists('bee-buzz')) {
@@ -43,6 +44,20 @@ export class Bee {
     const cy = this.y;
     const w = BEE.WIDTH;
     const h = BEE.HEIGHT;
+
+    const ts = performance.now() / 1000;
+    const flap = Math.abs(Math.sin(ts * BEE.WING_FREQ + this._wingPhase));
+    const wingW = 6 + flap * 4;
+    const wingH = 4 + flap * 5;
+    const wingY = cy - h / 2 + 2;
+    const wingOffsetX = 7;
+    g.fillStyle(0xfff2a8, 0.5);
+    g.fillEllipse(cx - wingOffsetX, wingY, wingW, wingH);
+    g.fillEllipse(cx + wingOffsetX, wingY, wingW, wingH);
+    g.lineStyle(1, 0x4d3e00, 0.55);
+    g.strokeEllipse(cx - wingOffsetX, wingY, wingW, wingH);
+    g.strokeEllipse(cx + wingOffsetX, wingY, wingW, wingH);
+
     g.lineStyle(1, 0x15151f, 1);
     g.beginPath();
     g.moveTo(cx - w / 4, cy - h / 2);
@@ -53,9 +68,6 @@ export class Bee {
     g.fillStyle(0x15151f, 1);
     g.fillCircle(cx - w / 4, cy - h / 2 - 4, 1.2);
     g.fillCircle(cx + w / 4, cy - h / 2 - 4, 1.2);
-    g.fillStyle(0x15151f, 1);
-    g.fillRect(cx - w / 2 - 2, cy - 2, 3, 4);
-    g.fillRect(cx + w / 2 - 1, cy - 2, 3, 4);
     g.fillStyle(0x15151f, 1);
     g.fillRect(cx - 5, cy - 1, 2, 2);
     g.fillRect(cx + 3, cy - 1, 2, 2);

@@ -139,8 +139,11 @@ export class BeeController {
       }
     } else {
       this.path = null;
-      ax = -bee.vx * BEE.DAMPING;
-      ay = -bee.vy * BEE.DAMPING;
+      const t = (now - this.spawnedAt) / 1000;
+      const wx = Math.cos(t * BEE.WANDER_FREQ_X + this.wobblePhase) * BEE.WANDER_FORCE;
+      const wy = Math.sin(t * BEE.WANDER_FREQ_Y + this.wobblePhase * 1.7) * BEE.WANDER_FORCE * 0.55;
+      ax = wx - bee.vx * BEE.DAMPING * 0.4;
+      ay = wy - bee.vy * BEE.DAMPING * 0.4;
     }
 
     const sep = this._separationAccel();
