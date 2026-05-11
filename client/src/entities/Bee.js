@@ -47,16 +47,18 @@ export class Bee {
 
     const ts = performance.now() / 1000;
     const flap = Math.abs(Math.sin(ts * BEE.WING_FREQ + this._wingPhase));
-    const wingW = 6 + flap * 4;
-    const wingH = 4 + flap * 5;
-    const wingY = cy - h / 2 + 2;
-    const wingOffsetX = 7;
+    const wingW = 5 + flap * 6;
+    const wingH = 8;
+    const wingY = cy - 1;
+    const wingAnchorX = w / 2;
+    const leftCx = cx - wingAnchorX - wingW / 2 + 2;
+    const rightCx = cx + wingAnchorX + wingW / 2 - 2;
     g.fillStyle(0xfff2a8, 0.5);
-    g.fillEllipse(cx - wingOffsetX, wingY, wingW, wingH);
-    g.fillEllipse(cx + wingOffsetX, wingY, wingW, wingH);
+    g.fillEllipse(leftCx, wingY, wingW, wingH);
+    g.fillEllipse(rightCx, wingY, wingW, wingH);
     g.lineStyle(1, 0x4d3e00, 0.55);
-    g.strokeEllipse(cx - wingOffsetX, wingY, wingW, wingH);
-    g.strokeEllipse(cx + wingOffsetX, wingY, wingW, wingH);
+    g.strokeEllipse(leftCx, wingY, wingW, wingH);
+    g.strokeEllipse(rightCx, wingY, wingW, wingH);
 
     g.lineStyle(1, 0x15151f, 1);
     g.beginPath();
