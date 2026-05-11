@@ -170,6 +170,9 @@ export class BeeController {
     this._clampToMap();
     this._resolveObstacleCollision();
     this._resolveBeeOverlap();
+    if (this.attackState !== 'lunge') {
+      this._resolvePlayerOverlap();
+    }
     this._resolveObstacleCollision();
     this._clampToMap();
   }
@@ -205,6 +208,34 @@ export class BeeController {
       ay += (dy / d) * k * BEE.SEPARATION_FORCE;
     });
     return { ax, ay };
+  }
+
+  _resolvePlayerOverlap() {
+    const bee = this.bee;
+    const now = Date.now();
+    const minDX = HALF_W + PLAYER.WIDTH / 2;
+    const minDY = HALF_H + PLAYER.HEIGHT / 2;
+    this.room.state.players.forEach((p) => {
+      if (p === bee) return;
+      if (p.kind === 'bee') return;
+      if (!p.alive) return;
+      if (p.team === 0) return;
+      if (p.spawnProtectionUntil && now < p.spawnProtectionUntil) return;
+      const dx = bee.x - p.x;
+      const dy = bee.y - p.y;
+      const overlapX = minDX - Math.abs(dx);
+      const overlapY = minDY - Math.abs(dy);
+      if (overlapX <= 0 || overlapY <= 0) return;
+      if (overlapX < overlapY) {
+        const sign = dx >= 0 ? 1 : -1;
+        bee.x += sign * overlapX;
+        if ((sign > 0 && bee.vx < 0) || (sign < 0 && bee.vx > 0)) bee.vx = 0;
+      } else {
+        const sign = dy >= 0 ? 1 : -1;
+        bee.y += sign * overlapY;
+        if ((sign > 0 && bee.vy < 0) || (sign < 0 && bee.vy > 0)) bee.vy = 0;
+      }
+    });
   }
 
   _resolveBeeOverlap() {
