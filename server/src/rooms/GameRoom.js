@@ -629,6 +629,42 @@ export class GameRoom extends Room {
     });
   }
 
+  applyBeeMelee(attackerId, target, targetId, knockX, knockY) {
+    const damage = BEE.MELEE_DAMAGE;
+    const wasAlive = target.alive;
+    target.hp = Math.max(0, target.hp - damage);
+    target.lastHitAt = Date.now();
+    if (target.hp <= 0 && wasAlive) {
+      target.alive = false;
+      target.deaths++;
+      target.respawnAt = Date.now() + RESPAWN.COOLDOWN_MS;
+      const attacker = this.state.players.get(attackerId);
+      if (attacker) attacker.kills++;
+      this.logEvent(LOG_EVENTS.KILL, {
+        shooter: attacker?.name ?? '?',
+        shooterTeam: attacker?.team ?? 0,
+        victim: target.name,
+        victimTeam: target.team,
+      });
+    }
+    if (this.mode !== 'dm' && this.mode !== 'bee' && this.state.flag.carrierId === targetId) {
+      this.state.flag.carrierId = '';
+      this.state.flag.x = target.x;
+      this.state.flag.y = target.y;
+      this.state.flag.vx = knockX * 0.5;
+      this.state.flag.vy = -220;
+    }
+    this.broadcast(MESSAGES.HIT, {
+      targetId,
+      shooterId: attackerId,
+      damage,
+      knockX,
+      knockY,
+      hp: target.hp,
+      alive: target.alive,
+    });
+  }
+
   onJoin(client, options = {}) {
     const name = (options?.name && String(options.name).slice(0, 16)) || defaultPlayerName(client.sessionId);
     const player = new Player(0);
