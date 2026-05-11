@@ -26,8 +26,12 @@
             <span class="btn__label"><span class="btn__index">02</span><span data-i18n="menu.createGame">Create game</span></span>
             <span class="btn__key">C</span>
           </button>
+          <button id="btn-solo" class="btn btn--secondary" type="button">
+            <span class="btn__label"><span class="btn__index">03</span><span data-i18n="menu.solo">Single player</span></span>
+            <span class="btn__key">P</span>
+          </button>
           <button id="btn-settings" class="btn btn--secondary" type="button">
-            <span class="btn__label"><span class="btn__index">03</span><span data-i18n="menu.settings">Settings</span></span>
+            <span class="btn__label"><span class="btn__index">04</span><span data-i18n="menu.settings">Settings</span></span>
             <span class="btn__key">S</span>
           </button>
           <button id="btn-test" class="btn btn--secondary btn--compact" type="button">
@@ -342,6 +346,29 @@
           </button>
         </div>
         <button id="team-pick-spectate" class="team-pick__spectate" type="button">JUST SPECTATE</button>
+      </div>
+    </div>
+
+    <div id="solo-overlay" class="overlay hidden">
+      <div class="overlay__backdrop"></div>
+      <div class="overlay__panel overlay__panel--wide">
+        <div class="overlay__header">
+          <span class="eyebrow" data-i18n="solo.eyebrow">◣ Single player</span>
+          <button id="solo-close" class="btn btn--secondary btn--compact" type="button" data-i18n="settings.close">CLOSE</button>
+        </div>
+        <h2 class="overlay__title" data-i18n="solo.title">CHOOSE A MODE</h2>
+        <div class="solo-grid">
+          <button id="solo-story" class="solo-card is-locked" type="button" disabled>
+            <div class="solo-card__icon">◐</div>
+            <div class="solo-card__name" data-i18n="solo.story">Story</div>
+            <div class="solo-card__sub" data-i18n="solo.lockedSoon">Coming soon</div>
+          </button>
+          <button id="solo-bee" class="solo-card" type="button">
+            <div class="solo-card__icon">▲</div>
+            <div class="solo-card__name" data-i18n="solo.bee">Bee Wars</div>
+            <div class="solo-card__sub" data-i18n="solo.beeSub">Defend against the swarm</div>
+          </button>
+        </div>
       </div>
     </div>
 

@@ -962,6 +962,55 @@ input, textarea {
   gap: 14px;
   margin-bottom: 16px;
 }
+.solo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.solo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 18px;
+  background: var(--bf-arena);
+  border: 1.5px solid var(--bf-mute);
+  color: var(--bf-bone);
+  border-radius: var(--r-tight);
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 80ms ease, background 120ms ease;
+}
+.solo-card:hover:not(:disabled) {
+  border-color: var(--p1);
+  background: rgba(78, 224, 138, 0.08);
+}
+.solo-card:active:not(:disabled) { transform: translateY(1px); }
+.solo-card.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.solo-card__icon {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--p1);
+}
+.solo-card.is-locked .solo-card__icon { color: var(--bf-soft); }
+.solo-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.solo-card__sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--bf-soft);
+  text-transform: uppercase;
+}
+
 .map-card {
   display: flex;
   flex-direction: column;

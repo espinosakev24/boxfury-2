@@ -23,6 +23,7 @@ export class Player extends Schema {
     this.respawnAt = 0;
     this.spawnProtectionUntil = 0;
     this.crouching = false;
+    this.kind = 'player';
   }
 }
 
@@ -46,4 +47,5 @@ defineTypes(Player, {
   respawnAt: 'number',
   spawnProtectionUntil: 'number',
   crouching: 'boolean',
+  kind: 'string',
 });

@@ -1,6 +1,7 @@
 import { Room } from 'colyseus';
 import {
   ARROW,
+  BEE,
   DEATHMATCH,
   FLAG,
   HIT,
@@ -25,6 +26,7 @@ import {
 import { GameState } from '../schemas/GameState.js';
 import { Player } from '../schemas/Player.js';
 import { Arrow } from '../schemas/Arrow.js';
+import { BeeController } from './BeeController.js';
 
 const ADJECTIVES = ['Jade', 'Crimson', 'Azure', 'Amber', 'Bone', 'Void', 'Deep', 'Mute', 'Neon', 'Hollow'];
 const NOUNS = ['Arena', 'Drift', 'Lab', 'Vault', 'Cell', 'Spire', 'Gate', 'Yard', 'Crater', 'Stack'];
@@ -66,7 +68,7 @@ export class GameRoom extends Room {
       this.state.flag.homeX = this.map.flag.x;
       this.state.flag.homeY = this.map.flag.y;
     }
-    this.state.flag.disabled = this.mode === 'dm';
+    this.state.flag.disabled = this.mode === 'dm' || this.mode === 'bee';
     this.updateMetadata();
 
     this.onMessage(MESSAGES.STATE, (client, payload) => {
@@ -231,6 +233,30 @@ export class GameRoom extends Room {
     });
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / PHYSICS.TICK_HZ);
+
+    if (this.mode === 'bee') {
+      this.setPrivate(true);
+      this.spawnBee();
+    }
+  }
+
+  spawnBee() {
+    const sessionId = `bee-${Math.random().toString(36).slice(2, 8)}`;
+    const bee = new Player(BEE.COLOR);
+    bee.name = 'BEE';
+    bee.team = 2;
+    bee.kind = 'bee';
+    bee.alive = true;
+    bee.hp = BEE.HP;
+    bee.x = this.map.pixelWidth / 2;
+    bee.y = this.map.pixelHeight / 2 - 80;
+    bee.vx = 0;
+    bee.vy = 0;
+    bee.spawnProtectionUntil = 0;
+    this.state.players.set(sessionId, bee);
+    if (!this.bees) this.bees = new Map();
+    this.bees.set(sessionId, new BeeController(this, sessionId, bee));
+    this.beeSessionId = sessionId;
   }
 
   endMatch() {
@@ -335,6 +361,10 @@ export class GameRoom extends Room {
 
     for (const id of remove) this.state.arrows.delete(id);
 
+    if (this.bees) {
+      this.bees.forEach((ctrl) => ctrl.tick(dt, now));
+    }
+
     if (this.mode !== 'dm') this.tickFlag(dt);
     this.tickRespawns(now);
     if (this.mode === 'dm') this.tickDeathmatch();
@@ -369,10 +399,10 @@ export class GameRoom extends Room {
       }
       p.vx = 0;
       p.vy = 0;
-      p.hp = PLAYER.MAX_HP;
+      p.hp = p.kind === 'bee' ? BEE.HP : PLAYER.MAX_HP;
       p.alive = true;
       p.respawnAt = 0;
-      p.spawnProtectionUntil = now + SPAWN_PROTECTION.DURATION_MS;
+      p.spawnProtectionUntil = p.kind === 'bee' ? 0 : now + SPAWN_PROTECTION.DURATION_MS;
     });
   }
 
@@ -529,8 +559,6 @@ export class GameRoom extends Room {
   }
 
   sweepArrowAgainstPlayers(arrow, prevX, prevY, now) {
-    const halfW = PLAYER.WIDTH / 2;
-    const halfH = PLAYER.HEIGHT / 2;
     let best = null;
     for (const [pid, target] of this.state.players) {
       if (pid === arrow.shooterId) continue;
@@ -538,6 +566,8 @@ export class GameRoom extends Room {
       if (arrow.shooterTeam !== 0 && target.team === arrow.shooterTeam) continue;
       if (target.spawnProtectionUntil && now < target.spawnProtectionUntil) continue;
       if (now - target.lastHitAt < HIT.IFRAMES_MS) continue;
+      const halfW = (target.kind === 'bee' ? BEE.WIDTH : PLAYER.WIDTH) / 2;
+      const halfH = (target.kind === 'bee' ? BEE.HEIGHT : PLAYER.HEIGHT) / 2;
       const hit = segmentVsAabb(
         prevX, prevY,
         arrow.x, arrow.y,
@@ -568,6 +598,13 @@ export class GameRoom extends Room {
         victim: target.name,
         victimTeam: target.team,
       });
+      if (target.kind === 'bee') {
+        const stuckIds = [];
+        this.state.arrows.forEach((a, id) => {
+          if (a.stuckToId === targetId) stuckIds.push(id);
+        });
+        for (const id of stuckIds) this.state.arrows.delete(id);
+      }
     }
 
     if (this.mode !== 'dm' && this.state.flag.carrierId === targetId) {
@@ -601,14 +638,31 @@ export class GameRoom extends Room {
     player.alive = false;
     this.state.players.set(client.sessionId, player);
     this.joinCount++;
+    if (this.mode === 'bee') this._autoAssignBee(player);
     this.updateMetadata();
     this.logEvent(LOG_EVENTS.JOIN, { name });
     console.log(`[room ${this.displayName}] +${name} (waiting for team, ${this.state.players.size})`);
   }
 
+  _autoAssignBee(player) {
+    player.team = 1;
+    player.color = PLAYER_COLORS[0];
+    player.alive = true;
+    player.hp = PLAYER.MAX_HP;
+    player.respawnAt = 0;
+    player.kills = 0;
+    player.deaths = 0;
+    player.spawnProtectionUntil = Date.now() + SPAWN_PROTECTION.DURATION_MS;
+    const base = this.bases?.[1] ?? { x: 80, y: this.map.pixelHeight - 100 };
+    player.x = base.x;
+    player.y = base.y;
+    player.vx = 0;
+    player.vy = 0;
+  }
+
   async onLeave(client, consented) {
     const player = this.state.players.get(client.sessionId);
-    if (consented || !player) {
+    if (consented || !player || this.mode === 'bee') {
       this._cleanupClient(client);
       return;
     }

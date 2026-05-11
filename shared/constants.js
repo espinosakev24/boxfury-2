@@ -74,6 +74,20 @@ export const DEATHMATCH = {
   KILLS_TO_WIN: 5,
 };
 
+export const BEE = {
+  WIDTH: 20,
+  HEIGHT: 20,
+  HP: 30,
+  COLOR: 0xffd84e,
+  SPEED: 220,
+  ACCEL: 800,
+  DAMPING: 1.6,
+  HOVER_DISTANCE: 70,
+  SIGHT_RANGE: 1200,
+  BOB_AMPLITUDE: 8,
+  BOB_FREQUENCY: 2.4,
+};
+
 export const ROOM = {
   MAX_CLIENTS: 8,
 };

@@ -3,6 +3,7 @@ import { FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
 import { openMapPicker } from '../map-picker.js';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
+import { Bee } from '../entities/Bee.js';
 import { Arrow } from '../entities/Arrow.js';
 import { Level } from '../entities/Level.js';
 import { NetworkManager } from '../network/NetworkManager.js';
@@ -15,6 +16,7 @@ export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
     this.remotes = new Map();
+    this.bees = new Map();
     this.arrows = new Map();
   }
 
@@ -140,6 +142,12 @@ export class GameScene extends Phaser.Scene {
     const $ = this.network.$;
 
     const spawnRemote = (sessionId, player) => {
+      if (player.kind === 'bee') {
+        if (this.bees.has(sessionId)) return;
+        const bee = new Bee(this, { id: sessionId, x: player.x, y: player.y });
+        this.bees.set(sessionId, bee);
+        return;
+      }
       if (this.remotes.has(sessionId)) return;
       const remote = new RemotePlayer(this, {
         id: sessionId,
@@ -214,6 +222,10 @@ export class GameScene extends Phaser.Scene {
             crouching: player.crouching,
           });
         }
+        const bee = this.bees.get(sessionId);
+        if (bee) {
+          bee.applyState({ x: player.x, y: player.y });
+        }
         this.updateTeamCounts();
       });
     };
@@ -225,6 +237,11 @@ export class GameScene extends Phaser.Scene {
       if (remote) {
         remote.destroy();
         this.remotes.delete(sessionId);
+      }
+      const bee = this.bees.get(sessionId);
+      if (bee) {
+        bee.destroy();
+        this.bees.delete(sessionId);
       }
       this.updateTeamCounts();
     });
@@ -283,6 +300,8 @@ export class GameScene extends Phaser.Scene {
     }
     for (const remote of this.remotes.values()) remote.destroy();
     this.remotes.clear();
+    for (const bee of this.bees.values()) bee.destroy();
+    this.bees.clear();
     for (const arrow of this.arrows.values()) arrow.destroy();
     this.arrows.clear();
     this.flagCarrierId = '';
@@ -518,10 +537,15 @@ export class GameScene extends Phaser.Scene {
     if (!target.dead) target.flashHit();
     this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
     if (typeof hp === 'number') target.setDamageFromHp(hp);
+    const isBee = this.bees.has(targetId);
     if (this.cache?.audio?.exists('body-hit')) {
       this.sound.play('body-hit', { volume: 0.6 });
     }
-    if (this.cache?.audio?.exists('player-moan')) {
+    if (isBee) {
+      if (this.cache?.audio?.exists('bee-chirp')) {
+        this.sound.play('bee-chirp', { volume: 0.5 });
+      }
+    } else if (this.cache?.audio?.exists('player-moan')) {
       this.time.delayedCall(40, () => {
         this.sound.play('player-moan', { volume: 0.3 });
       });
@@ -602,7 +626,7 @@ export class GameScene extends Phaser.Scene {
 
   findPlayer(id) {
     if (this.player?.id === id) return this.player;
-    return this.remotes.get(id) ?? null;
+    return this.remotes.get(id) ?? this.bees.get(id) ?? null;
   }
 
   spawnLocalPlayer(color, team = 1, name = '', skin = undefined) {
@@ -865,11 +889,22 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       const remote = this.remotes.get(sessionId);
-      if (!remote) return;
-      if (!p.alive && !remote.dead) {
-        remote.playDeathAnim();
-        this._playDeathSound(0.35);
-      } else if (p.alive && remote.dead) remote.resetVisual();
+      if (remote) {
+        if (!p.alive && !remote.dead) {
+          remote.playDeathAnim();
+          this._playDeathSound(0.35);
+        } else if (p.alive && remote.dead) remote.resetVisual();
+        return;
+      }
+      const bee = this.bees.get(sessionId);
+      if (bee) {
+        if (!p.alive && !bee.dead) {
+          bee.playDeathAnim();
+          if (this.cache?.audio?.exists('bee-death')) {
+            this.sound.play('bee-death', { volume: 0.55 });
+          }
+        } else if (p.alive && bee.dead) bee.resetVisual();
+      }
     });
   }
 
@@ -1261,6 +1296,7 @@ export class GameScene extends Phaser.Scene {
     this.syncScores();
     if (this.scoreboardOpen) this.renderScoreboard();
     for (const r of this.remotes.values()) r.update();
+    for (const b of this.bees.values()) b.update();
     for (const a of this.arrows.values()) a.update(dt);
   }
 }

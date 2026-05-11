@@ -11,6 +11,7 @@ import { openCreateRoom, setupCreateRoom } from './create-room.js';
 import { setupMapPicker } from './map-picker.js';
 import { setupUiSounds } from './ui-sounds.js';
 import { setupTouchControls } from './touch-controls.js';
+import { setupSoloPicker, openSoloPicker } from './solo-picker.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
@@ -22,6 +23,7 @@ setupSettings();
 setupMapPicker();
 setupUiSounds();
 setupTouchControls();
+setupSoloPicker();
 
 const bgMusic = new Audio('/assets/audio/arena-drift.ogg');
 bgMusic.loop = true;
@@ -122,6 +124,20 @@ setupCreateRoom({
 setupMenu({
   onJoin: (roomId) => startGame({ mode: 'join', roomId }),
   onCreate: () => openCreateRoom(),
+  onSolo: () => openSoloPicker((mode) => {
+    if (mode === 'bee') {
+      startGame({
+        mode: 'create',
+        options: {
+          roomName: 'BEE WARS',
+          mode: 'bee',
+          mapId: 'default',
+          maxPlayers: 2,
+          maxPoints: 5,
+        },
+      });
+    }
+  }),
   onTest: () => startGame({
     mode: 'create',
     autoTeam: 1,
