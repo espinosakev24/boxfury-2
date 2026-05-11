@@ -95,6 +95,8 @@ export const BEE = {
   RECOVER_SPEED: 280,
   RECOVER_MS: 360,
   MELEE_DAMAGE: 18,
+  KNOCKBACK_MULT: 1.4,
+  KNOCKED_MS: 280,
 };
 
 export const ROOM = {

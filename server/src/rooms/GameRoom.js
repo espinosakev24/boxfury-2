@@ -667,6 +667,10 @@ export class GameRoom extends Room {
     const knockX = arrow.vx * ARROW.KNOCKBACK_MULT;
     const knockY = arrow.vy * ARROW.KNOCKBACK_MULT - ARROW.KNOCKBACK_UP;
 
+    if (target.kind === 'bee' && target.alive) {
+      this.bees?.get(targetId)?.applyKnockback(knockX, knockY);
+    }
+
     this.broadcast(MESSAGES.HIT, {
       targetId,
       shooterId: arrow.shooterId,

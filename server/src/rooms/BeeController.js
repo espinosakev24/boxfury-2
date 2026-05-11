@@ -18,6 +18,16 @@ export class BeeController {
     this.recoverDirX = 0;
     this.recoverDirY = 0;
     this.recoverStartedAt = 0;
+    this.knockedStartedAt = 0;
+  }
+
+  applyKnockback(knockX, knockY) {
+    if (!this.bee.alive) return;
+    this.bee.vx = knockX * BEE.KNOCKBACK_MULT;
+    this.bee.vy = knockY * BEE.KNOCKBACK_MULT;
+    this.attackState = 'knocked';
+    this.knockedStartedAt = Date.now();
+    this.lungeTargetId = null;
   }
 
   findTarget() {
@@ -50,6 +60,11 @@ export class BeeController {
       return;
     }
 
+    if (this.attackState === 'knocked') {
+      this._tickKnocked(dt, now);
+      this._clampToMap();
+      return;
+    }
     if (this.attackState === 'lunge') {
       this._tickLunge(dt, now);
       this._clampToMap();
@@ -188,6 +203,18 @@ export class BeeController {
     bee.vx = this.recoverDirX * BEE.RECOVER_SPEED;
     bee.vy = this.recoverDirY * BEE.RECOVER_SPEED;
     this.lungeTargetId = null;
+  }
+
+  _tickKnocked(dt, now) {
+    const bee = this.bee;
+    bee.vx -= bee.vx * BEE.DAMPING * dt * 0.7;
+    bee.vy -= bee.vy * BEE.DAMPING * dt * 0.7;
+    bee.x += bee.vx * dt;
+    bee.y += bee.vy * dt;
+    if (now - this.knockedStartedAt >= BEE.KNOCKED_MS) {
+      this.attackState = 'idle';
+      this.attackEndedAt = now;
+    }
   }
 
   _tickRecover(dt, now) {
