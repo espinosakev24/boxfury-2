@@ -236,11 +236,24 @@ export class GameRoom extends Room {
 
     if (this.mode === 'bee') {
       this.setPrivate(true);
-      this.spawnBee();
+      this.beeWave = 1;
+      this.nextWaveAt = 0;
+      this.spawnBeeWave(this.beeWave);
     }
   }
 
-  spawnBee() {
+  spawnBeeWave(count) {
+    const map = this.map;
+    if (!this.bees) this.bees = new Map();
+    for (let i = 0; i < count; i++) {
+      const t = (i + 1) / (count + 1);
+      const x = map.pixelWidth * t;
+      const y = Math.max(60, Math.min(120, map.pixelHeight * 0.15));
+      this._spawnSingleBee(x, y);
+    }
+  }
+
+  _spawnSingleBee(x, y) {
     const sessionId = `bee-${Math.random().toString(36).slice(2, 8)}`;
     const bee = new Player(BEE.COLOR);
     bee.name = 'BEE';
@@ -248,15 +261,13 @@ export class GameRoom extends Room {
     bee.kind = 'bee';
     bee.alive = true;
     bee.hp = BEE.HP;
-    bee.x = this.map.pixelWidth / 2;
-    bee.y = this.map.pixelHeight / 2 - 80;
+    bee.x = x;
+    bee.y = y;
     bee.vx = 0;
     bee.vy = 0;
     bee.spawnProtectionUntil = 0;
     this.state.players.set(sessionId, bee);
-    if (!this.bees) this.bees = new Map();
     this.bees.set(sessionId, new BeeController(this, sessionId, bee));
-    this.beeSessionId = sessionId;
   }
 
   endMatch() {
@@ -365,9 +376,44 @@ export class GameRoom extends Room {
       this.bees.forEach((ctrl) => ctrl.tick(dt, now));
     }
 
-    if (this.mode !== 'dm') this.tickFlag(dt);
+    if (this._beeRemovals?.length) {
+      for (let i = this._beeRemovals.length - 1; i >= 0; i--) {
+        if (now >= this._beeRemovals[i].at) {
+          const { id } = this._beeRemovals[i];
+          this.state.players.delete(id);
+          this.bees?.delete(id);
+          this._beeRemovals.splice(i, 1);
+        }
+      }
+    }
+
+    if (this.mode === 'bee') this.tickBeeWaves(now);
+    if (this.mode !== 'dm' && this.mode !== 'bee') this.tickFlag(dt);
     this.tickRespawns(now);
     if (this.mode === 'dm') this.tickDeathmatch();
+  }
+
+  tickBeeWaves(now) {
+    if (!this.bees || this.bees.size > 0) {
+      this.nextWaveAt = 0;
+      return;
+    }
+    const hasHumans = Array.from(this.state.players.values()).some(
+      (p) => p.kind !== 'bee' && p.team !== 0,
+    );
+    if (!hasHumans) {
+      this.nextWaveAt = 0;
+      return;
+    }
+    if (!this.nextWaveAt) {
+      this.nextWaveAt = now + 2000;
+      return;
+    }
+    if (now >= this.nextWaveAt) {
+      this.beeWave = (this.beeWave ?? 0) + 1;
+      this.spawnBeeWave(this.beeWave);
+      this.nextWaveAt = 0;
+    }
   }
 
   tickDeathmatch() {
@@ -604,6 +650,9 @@ export class GameRoom extends Room {
           if (a.stuckToId === targetId) stuckIds.push(id);
         });
         for (const id of stuckIds) this.state.arrows.delete(id);
+        this.state.scoreTeam1 = (this.state.scoreTeam1 ?? 0) + 1;
+        if (!this._beeRemovals) this._beeRemovals = [];
+        this._beeRemovals.push({ id: targetId, at: Date.now() + 250 });
       }
     }
 
