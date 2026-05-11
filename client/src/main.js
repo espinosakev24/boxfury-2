@@ -8,7 +8,7 @@ import { setupMenu } from './menu.js';
 import { setupGameMenu } from './game-menu.js';
 import { setupSettings } from './settings.js';
 import { openCreateRoom, setupCreateRoom } from './create-room.js';
-import { setupMapPicker } from './map-picker.js';
+import { openMapPicker, setupMapPicker } from './map-picker.js';
 import { setupUiSounds } from './ui-sounds.js';
 import { setupTouchControls } from './touch-controls.js';
 import { setupSoloPicker, openSoloPicker } from './solo-picker.js';
@@ -126,14 +126,19 @@ setupMenu({
   onCreate: () => openCreateRoom(),
   onSolo: () => openSoloPicker((mode) => {
     if (mode === 'bee') {
-      startGame({
-        mode: 'create',
-        options: {
-          roomName: 'BEE WARS',
-          mode: 'bee',
-          mapId: 'default',
-          maxPlayers: 2,
-          maxPoints: 5,
+      openMapPicker({
+        mapId: 'default',
+        onSelect: (mapId) => {
+          startGame({
+            mode: 'create',
+            options: {
+              roomName: 'BEE WARS',
+              mode: 'bee',
+              mapId,
+              maxPlayers: 2,
+              maxPoints: 5,
+            },
+          });
         },
       });
     }
