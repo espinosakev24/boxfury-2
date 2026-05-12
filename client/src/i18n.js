@@ -21,6 +21,7 @@ const TRANSLATIONS = {
     'menu.arenaCaption': 'Capture the flag · up to 8 players',
     'controls.shootShort': 'Hold to charge, release to shoot',
     'controls.crouch': 'Crouch',
+    'controls.aim': 'Aim (the bow follows the cursor)',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': '4 players max',
 
@@ -190,6 +191,7 @@ const TRANSLATIONS = {
     'menu.arenaCaption': 'Captura la bandera · hasta 8 jugadores',
     'controls.shootShort': 'Mantén para cargar, suelta para disparar',
     'controls.crouch': 'Agacharse',
+    'controls.aim': 'Apuntar (el arco sigue al cursor)',
     'menu.arena': 'Arena · 1440 × 900',
     'menu.maxPlayers': 'Máx 4 jugadores',
 
