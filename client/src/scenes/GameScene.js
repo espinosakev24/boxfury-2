@@ -1365,11 +1365,7 @@ export class GameScene extends Phaser.Scene {
           if (this.justDown('flag')) {
             this.toggleFlag();
           }
-          if (this.justDown('space')) {
-            if (!this.player.charging) this.player.chargeBow();
-            const shot = this.player.releaseBow();
-            if (shot) this.network.sendShoot(shot);
-          } else if (aimInput) {
+          if (this.isDown('space') || aimInput) {
             this.player.chargeBow();
           } else {
             const shot = this.player.releaseBow();

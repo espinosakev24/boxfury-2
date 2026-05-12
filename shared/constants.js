@@ -26,11 +26,12 @@ export const BOW = {
   THICKNESS: 3,
   MIN_ANGLE: 45,
   MAX_ANGLE: 180,
-  CHARGE_RATE: 180,
+  CHARGE_DURATION_MS: 962,
 };
 
 export const ARROW = {
-  SPEED: 700,
+  SPEED_MIN: 380,
+  SPEED_MAX: 900,
   DAMAGE: 25,
   LIFETIME_MS: 3000,
   LENGTH: 18,

@@ -12,6 +12,7 @@ export class Bow {
     this.scene = scene;
     this.owner = owner;
     this.angle = BOW.MIN_ANGLE;
+    this.pull = 0;
     this._stringOvershoot = 0;
     this.sprite = scene.add.graphics();
     this._draw();
@@ -49,8 +50,7 @@ export class Bow {
   _draw() {
     const gfx = this.sprite;
     gfx.clear();
-    const range = BOW.MAX_ANGLE - BOW.MIN_ANGLE;
-    const pull = range > 0 ? Math.max(0, Math.min(1, (this.angle - BOW.MIN_ANGLE) / range)) : 0;
+    const pull = Math.max(0, Math.min(1, this.pull ?? 0));
 
     gfx.lineStyle(1, 0xffffff, 0.35);
     gfx.beginPath();

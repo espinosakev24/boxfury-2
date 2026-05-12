@@ -146,7 +146,8 @@ export class Player {
     this.sprite.body.setVelocity(vx, vy);
     this.inputLockedUntil = performance.now() + HIT.INPUT_LOCK_MS;
     this.charging = false;
-    this.bow.setAngle(BOW.MIN_ANGLE);
+    this._chargeStartAt = null;
+    this.bow.pull = 0;
   }
 
   playDeathAnim() {
@@ -300,7 +301,8 @@ export class Player {
     this.carryingFlag = carrying;
     if (carrying) {
       this.charging = false;
-      this.bow.setAngle(BOW.MIN_ANGLE);
+      this._chargeStartAt = null;
+      this.bow.pull = 0;
     }
     this.bow.sprite.setVisible(!carrying);
   }
@@ -359,28 +361,39 @@ export class Player {
 
   chargeBow() {
     if (this.carryingFlag) return;
+    if (!this.charging) {
+      this._chargeStartAt = performance.now();
+    }
     this.charging = true;
+  }
+
+  getChargePull() {
+    if (!this._chargeStartAt) return 0;
+    const elapsed = performance.now() - this._chargeStartAt;
+    return Math.max(0, Math.min(1, elapsed / BOW.CHARGE_DURATION_MS));
   }
 
   releaseBow() {
     if (this.carryingFlag || !this.charging) return null;
+    const pull = this.getChargePull();
     this.charging = false;
+    this._chargeStartAt = null;
+    this.bow.pull = 0;
     const now = performance.now();
     if (this._lastShotAt && now - this._lastShotAt < ARROW.COOLDOWN_MS) {
-      this.bow.setAngle(BOW.MIN_ANGLE);
       return null;
     }
     this._lastShotAt = now;
     const rot = this.bow.getRotation();
     const cos = Math.cos(rot);
     const sin = Math.sin(rot);
+    const speed = ARROW.SPEED_MIN + (ARROW.SPEED_MAX - ARROW.SPEED_MIN) * pull;
     const shot = {
       x: this.sprite.x + cos * BOW.LENGTH,
       y: this.sprite.y + sin * BOW.LENGTH,
-      vx: cos * ARROW.SPEED,
-      vy: sin * ARROW.SPEED,
+      vx: cos * speed,
+      vy: sin * speed,
     };
-    this.bow.setAngle(BOW.MIN_ANGLE);
     this.bow.triggerSnap();
     if (this.scene.cache?.audio?.exists('arrow-shoot')) {
       this.scene.sound.play('arrow-shoot', { volume: 0.2 });
@@ -394,11 +407,7 @@ export class Player {
     else if (!this.charging && this._wasCharging) this._stopChargeSfx();
     this._wasCharging = this.charging;
 
-    if (this.charging) {
-      this.bow.setAngle(this.bow.angle + BOW.CHARGE_RATE * dt);
-    } else {
-      this.bow.setAngle(BOW.MIN_ANGLE);
-    }
+    this.bow.pull = this.charging ? this.getChargePull() : 0;
     this.bow.update();
 
     const body = this.sprite.body;
