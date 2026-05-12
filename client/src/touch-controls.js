@@ -12,6 +12,11 @@ const KEY_CODES = {
   f: 70,
 };
 
+import { getAimInvert, onAimInvertChange } from './aim-mode.js';
+
+let aimInverted = getAimInvert();
+onAimInvertChange((v) => { aimInverted = v; });
+
 function dispatchKey(type, key) {
   const opts = {
     key,
@@ -184,8 +189,9 @@ function setupAimJoystick(base, knob) {
       dy *= k;
     }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    const ndx = dx / MAX_RADIUS;
-    const ndy = dy / MAX_RADIUS;
+    const sign = aimInverted ? -1 : 1;
+    const ndx = (dx / MAX_RADIUS) * sign;
+    const ndy = (dy / MAX_RADIUS) * sign;
     window.boxfuryTouchAim = { dx: ndx, dy: ndy };
     if (Math.hypot(ndx, ndy) > 0.05) {
       window.boxfuryAimDir = { dx: ndx, dy: ndy };
