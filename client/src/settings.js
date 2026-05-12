@@ -75,7 +75,9 @@ export function setupSettings() {
     document.querySelectorAll('input[name="settings-lang"]').forEach((r) => {
       r.checked = r.value === currentLocale;
     });
-    usernameInput.focus();
+    if (!document.body.classList.contains('is-mobile')) {
+      usernameInput.focus();
+    }
   };
   const close = () => overlay.classList.add('hidden');
 

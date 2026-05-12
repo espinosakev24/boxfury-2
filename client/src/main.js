@@ -12,11 +12,23 @@ import { openMapPicker, setupMapPicker } from './map-picker.js';
 import { setupUiSounds } from './ui-sounds.js';
 import { setupTouchControls } from './touch-controls.js';
 import { setupSoloPicker, openSoloPicker } from './solo-picker.js';
+import { showTutorialIfNeeded } from './tutorial.js';
 import { applyLocale } from './i18n.js';
 import { getUsername } from './username.js';
 import { getSkin } from './skin.js';
 
 let game = null;
+
+(function detectDevice() {
+  const ua = navigator.userAgent || '';
+  const isMobileUA = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isTouchPrimary =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse) and (hover: none)').matches;
+  const isMobile = isMobileUA || isTouchPrimary;
+  document.body.classList.toggle('is-mobile', isMobile);
+  document.body.classList.toggle('is-desktop', !isMobile);
+})();
 
 applyLocale();
 setupSettings();
@@ -81,6 +93,7 @@ function doStartGame(connectOptions) {
   pauseBgMusic();
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
+  showTutorialIfNeeded();
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',

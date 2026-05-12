@@ -71,7 +71,9 @@ export function openCreateRoom() {
   renderPlayers();
   renderPoints();
   document.getElementById('create-overlay').classList.remove('hidden');
-  document.getElementById('create-name').focus();
+  if (!document.body.classList.contains('is-mobile')) {
+    document.getElementById('create-name').focus();
+  }
 }
 
 function renderModes() {

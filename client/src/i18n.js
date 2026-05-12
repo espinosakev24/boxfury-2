@@ -36,6 +36,21 @@ const TRANSLATIONS = {
     'settings.aim': 'Aim (touch)',
     'aim.pullBack': 'Pull-back',
     'aim.direct': 'Direct',
+    'tutorial.eyebrow': '◣ How to play',
+    'tutorial.title': 'QUICK START',
+    'tutorial.desktop': 'Desktop',
+    'tutorial.mobile': 'Mobile',
+    'tutorial.dMove': 'Move',
+    'tutorial.dJump': 'Jump',
+    'tutorial.dAim': 'Aim — the bow follows the cursor.',
+    'tutorial.dShoot': 'Hold to charge, release to shoot. The longer you hold, the farther the arrow flies.',
+    'tutorial.dFlag': 'Pick up or drop the flag.',
+    'tutorial.mMove': 'Left joystick: move. Push up to jump.',
+    'tutorial.mAim': 'Right joystick: aim and charge. The bow follows where you push. Hold to charge — release to shoot.',
+    'tutorial.mFlag': 'Flag button: pick up or drop.',
+    'tutorial.tip': 'Tip: in Settings you can switch the aim to <strong>Pull-back</strong> — drag the joystick away from where you want to shoot, like drawing a bowstring.',
+    'tutorial.gotIt': 'Got it',
+    'tutorial.never': "Don't show again",
     'settings.skin': 'Face',
     'settings.save': 'Save',
     'settings.cancel': 'Cancel',
@@ -190,6 +205,21 @@ const TRANSLATIONS = {
     'settings.aim': 'Apuntado (táctil)',
     'aim.pullBack': 'Tirar atrás',
     'aim.direct': 'Directo',
+    'tutorial.eyebrow': '◣ Cómo jugar',
+    'tutorial.title': 'INICIO RÁPIDO',
+    'tutorial.desktop': 'Escritorio',
+    'tutorial.mobile': 'Móvil',
+    'tutorial.dMove': 'Moverse',
+    'tutorial.dJump': 'Saltar',
+    'tutorial.dAim': 'Apuntar — el arco sigue al cursor.',
+    'tutorial.dShoot': 'Mantén para cargar, suelta para disparar. Cuanto más mantengas, más lejos llega la flecha.',
+    'tutorial.dFlag': 'Recoger o soltar la bandera.',
+    'tutorial.mMove': 'Joystick izquierdo: moverse. Empújalo hacia arriba para saltar.',
+    'tutorial.mAim': 'Joystick derecho: apuntar y cargar. El arco sigue hacia donde empujes. Mantén para cargar — suelta para disparar.',
+    'tutorial.mFlag': 'Botón de bandera: recoger o soltar.',
+    'tutorial.tip': 'Tip: en Ajustes podés cambiar el apuntado a <strong>Tirar atrás</strong> — arrastrá el joystick en sentido contrario al que querés disparar, como tensar una cuerda.',
+    'tutorial.gotIt': 'Entendido',
+    'tutorial.never': 'No mostrar más',
     'settings.skin': 'Cara',
     'settings.save': 'Guardar',
     'settings.cancel': 'Cancelar',
@@ -331,6 +361,10 @@ export function applyLocale() {
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.dataset.i18n;
     if (key) el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const key = el.dataset.i18nHtml;
+    if (key) el.innerHTML = t(key);
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
     const key = el.dataset.i18nPlaceholder;

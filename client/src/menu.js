@@ -22,7 +22,9 @@ export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
     lobbySearch.value = '';
     filter = '';
     refreshRooms();
-    lobbySearch.focus();
+    if (!document.body.classList.contains('is-mobile')) {
+      lobbySearch.focus();
+    }
     pollTimer = setInterval(refreshRooms, 3000);
   };
 
