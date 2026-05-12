@@ -343,7 +343,7 @@ const TRANSLATIONS = {
 
 export function getLocale() {
   const v = localStorage.getItem(STORAGE_KEY);
-  return TRANSLATIONS[v] ? v : 'en';
+  return TRANSLATIONS[v] ? v : 'es';
 }
 
 export function setLocale(locale) {
