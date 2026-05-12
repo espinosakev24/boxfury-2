@@ -22,6 +22,7 @@ export class GameScene extends Phaser.Scene {
 
   async create() {
     this._buildKeyMap();
+    this._bindMouseAim();
     this.level = new Level(this);
     this.network = new NetworkManager();
 
@@ -445,7 +446,6 @@ export class GameScene extends Phaser.Scene {
       down: make([...(useArrows ? [KC.DOWN] : []), ...(useWasd ? [KC.S] : [])]),
       space: make([KC.SPACE]),
       flag: make([KC.X]),
-      lock: make([KC.SHIFT]),
       zoomIn: make([KC.PLUS, KC.NUMPAD_ADD, KC.E]),
       zoomOut: make([KC.MINUS, KC.NUMPAD_SUBTRACT, KC.Q]),
       follow: make([KC.F]),
@@ -474,14 +474,97 @@ export class GameScene extends Phaser.Scene {
     return false;
   }
 
-  _applyTouchAim() {
-    const aim = window.boxfuryTouchAim;
-    if (!aim || !this.player || !this.player.charging) return;
-    const { dx, dy } = aim;
-    const FACING_DEADZONE = 0.18;
-    if (Math.abs(dx) > FACING_DEADZONE) {
+  _bindMouseAim() {
+    this._mouseAiming = false;
+    const canvas = this.game.canvas;
+    if (!canvas) return;
+
+    const screenToWorld = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const cam = this.cameras.main;
+      const localX = ((clientX - rect.left) / rect.width) * canvas.width;
+      const localY = ((clientY - rect.top) / rect.height) * canvas.height;
+      return cam.getWorldPoint(localX, localY);
+    };
+
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      if (this._chatOpen || this.deathState) return;
+      if (e.target !== canvas) return;
+      this._mouseAiming = true;
+      const wp = screenToWorld(e.clientX, e.clientY);
+      this._mouseClientX = e.clientX;
+      this._mouseClientY = e.clientY;
+      this._mouseAimWorldX = wp.x;
+      this._mouseAimWorldY = wp.y;
+    };
+    const onMove = (e) => {
+      this._mouseClientX = e.clientX;
+      this._mouseClientY = e.clientY;
+    };
+    const onUp = (e) => {
+      if (e.button !== 0) return;
+      if (!this._mouseAiming) return;
+      this._mouseAiming = false;
+    };
+    this._mouseAimDown = onDown;
+    this._mouseAimMove = onMove;
+    this._mouseAimUp = onUp;
+    this._mouseAimScreenToWorld = screenToWorld;
+
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    this.events.once('shutdown', () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    });
+  }
+
+  _hasAimInput() {
+    return !!window.boxfuryTouchAim || this._mouseAiming;
+  }
+
+  _applyAim() {
+    if (!this.player) return;
+
+    let dx = null;
+    let dy = null;
+    let facingThreshold = 0;
+
+    const touchAim = window.boxfuryTouchAim;
+    if (touchAim) {
+      dx = touchAim.dx;
+      dy = touchAim.dy;
+      facingThreshold = 0.18;
+    } else if (this._mouseAiming && this._mouseClientX != null) {
+      const wp = this._mouseAimScreenToWorld(this._mouseClientX, this._mouseClientY);
+      dx = wp.x - this.player.sprite.x;
+      dy = wp.y - this.player.sprite.y;
+      facingThreshold = 6;
+    } else {
+      const touchDir = window.boxfuryAimDir;
+      if (touchDir) {
+        dx = touchDir.dx;
+        dy = touchDir.dy;
+        facingThreshold = 0.18;
+      } else if (this._mouseClientX != null && this._mouseAimScreenToWorld) {
+        const wp = this._mouseAimScreenToWorld(this._mouseClientX, this._mouseClientY);
+        dx = wp.x - this.player.sprite.x;
+        dy = wp.y - this.player.sprite.y;
+        facingThreshold = 6;
+      }
+    }
+
+    if (dx == null) return;
+
+    if (Math.abs(dx) > facingThreshold) {
       this.player.facing = dx >= 0 ? 1 : -1;
     }
+
     const adx = Math.max(Math.abs(dx), 1e-3);
     const theta = Math.atan2(dy, adx);
     let angle = 90 - (theta * 180) / Math.PI;
@@ -1269,20 +1352,24 @@ export class GameScene extends Phaser.Scene {
     if (this.player) {
       if (!this.deathState) {
         if (!this._chatOpen) {
-          const touchAim = window.boxfuryTouchAim;
+          const aimInput = this._hasAimInput();
           this.player.setCrouching(this.isDown('down'));
           if (this.justDown('down')) this._handleDownTap();
           this.player.move({
             left: this.isDown('left'),
             right: this.isDown('right'),
-            lockFacing: this.player.charging || this.isDown('lock') || !!touchAim,
+            lockFacing: true,
           });
           if (this.isDown('up')) this.player.jump();
 
           if (this.justDown('flag')) {
             this.toggleFlag();
           }
-          if (this.isDown('space')) {
+          if (this.justDown('space')) {
+            if (!this.player.charging) this.player.chargeBow();
+            const shot = this.player.releaseBow();
+            if (shot) this.network.sendShoot(shot);
+          } else if (aimInput) {
             this.player.chargeBow();
           } else {
             const shot = this.player.releaseBow();
@@ -1292,7 +1379,7 @@ export class GameScene extends Phaser.Scene {
           this.player.sprite.body.setVelocityX(0);
         }
         this.player.update(dt);
-        this._applyTouchAim();
+        this._applyAim();
       }
       this.network.sendState(this.player.getState());
       if (this.player.nameText) {

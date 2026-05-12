@@ -169,15 +169,6 @@ function setupAimJoystick(base, knob) {
   if (!base || !knob) return;
 
   let pointerId = null;
-  let spaceHeld = false;
-
-  const publish = (dx, dy) => {
-    window.boxfuryTouchAim = { dx, dy };
-  };
-
-  const clear = () => {
-    window.boxfuryTouchAim = null;
-  };
 
   const update = (clientX, clientY) => {
     const rect = base.getBoundingClientRect();
@@ -193,7 +184,12 @@ function setupAimJoystick(base, knob) {
       dy *= k;
     }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    publish(dx / MAX_RADIUS, dy / MAX_RADIUS);
+    const ndx = dx / MAX_RADIUS;
+    const ndy = dy / MAX_RADIUS;
+    window.boxfuryTouchAim = { dx: ndx, dy: ndy };
+    if (Math.hypot(ndx, ndy) > 0.05) {
+      window.boxfuryAimDir = { dx: ndx, dy: ndy };
+    }
   };
 
   base.addEventListener('pointerdown', (e) => {
@@ -202,11 +198,6 @@ function setupAimJoystick(base, knob) {
     pointerId = e.pointerId;
     base.classList.add('is-active');
     try { base.setPointerCapture(pointerId); } catch {}
-    publish(0, 0);
-    if (!spaceHeld) {
-      spaceHeld = true;
-      dispatchKey('keydown', ' ');
-    }
     update(e.clientX, e.clientY);
   });
   base.addEventListener('pointermove', (e) => {
@@ -218,12 +209,7 @@ function setupAimJoystick(base, knob) {
     pointerId = null;
     base.classList.remove('is-active');
     try { base.releasePointerCapture(e.pointerId); } catch {}
-    knob.style.transform = '';
-    clear();
-    if (spaceHeld) {
-      spaceHeld = false;
-      dispatchKey('keyup', ' ');
-    }
+    window.boxfuryTouchAim = null;
   };
   base.addEventListener('pointerup', end);
   base.addEventListener('pointercancel', end);
