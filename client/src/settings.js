@@ -43,8 +43,8 @@ export function setupSettings() {
     if (!aimRoot) return;
     aimRoot.innerHTML = '';
     const options = [
-      { value: true, key: 'aim.pullBack' },
       { value: false, key: 'aim.direct' },
+      { value: true, key: 'aim.pullBack' },
     ];
     for (const opt of options) {
       const btn = document.createElement('button');

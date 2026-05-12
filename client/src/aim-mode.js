@@ -4,10 +4,10 @@ const EVENT = 'boxfury:aimInvert';
 export function getAimInvert() {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === null) return true;
+    if (v === null) return false;
     return v === '1';
   } catch {
-    return true;
+    return false;
   }
 }
 
