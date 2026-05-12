@@ -1447,10 +1447,10 @@ input, textarea {
   align-items: center;
 }
 .touch__row--top { gap: 10px; opacity: 0.85; }
+.touch__row--play { align-items: flex-end; }
 .touch__row--spectator { display: none; }
 #touch-controls.is-spectator .touch__row--play { display: none; }
 #touch-controls.is-spectator .touch__row--spectator { display: flex; }
-#touch-controls.is-spectator .joystick--lock { display: none; }
 
 .touch__btn {
   pointer-events: auto;
@@ -1481,17 +1481,6 @@ input, textarea {
   height: 44px;
   font-size: 16px;
 }
-.touch__btn--shoot {
-  width: 80px;
-  height: 80px;
-  font-size: 28px;
-  background: rgba(255, 84, 112, 0.25);
-  border-color: rgba(255, 84, 112, 0.6);
-}
-.touch__btn--shoot.is-active {
-  background: rgba(255, 84, 112, 0.55);
-  border-color: var(--p2);
-}
 .touch__btn--jump {
   width: 70px;
   height: 70px;
@@ -1509,26 +1498,19 @@ input, textarea {
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
-.joystick--lock {
+.joystick--aim {
   width: 130px;
   height: 130px;
-  background: rgba(78, 224, 138, 0.06);
-  border-color: rgba(78, 224, 138, 0.35);
+  background: rgba(255, 84, 112, 0.12);
+  border-color: rgba(255, 84, 112, 0.55);
 }
-.joystick--lock.is-active {
-  background: rgba(78, 224, 138, 0.14);
-  border-color: var(--p1);
+.joystick--aim.is-active {
+  background: rgba(255, 84, 112, 0.22);
+  border-color: var(--p2);
 }
-.joystick__badge {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: var(--font-mono);
-  font-size: 16px;
-  color: rgba(78, 224, 138, 0.5);
-  pointer-events: none;
-  z-index: 0;
+.joystick--aim.is-active .joystick__knob {
+  background: rgba(255, 84, 112, 0.45);
+  border-color: var(--p2);
 }
 .joystick__label {
   position: absolute;

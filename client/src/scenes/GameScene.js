@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
+import { BOW, FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
 import { openMapPicker } from '../map-picker.js';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
@@ -472,6 +472,23 @@ export class GameScene extends Phaser.Scene {
     if (!keys) return false;
     for (const k of keys) if (Phaser.Input.Keyboard.JustDown(k)) return true;
     return false;
+  }
+
+  _applyTouchAim() {
+    const aim = window.boxfuryTouchAim;
+    if (!aim || !this.player || !this.player.charging) return;
+    const { dx, dy } = aim;
+    const FACING_DEADZONE = 0.18;
+    if (Math.abs(dx) > FACING_DEADZONE) {
+      this.player.facing = dx >= 0 ? 1 : -1;
+    }
+    const adx = Math.max(Math.abs(dx), 1e-3);
+    const theta = Math.atan2(dy, adx);
+    let angle = 90 - (theta * 180) / Math.PI;
+    if (angle < BOW.MIN_ANGLE) angle = BOW.MIN_ANGLE;
+    if (angle > BOW.MAX_ANGLE) angle = BOW.MAX_ANGLE;
+    this.player.bow.setAngle(angle);
+    this.player.bow.update();
   }
 
   _handleDownTap() {
@@ -1252,12 +1269,13 @@ export class GameScene extends Phaser.Scene {
     if (this.player) {
       if (!this.deathState) {
         if (!this._chatOpen) {
+          const touchAim = window.boxfuryTouchAim;
           this.player.setCrouching(this.isDown('down'));
           if (this.justDown('down')) this._handleDownTap();
           this.player.move({
             left: this.isDown('left'),
             right: this.isDown('right'),
-            lockFacing: this.player.charging || this.isDown('lock'),
+            lockFacing: this.player.charging || this.isDown('lock') || !!touchAim,
           });
           if (this.isDown('up')) this.player.jump();
 
@@ -1274,6 +1292,7 @@ export class GameScene extends Phaser.Scene {
           this.player.sprite.body.setVelocityX(0);
         }
         this.player.update(dt);
+        this._applyTouchAim();
       }
       this.network.sendState(this.player.getState());
       if (this.player.nameText) {

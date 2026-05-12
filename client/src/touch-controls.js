@@ -89,14 +89,13 @@ export function setupTouchControls() {
     document.getElementById('touch-joystick'),
     document.getElementById('touch-joystick-knob'),
   );
-  setupJoystick(
-    document.getElementById('touch-joystick-lock'),
-    document.getElementById('touch-joystick-lock-knob'),
-    { alwaysKeys: ['Shift'] },
+  setupAimJoystick(
+    document.getElementById('touch-joystick-aim'),
+    document.getElementById('touch-joystick-aim-knob'),
   );
 }
 
-function setupJoystick(base, knob, { alwaysKeys = [] } = {}) {
+function setupJoystick(base, knob) {
   if (!base || !knob) return;
 
   const DEADZONE = 14;
@@ -139,7 +138,6 @@ function setupJoystick(base, knob, { alwaysKeys = [] } = {}) {
     setKey('ArrowRight', dx >  DEADZONE && ax >= ay * 0.6);
     setKey('ArrowUp',    dy < -DEADZONE && ay >= ax * 0.6);
     setKey('ArrowDown',  dy >  DEADZONE && ay >= ax * 0.6);
-    for (const k of alwaysKeys) setKey(k, true);
   };
 
   base.addEventListener('pointerdown', (e) => {
@@ -161,6 +159,71 @@ function setupJoystick(base, knob, { alwaysKeys = [] } = {}) {
     try { base.releasePointerCapture(e.pointerId); } catch {}
     knob.style.transform = '';
     releaseAll();
+  };
+  base.addEventListener('pointerup', end);
+  base.addEventListener('pointercancel', end);
+  base.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+function setupAimJoystick(base, knob) {
+  if (!base || !knob) return;
+
+  let pointerId = null;
+  let spaceHeld = false;
+
+  const publish = (dx, dy) => {
+    window.boxfuryTouchAim = { dx, dy };
+  };
+
+  const clear = () => {
+    window.boxfuryTouchAim = null;
+  };
+
+  const update = (clientX, clientY) => {
+    const rect = base.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const MAX_RADIUS = Math.min(rect.width, rect.height) / 2 - 16;
+    let dx = clientX - cx;
+    let dy = clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > MAX_RADIUS) {
+      const k = MAX_RADIUS / dist;
+      dx *= k;
+      dy *= k;
+    }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    publish(dx / MAX_RADIUS, dy / MAX_RADIUS);
+  };
+
+  base.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pointerId !== null) return;
+    pointerId = e.pointerId;
+    base.classList.add('is-active');
+    try { base.setPointerCapture(pointerId); } catch {}
+    publish(0, 0);
+    if (!spaceHeld) {
+      spaceHeld = true;
+      dispatchKey('keydown', ' ');
+    }
+    update(e.clientX, e.clientY);
+  });
+  base.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pointerId) return;
+    update(e.clientX, e.clientY);
+  });
+  const end = (e) => {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    pointerId = null;
+    base.classList.remove('is-active');
+    try { base.releasePointerCapture(e.pointerId); } catch {}
+    knob.style.transform = '';
+    clear();
+    if (spaceHeld) {
+      spaceHeld = false;
+      dispatchKey('keyup', ' ');
+    }
   };
   base.addEventListener('pointerup', end);
   base.addEventListener('pointercancel', end);
