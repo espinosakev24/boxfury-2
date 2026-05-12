@@ -217,7 +217,7 @@ const TRANSLATIONS = {
     'tutorial.mMove': 'Joystick izquierdo: moverse. Empújalo hacia arriba para saltar.',
     'tutorial.mAim': 'Joystick derecho: apuntar y cargar. El arco sigue hacia donde empujes. Mantén para cargar — suelta para disparar.',
     'tutorial.mFlag': 'Botón de bandera: recoger o soltar.',
-    'tutorial.tip': 'Tip: en Ajustes podés cambiar el apuntado a <strong>Tirar atrás</strong> — arrastrá el joystick en sentido contrario al que querés disparar, como tensar una cuerda.',
+    'tutorial.tip': 'Tip: en Ajustes puedes cambiar el apuntado a <strong>Tirar atrás</strong> — arrastra el joystick en sentido contrario al que quieres disparar, como tensar una cuerda.',
     'tutorial.gotIt': 'Entendido',
     'tutorial.never': 'No mostrar más',
     'settings.skin': 'Cara',
