@@ -19,7 +19,7 @@ import { getSkin } from './skin.js';
 
 let game = null;
 
-(function detectDevice() {
+function detectDevice() {
   const ua = navigator.userAgent || '';
   const isMobileUA = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   const isTouchPrimary =
@@ -28,7 +28,19 @@ let game = null;
   const isMobile = isMobileUA || isTouchPrimary;
   document.body.classList.toggle('is-mobile', isMobile);
   document.body.classList.toggle('is-desktop', !isMobile);
-})();
+}
+detectDevice();
+
+function handleViewportChange() {
+  detectDevice();
+  if (game?.scale) game.scale.refresh();
+}
+window.addEventListener('resize', handleViewportChange);
+window.addEventListener('orientationchange', () => {
+  // iOS/Android dispatch orientationchange before the viewport dimensions
+  // settle — measuring immediately yields the old size.
+  setTimeout(handleViewportChange, 200);
+});
 
 applyLocale();
 setupSettings();
