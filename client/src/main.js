@@ -1,4 +1,5 @@
 import './style.css';
+import './auth/mount.jsx';
 import Phaser from 'phaser';
 import { COLORS, WORLD } from '@boxfury/shared';
 import { BootScene } from './scenes/BootScene.js';
@@ -14,8 +15,9 @@ import { setupTouchControls } from './touch-controls.js';
 import { setupSoloPicker, openSoloPicker } from './solo-picker.js';
 import { showTutorialIfNeeded } from './tutorial.js';
 import { applyLocale } from './i18n.js';
-import { getUsername } from './username.js';
+import { getUsername, setUsername } from './username.js';
 import { getSkin } from './skin.js';
+import { AUTH_EVENTS } from './auth/config.js';
 
 let game = null;
 
@@ -182,4 +184,11 @@ setupMenu({
 setupGameMenu({
   onLeave: leaveGame,
   onJoinTeam: () => game?.scene.getScene('GameScene')?.joinTeam?.(),
+});
+
+// When a server profile arrives, prefer its username over the cached guest one.
+// Guests keep working — they just use whatever localStorage already has.
+window.addEventListener(AUTH_EVENTS.PROFILE, (e) => {
+  const name = e.detail?.profile?.username;
+  if (name) setUsername(name);
 });

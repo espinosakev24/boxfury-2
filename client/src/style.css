@@ -1853,3 +1853,100 @@ body.is-mobile #tutorial-overlay .overlay__actions .btn { flex: 0 0 auto; }
   .overlay__actions .btn { padding: 10px 14px; }
 }
 .room__sub { color: var(--bf-mute); font-size: 10px; margin-left: auto; }
+
+/* ---------- Auth chip (top-right of main menu) ---------- */
+.auth-root {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.auth-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bf-arena);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--r-tight);
+  color: var(--bf-bone);
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 1;
+  text-align: left;
+  text-decoration: none;
+  cursor: default;
+}
+
+.auth-chip--login {
+  cursor: pointer;
+  background: var(--bf-deep);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.auth-chip--login:hover { background: var(--bf-arena); border-color: var(--p1); }
+
+.auth-chip--profile { flex-direction: row; }
+
+.auth-chip__eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bf-soft);
+}
+
+.auth-chip__status {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--bf-bone);
+}
+
+.auth-chip__main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.auth-chip__name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--bf-bone);
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-chip__coins {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--p4);
+  letter-spacing: 0.03em;
+}
+
+.auth-chip__logout {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--bf-line);
+  color: var(--bf-soft);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-radius: var(--r-tight);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.auth-chip__logout:hover { color: var(--p2); border-color: var(--p2); }
+
+.auth-chip--error { border-color: var(--p2); }
+.auth-chip--error .auth-chip__status { color: var(--p2); }
+
+@media (max-width: 640px) {
+  .auth-root { top: 12px; right: 12px; }
+  .auth-chip { padding: 6px 10px; gap: 8px; }
+  .auth-chip__name { max-width: 100px; font-size: 12px; }
+}

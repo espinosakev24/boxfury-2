@@ -3,6 +3,7 @@ import { applyLocale, getLocale, setLocale, t } from './i18n.js';
 import { KEY_SCHEMES, getKeyScheme, setKeyScheme } from './keyscheme.js';
 import { currentSkinLabel, openSkinPicker, setupSkinPicker } from './skin-picker.js';
 import { getUsername, setUsername } from './username.js';
+import { patchMyUsername } from './auth/api.js';
 
 export function setupSettings() {
   const overlay = document.getElementById('settings-overlay');
@@ -84,8 +85,9 @@ export function setupSettings() {
   openBtn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
   cancelBtn.addEventListener('click', close);
-  saveBtn.addEventListener('click', () => {
-    setUsername(usernameInput.value);
+  saveBtn.addEventListener('click', async () => {
+    const newName = usernameInput.value;
+    setUsername(newName);
     setKeyScheme(pickedKeys);
     setAimInvert(pickedAimInvert);
     const lang = document.querySelector('input[name="settings-lang"]:checked')?.value;
@@ -93,6 +95,15 @@ export function setupSettings() {
     applyLocale();
     refreshSkinLabel();
     close();
+    // Persist to server when logged in — guests stay localStorage-only.
+    if (window.boxfuryAuth?.isAuthenticated?.()) {
+      try {
+        const token = await window.boxfuryAuth.getAccessToken();
+        if (token && newName?.trim()) await patchMyUsername(token, newName);
+      } catch (err) {
+        console.warn('[settings] username sync failed', err);
+      }
+    }
   });
 
   window.addEventListener('keydown', (e) => {
