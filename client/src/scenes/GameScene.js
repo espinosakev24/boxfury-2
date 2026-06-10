@@ -11,6 +11,9 @@ import { LOG_EVENTS } from '@boxfury/shared';
 import { pushEvent, setupEventLog, teardownEventLog } from '../event-log.js';
 import { getKeyScheme } from '../keyscheme.js';
 import { t } from '../i18n.js';
+import { detectQualityTier } from '../fx/quality.js';
+import { ensureFxTextures } from '../fx/textures.js';
+import { FxManager } from '../fx/FxManager.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -23,6 +26,12 @@ export class GameScene extends Phaser.Scene {
   async create() {
     this._buildKeyMap();
     this._bindMouseAim();
+    // Resolved once per game start (Canvas renderer always demotes to low);
+    // no per-frame branching beyond integer compares downstream.
+    this.quality = this.registry.get('quality') ?? detectQualityTier();
+    if (this.renderer?.type !== Phaser.WEBGL) this.quality = 'low';
+    ensureFxTextures(this);
+    this.fx = new FxManager(this, this.quality);
     this.level = new Level(this);
     this.network = new NetworkManager();
 
@@ -88,7 +97,9 @@ export class GameScene extends Phaser.Scene {
     };
     document.addEventListener('visibilitychange', this._visibilityHandler);
 
-    this.events.once('shutdown', () => {
+    const cleanup = () => {
+      if (this._cleanedUp) return;
+      this._cleanedUp = true;
       this.hideTeamPicker();
       this.hideHud();
       this.hideScoreboard();
@@ -105,8 +116,15 @@ export class GameScene extends Phaser.Scene {
         window.removeEventListener('boxfury:keys', this._keysListener);
       if (this._visibilityHandler)
         document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this.fx?.destroy();
+      this.fx = null;
       this.network?.disconnect();
-    });
+    };
+    // The app's only teardown path is leaveGame() -> game.destroy(true),
+    // which emits 'destroy' WITHOUT a prior 'shutdown' — registering on
+    // shutdown alone leaks every window/document listener across matches.
+    this.events.once('shutdown', cleanup);
+    this.events.once('destroy', cleanup);
 
     const connectOptions = this.registry.get('connectOptions') ?? {};
     this.autoTeam = connectOptions.autoTeam ?? 0;
@@ -631,7 +649,7 @@ export class GameScene extends Phaser.Scene {
     this.level.flag.applyState(flagState);
   }
 
-  handleHit({ targetId, knockX, knockY, hp }) {
+  handleHit({ targetId, shooterId, knockX, knockY, hp, alive }) {
     const target = this.findPlayer(targetId);
     if (!target) return;
     if (!target.dead) target.flashHit();
@@ -654,74 +672,58 @@ export class GameScene extends Phaser.Scene {
       this.player.applyKnockback(knockX, knockY);
       this.cameras.main.shake(140, 0.006);
     }
+    if (alive === false && shooterId === this.network.sessionId && targetId !== shooterId) {
+      this.playKillConfirm(target);
+    }
   }
 
-  spawnArrowSplash(x, y, vx = 0, vy = 0) {
-    const speed = Math.hypot(vx, vy) || 1;
-    const nx = -vx / speed;
-    const ny = -vy / speed;
-    const baseAngle = Math.atan2(ny, nx);
-    const count = 6;
-    for (let i = 0; i < count; i++) {
-      const size = Phaser.Math.Between(1, 2);
-      const p = this.add.rectangle(x, y, size, size, 0xffffff);
-      p.setAlpha(0.9);
-      const spread = Phaser.Math.FloatBetween(-Math.PI / 2, Math.PI / 2);
-      const angle = baseAngle + spread;
-      const dist = Phaser.Math.Between(20, 55);
-      this.tweens.add({
-        targets: p,
-        x: x + Math.cos(angle) * dist,
-        y: y + Math.sin(angle) * dist,
-        alpha: 0,
-        duration: Phaser.Math.Between(220, 340),
-        ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+  playKillConfirm(target) {
+    const now = this.time.now;
+    const streak =
+      this._lastKillAt != null && now - this._lastKillAt < 5000
+        ? (this._killStreak ?? 0) + 1
+        : 1;
+    this._killStreak = streak;
+    this._lastKillAt = now;
+    const s = Math.min(streak, 3);
+    this.cameras.main.shake(90 + (s - 1) * 65, 0.004 + (s - 1) * 0.0025, true);
+    this.punchZoom(1.045);
+    if (target?.sprite) {
+      this.spawnRing(target.sprite.x, target.sprite.y, target.color, {
+        scale: 2.2,
+        duration: 280,
       });
     }
+  }
+
+  punchZoom(mult) {
+    const cam = this.cameras.main;
+    if (this._zoomPunching) return;
+    const base = this._camBaseZoom ?? cam.zoom;
+    this._zoomPunching = true;
+    // Chain via ZOOM_COMPLETE: restarting the shared zoom effect from inside
+    // its own onUpdate callback gets killed by the trailing effectComplete().
+    cam.once(Phaser.Cameras.Scene2D.Events.ZOOM_COMPLETE, () => {
+      this._zoomPunching = false;
+      cam.zoomTo(base, 180, 'Sine.easeIn', true);
+    });
+    cam.zoomTo(base * mult, 60, 'Sine.easeOut', true);
+  }
+
+  // Legacy signatures preserved — entity call sites are untouched; the
+  // pooled FxManager emitters replace per-burst rectangle + tween churn.
+  spawnArrowSplash(x, y, vx = 0, vy = 0) {
+    const deg = Phaser.Math.RadToDeg(Math.atan2(-vy, -vx));
+    this.fx?.cone(x, y, deg, 6, 0xffffff);
   }
 
   spawnLandingDust(x, y, color, intensity = 1) {
     const count = 4 + Math.round(intensity * 4);
-    for (let i = 0; i < count; i++) {
-      const size = Phaser.Math.Between(2, 3);
-      const p = this.add.rectangle(x, y - 1, size, size, color);
-      p.setAlpha(0.7);
-      const side = i % 2 === 0 ? -1 : 1;
-      const spread = Phaser.Math.FloatBetween(0.2, 0.9);
-      const speed = Phaser.Math.Between(40, 90) * intensity;
-      const dx = side * spread * speed;
-      const dy = -Phaser.Math.Between(6, 18) * intensity;
-      this.tweens.add({
-        targets: p,
-        x: x + dx,
-        y: y + dy + Phaser.Math.Between(2, 6),
-        alpha: 0,
-        duration: Phaser.Math.Between(220, 380),
-        ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
-      });
-    }
+    this.fx?.dust(x, y - 1, count, color, intensity);
   }
 
   spawnHitParticles(x, y, color) {
-    const count = 8;
-    for (let i = 0; i < count; i++) {
-      const size = Phaser.Math.Between(2, 4);
-      const p = this.add.rectangle(x, y, size, size, color);
-      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-      const speed = Phaser.Math.Between(40, 110);
-      const duration = Phaser.Math.Between(220, 360);
-      this.tweens.add({
-        targets: p,
-        x: x + Math.cos(angle) * speed,
-        y: y + Math.sin(angle) * speed,
-        alpha: 0,
-        duration,
-        ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
-      });
-    }
+    this.fx?.burst(x, y, 8, color);
   }
 
   findPlayer(id) {
@@ -783,24 +785,22 @@ export class GameScene extends Phaser.Scene {
       cam.setZoom(1);
       cam.centerOn(this.player.sprite.x, this.player.sprite.y);
     }
+    this._camBaseZoom = cam.zoom;
 
     this.spawnPulse(spawn.x, spawn.y, color);
     this.showHud();
   }
 
   spawnPulse(x, y, color) {
-    const ring = this.add.rectangle(x, y, 60, 90);
-    ring.setStrokeStyle(3, color, 1);
-    this.cameras.main.flash(220, 80, 80, 80);
-    this.tweens.add({
-      targets: ring,
-      scaleX: 2.6,
-      scaleY: 2.6,
-      alpha: 0,
-      duration: 1100,
-      ease: 'Cubic.easeOut',
-      onComplete: () => ring.destroy(),
-    });
+    this.spawnRing(x, y, color);
+    const r = Math.round(((color >> 16) & 0xff) * 0.35);
+    const g = Math.round(((color >> 8) & 0xff) * 0.35);
+    const b = Math.round((color & 0xff) * 0.35);
+    this.cameras.main.flash(220, r, g, b);
+  }
+
+  spawnRing(x, y, color, opts) {
+    this.fx?.ring(x, y, color, opts);
   }
 
   toggleFlag() {
@@ -999,6 +999,8 @@ export class GameScene extends Phaser.Scene {
       const bee = this.bees.get(sessionId);
       if (bee) {
         if (!p.alive && !bee.dead) {
+          // No extra burst here: the lethal HIT broadcast already triggers
+          // spawnHitParticles in handleHit for this same death.
           bee.playDeathAnim();
           if (this.cache?.audio?.exists('bee-death')) {
             this.sound.play('bee-death', { volume: 0.55 });

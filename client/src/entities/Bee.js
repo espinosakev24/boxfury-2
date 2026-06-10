@@ -82,6 +82,9 @@ export class Bee {
   }
 
   update() {
+    // Dead bees are invisible (or fading out frozen in place): skip interp,
+    // redraw, and buzz work. The buffer fast-forwards on revive.
+    if (this.dead) return;
     const renderTime = performance.now() - NETWORK.INTERP_DELAY_MS;
     while (this.buffer.length > 2 && this.buffer[1].t <= renderTime) {
       this.buffer.shift();
@@ -134,18 +137,31 @@ export class Bee {
 
   playDeathAnim() {
     this.dead = true;
-    this.sprite.setVisible(false);
-    this.detailGfx.setVisible(false);
     if (this.buzz) this.buzz.setVolume(0);
+    const targets = [this.sprite, this.detailGfx].filter(Boolean);
+    this._deathTween = this.scene.tweens.add({
+      targets,
+      alpha: 0,
+      duration: 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        this._deathTween = null;
+        targets.forEach((t) => t.setVisible(false));
+      },
+    });
   }
 
   resetVisual() {
     this.dead = false;
-    this.sprite.setVisible(true);
-    this.detailGfx.setVisible(true);
+    this._deathTween?.remove();
+    this._deathTween = null;
+    this.sprite.setVisible(true).setAlpha(1);
+    this.detailGfx.setVisible(true).setAlpha(1);
   }
 
   destroy() {
+    this._deathTween?.remove();
+    this._deathTween = null;
     this.sprite?.destroy();
     this.detailGfx?.destroy();
     if (this.buzz) {

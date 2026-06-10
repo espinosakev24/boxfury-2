@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { ARROW, PHYSICS } from '@boxfury/shared';
 
 const TRAIL_MAX = 8;
@@ -28,6 +29,7 @@ export class Arrow {
     this.sprite.setOrigin(1, 0.5);
     this.sprite.rotation = Math.atan2(state.vy, state.vx);
     this.trailGfx.setDepth(19);
+    this.trailGfx.setBlendMode(Phaser.BlendModes.ADD);
     this.sprite.setDepth(this.stuckToId ? 9 : 20);
 
     if (this.stuck) {

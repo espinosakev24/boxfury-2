@@ -18,6 +18,7 @@ import { applyLocale } from './i18n.js';
 import { getUsername, setUsername } from './username.js';
 import { getSkin } from './skin.js';
 import { AUTH_EVENTS } from './auth/config.js';
+import { detectQualityTier } from './fx/quality.js';
 
 let game = null;
 
@@ -113,6 +114,11 @@ function doStartGame(connectOptions) {
     parent: 'game',
     backgroundColor: COLORS.ARENA,
     pixelArt: true,
+    render: {
+      powerPreference: 'high-performance',
+      antialias: false,
+      roundPixels: true,
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -127,6 +133,11 @@ function doStartGame(connectOptions) {
   });
   game.registry.set('connectOptions', connectOptions);
   game.registry.set('leaveGame', leaveGame);
+  game.registry.set('quality', detectQualityTier());
+  game.events.once(Phaser.Core.Events.READY, () => {
+    const type = game?.renderer?.type === Phaser.WEBGL ? 'webgl' : 'canvas';
+    console.info('[perf] renderer=%s', type);
+  });
 }
 
 async function leaveGame() {

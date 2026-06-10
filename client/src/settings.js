@@ -1,4 +1,5 @@
 import { getAimInvert, setAimInvert } from './aim-mode.js';
+import { getSavedQuality, setSavedQuality } from './fx/quality.js';
 import { applyLocale, getLocale, setLocale, t } from './i18n.js';
 import { KEY_SCHEMES, getKeyScheme, setKeyScheme } from './keyscheme.js';
 import { currentSkinLabel, openSkinPicker, setupSkinPicker } from './skin-picker.js';
@@ -16,9 +17,11 @@ export function setupSettings() {
   const skinLabel = document.getElementById('settings-skin-current');
   const keysRoot = document.getElementById('settings-keys');
   const aimRoot = document.getElementById('settings-aim');
+  const qualityRoot = document.getElementById('settings-quality');
 
   let pickedKeys = getKeyScheme();
   let pickedAimInvert = getAimInvert();
+  let pickedQuality = getSavedQuality(); // null = auto
 
   const refreshSkinLabel = () => {
     if (skinLabel) skinLabel.textContent = currentSkinLabel();
@@ -60,6 +63,22 @@ export function setupSettings() {
     }
   };
 
+  const renderQuality = () => {
+    if (!qualityRoot) return;
+    qualityRoot.innerHTML = '';
+    for (const opt of [null, 'high', 'medium', 'low']) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip' + (opt === pickedQuality ? ' is-selected' : '');
+      btn.textContent = t(`quality.${opt ?? 'auto'}`);
+      btn.addEventListener('click', () => {
+        pickedQuality = opt;
+        renderQuality();
+      });
+      qualityRoot.appendChild(btn);
+    }
+  };
+
   setupSkinPicker({ onSaved: refreshSkinLabel });
 
   skinOpenBtn?.addEventListener('click', openSkinPicker);
@@ -69,8 +88,10 @@ export function setupSettings() {
     usernameInput.value = getUsername();
     pickedKeys = getKeyScheme();
     pickedAimInvert = getAimInvert();
+    pickedQuality = getSavedQuality();
     renderKeys();
     renderAim();
+    renderQuality();
     refreshSkinLabel();
     const currentLocale = getLocale();
     document.querySelectorAll('input[name="settings-lang"]').forEach((r) => {
@@ -90,6 +111,7 @@ export function setupSettings() {
     setUsername(newName);
     setKeyScheme(pickedKeys);
     setAimInvert(pickedAimInvert);
+    setSavedQuality(pickedQuality);
     const lang = document.querySelector('input[name="settings-lang"]:checked')?.value;
     if (lang) setLocale(lang);
     applyLocale();
