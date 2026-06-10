@@ -17,7 +17,8 @@ export const TILES = {
   FLAG: 'F',
 };
 
-// 53 cols × 15 rows ≈ 1272×720 (matches WORLD with an 8px right gutter).
+// Map dimensions derive from the grid itself: parseMap() computes
+// pixelWidth/pixelHeight as row length × TILE.WIDTH by row count × TILE.HEIGHT.
 
 export const MAPS = {
   default: [

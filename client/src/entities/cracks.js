@@ -69,7 +69,7 @@ function drawCrackLine(gfx, halfW, halfH, rng) {
   gfx.strokePath();
 }
 
-function mulberry32(seed) {
+export function mulberry32(seed) {
   let s = seed >>> 0;
   return function next() {
     s = (s + 0x6D2B79F5) >>> 0;

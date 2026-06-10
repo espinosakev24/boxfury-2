@@ -154,7 +154,15 @@ export class Player {
     if (this.dead) return;
     this.dead = true;
     this.bow.sprite.setVisible(false);
+    this.bow.hideFx?.();
     if (this.nameText) this.nameText.setVisible(false);
+    // Zero animation state: update() stops running while dead, but the
+    // postupdate overlay syncs keep consuming these every frame.
+    this._walkAmp = 0;
+    this._bobY = 0;
+    this._isMoving = false;
+    this._leanAngle = 0;
+    this._hitLean = 0;
     const fallDir = this.facing >= 0 ? 1 : -1;
     this.scene.tweens.killTweensOf(this.sprite);
     this.sprite.scaleX = 1;
@@ -178,6 +186,8 @@ export class Player {
     this.sprite.alpha = 1;
     this.sprite.scaleX = 1;
     this.sprite.scaleY = 1;
+    this._hitLean = 0;
+    this._leanAngle = 0;
     this.sprite.setVisible(true);
     if (this.sprite.body) {
       this.sprite.body.setSize(PLAYER.WIDTH - PLAYER.BODY_SLACK_X * 2, PLAYER.HEIGHT, true);
@@ -272,22 +282,27 @@ export class Player {
     gfx.setAlpha(this.sprite.alpha);
   }
 
-  flashHit() {
+  flashHit(knockX = 0, knockY = 0) {
     const sprite = this.sprite;
     if (!sprite?.active) return;
     drawBody(this.bodyGfx, 0xffffff);
     this.scene.time.delayedCall(HIT.FLASH_MS, () => {
       if (this.bodyGfx) drawBody(this.bodyGfx, this.color);
     });
+    // Squash along the dominant knock axis: horizontal hits pinch the box
+    // sideways, vertical hits pancake it (also the no-direction default).
+    const horizontal = Math.abs(knockX) > Math.abs(knockY);
     this._resetScaleTweens();
     this.scene.tweens.add({
       targets: sprite,
-      scaleX: 1.25,
-      scaleY: 0.8,
+      scaleX: horizontal ? 0.78 : 1.22,
+      scaleY: horizontal ? 1.16 : 0.8,
       duration: 90,
       yoyo: true,
       ease: 'Cubic.easeOut',
     });
+    // Lean impulse away from the hit, settling over ~180ms in update().
+    this._hitLean = Math.max(-1, Math.min(1, knockX / 600)) * 0.16;
   }
 
   _resetScaleTweens() {
@@ -323,10 +338,13 @@ export class Player {
   playJumpCrouch() {
     if (!this.sprite?.active) return;
     this._resetScaleTweens();
+    // Takeoff stretch -> settle. No anticipation squash: jump velocity
+    // applies the same frame, so the body is already a half-height airborne
+    // 50ms in — a crouch pose mid-rise reads as input lag.
     this.scene.tweens.chain({
       targets: this.sprite,
       tweens: [
-        { scaleX: 0.86, scaleY: 1.18, duration: 110, ease: 'Quad.easeOut' },
+        { scaleX: 0.88, scaleY: 1.2, duration: 70, ease: 'Quad.easeOut' },
         { scaleX: 1, scaleY: 1, duration: 130, ease: 'Quad.easeIn' },
       ],
     });
@@ -394,11 +412,25 @@ export class Player {
       vx: cos * speed,
       vy: sin * speed,
     };
-    this.bow.triggerSnap();
+    this.bow.triggerSnap(pull);
+    this.playShotRecoil();
     if (this.scene.cache?.audio?.exists('arrow-shoot')) {
       this.scene.sound.play('arrow-shoot', { volume: 0.2 });
     }
     return shot;
+  }
+
+  playShotRecoil() {
+    if (!this.sprite?.active) return;
+    this._resetScaleTweens();
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleX: 0.92,
+      scaleY: 1.06,
+      duration: 60,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+    });
   }
 
   update(dt) {
@@ -452,7 +484,10 @@ export class Player {
     const touchingLeft = body.blocked.left || body.touching.left;
     const touchingRight = body.blocked.right || body.touching.right;
     if ((touchingLeft && lean < 0) || (touchingRight && lean > 0)) lean = 0;
-    this._leanAngle = lean;
+    // Hit-lean impulse settles geometrically (~180ms at any frame rate).
+    this._hitLean = (this._hitLean ?? 0) * Math.pow(0.82, dt * 60);
+    if (Math.abs(this._hitLean) < 0.002) this._hitLean = 0;
+    this._leanAngle = lean + this._hitLean;
     if (this._lastFacing !== this.facing && Math.abs(vx) > 60 && grounded) {
       this.scene.spawnLandingDust?.(
         this.sprite.x,

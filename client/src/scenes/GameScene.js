@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BOW, FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
+import { ARROW, BOW, FLAG, GAME, PLAYER, ROOM, TILE, WORLD } from '@boxfury/shared';
 import { openMapPicker } from '../map-picker.js';
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
@@ -14,6 +14,8 @@ import { t } from '../i18n.js';
 import { detectQualityTier } from '../fx/quality.js';
 import { ensureFxTextures } from '../fx/textures.js';
 import { FxManager } from '../fx/FxManager.js';
+import { CameraFx } from '../fx/CameraFx.js';
+import { PerfMonitor } from '../fx/perf.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -32,6 +34,17 @@ export class GameScene extends Phaser.Scene {
     if (this.renderer?.type !== Phaser.WEBGL) this.quality = 'low';
     ensureFxTextures(this);
     this.fx = new FxManager(this, this.quality);
+    this.camFx = new CameraFx(this);
+    this.perf = new PerfMonitor(this, {
+      onDemote: (tier) => {
+        this.quality = tier;
+        this.fx?.setQuality(tier);
+        // Rebuild the backdrop at the new tier — bands, tweens, and the
+        // weather emitter are otherwise baked at construction.
+        this.level?.rebuildBackdrop?.();
+        if (this.renderer?.type === Phaser.WEBGL) this.cameras.main?.postFX?.clear();
+      },
+    });
     this.level = new Level(this);
     this.network = new NetworkManager();
 
@@ -116,6 +129,10 @@ export class GameScene extends Phaser.Scene {
         window.removeEventListener('boxfury:keys', this._keysListener);
       if (this._visibilityHandler)
         document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this.perf?.destroy();
+      this.perf = null;
+      this.camFx?.reset();
+      this.camFx = null;
       this.fx?.destroy();
       this.fx = null;
       this.network?.disconnect();
@@ -158,6 +175,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   _bindRoomState(room) {
+    // Colyseus onAdd callbacks fire immediately (synchronously) for every
+    // item already in the state snapshot — on initial join AND on reconnect.
+    // Suppress one-shot release FX during that replay; cleared at the end.
+    this._suppressJoinFx = true;
     const $ = this.network.$;
 
     const spawnRemote = (sessionId, player) => {
@@ -191,6 +212,7 @@ export class GameScene extends Phaser.Scene {
             this.player = null;
             this.deathState = null;
             const cam = this.cameras.main;
+            this.camFx?.reset();
             cam.stopFollow();
             cam.setZoom(1);
             const m = this.level.map;
@@ -266,9 +288,26 @@ export class GameScene extends Phaser.Scene {
     });
 
     $(room.state).arrows.onAdd((arrowState, id) => {
-      if (arrowState.shooterId !== this.network.sessionId) {
+      // Remote shooters get the same release package the local player plays
+      // in releaseBow, with recoil scaled by the pull reconstructed from the
+      // arrow speed (exact inverse of the release formula). The local
+      // shooter's package (snap, recoil, muzzle) already played at input
+      // time — replaying it ~RTT later would detach it from the moving bow.
+      if (
+        !this._suppressJoinFx &&
+        !arrowState.stuck &&
+        arrowState.shooterId !== this.network.sessionId
+      ) {
         const shooter = this.findPlayer(arrowState.shooterId);
-        shooter?.bow?.triggerSnap?.();
+        const speed = Math.hypot(arrowState.vx, arrowState.vy);
+        const pull = Math.max(
+          0,
+          Math.min(1, (speed - ARROW.SPEED_MIN) / (ARROW.SPEED_MAX - ARROW.SPEED_MIN)),
+        );
+        shooter?.bow?.triggerSnap?.(pull);
+        shooter?.playShotRecoil?.();
+        const deg = Phaser.Math.RadToDeg(Math.atan2(arrowState.vy, arrowState.vx));
+        this.fx?.muzzle(arrowState.x, arrowState.y, deg, shooter?.color ?? 0xffd84e);
       }
       const arrow = new Arrow(this, arrowState);
       this.arrows.set(id, arrow);
@@ -302,6 +341,7 @@ export class GameScene extends Phaser.Scene {
 
     this.flagCarrierId = '';
     if (this.level.flag && room.state.flag) this.level.flag.applyState(room.state.flag);
+    this._suppressJoinFx = false;
   }
 
   _showReconnectOverlay() {
@@ -652,7 +692,7 @@ export class GameScene extends Phaser.Scene {
   handleHit({ targetId, shooterId, knockX, knockY, hp, alive }) {
     const target = this.findPlayer(targetId);
     if (!target) return;
-    if (!target.dead) target.flashHit();
+    if (!target.dead) target.flashHit(knockX, knockY);
     this.spawnHitParticles(target.sprite.x, target.sprite.y, target.color);
     if (typeof hp === 'number') target.setDamageFromHp(hp);
     const isBee = this.bees.has(targetId);
@@ -670,7 +710,8 @@ export class GameScene extends Phaser.Scene {
     }
     if (target === this.player) {
       this.player.applyKnockback(knockX, knockY);
-      this.cameras.main.shake(140, 0.006);
+      this.camFx?.addTrauma(0.35);
+      this.camFx?.kick(knockX, knockY, 8);
     }
     if (alive === false && shooterId === this.network.sessionId && targetId !== shooterId) {
       this.playKillConfirm(target);
@@ -686,28 +727,14 @@ export class GameScene extends Phaser.Scene {
     this._killStreak = streak;
     this._lastKillAt = now;
     const s = Math.min(streak, 3);
-    this.cameras.main.shake(90 + (s - 1) * 65, 0.004 + (s - 1) * 0.0025, true);
-    this.punchZoom(1.045);
+    this.camFx?.addTrauma(0.25 + (s - 1) * 0.08);
+    this.camFx?.punchZoom(1.045);
     if (target?.sprite) {
       this.spawnRing(target.sprite.x, target.sprite.y, target.color, {
         scale: 2.2,
         duration: 280,
       });
     }
-  }
-
-  punchZoom(mult) {
-    const cam = this.cameras.main;
-    if (this._zoomPunching) return;
-    const base = this._camBaseZoom ?? cam.zoom;
-    this._zoomPunching = true;
-    // Chain via ZOOM_COMPLETE: restarting the shared zoom effect from inside
-    // its own onUpdate callback gets killed by the trailing effectComplete().
-    cam.once(Phaser.Cameras.Scene2D.Events.ZOOM_COMPLETE, () => {
-      this._zoomPunching = false;
-      cam.zoomTo(base, 180, 'Sine.easeIn', true);
-    });
-    cam.zoomTo(base * mult, 60, 'Sine.easeOut', true);
   }
 
   // Legacy signatures preserved — entity call sites are untouched; the
@@ -785,7 +812,7 @@ export class GameScene extends Phaser.Scene {
       cam.setZoom(1);
       cam.centerOn(this.player.sprite.x, this.player.sprite.y);
     }
-    this._camBaseZoom = cam.zoom;
+    this.camFx?.setBaseZoom(cam.zoom);
 
     this.spawnPulse(spawn.x, spawn.y, color);
     this.showHud();
@@ -815,6 +842,7 @@ export class GameScene extends Phaser.Scene {
 
   setupSpectatorCamera() {
     this.spectatorCameraSet = true;
+    this.camFx?.reset();
     const cam = this.cameras.main;
     cam.stopFollow();
     this._spectatorZoom = 1;
@@ -948,20 +976,41 @@ export class GameScene extends Phaser.Scene {
     document.getElementById('hud')?.classList.add('hidden');
   }
 
+  // Restart a one-shot CSS animation class (remove -> reflow -> add).
+  // The class is stripped again on animationend: the HUD DOM outlives the
+  // per-match Phaser.Game, and a lingering class would replay its animation
+  // when .hidden flips display back on next session.
+  _retriggerAnim(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    el.addEventListener('animationend', () => el.classList.remove(cls), {
+      once: true,
+    });
+  }
+
   syncScores() {
     const state = this.network?.room?.state;
     if (!state) return;
     const s1 = state.scoreTeam1 ?? 0;
     const s2 = state.scoreTeam2 ?? 0;
     if (s1 !== this._score1) {
+      const pop = this._score1 !== undefined; // no pop on initial paint
       this._score1 = s1;
       const el = document.getElementById('score-1');
-      if (el) el.textContent = String(s1);
+      if (el) {
+        el.textContent = String(s1);
+        if (pop) this._retriggerAnim(el, 'score-pop');
+      }
     }
     if (s2 !== this._score2) {
+      const pop = this._score2 !== undefined;
       this._score2 = s2;
       const el = document.getElementById('score-2');
-      if (el) el.textContent = String(s2);
+      if (el) {
+        el.textContent = String(s2);
+        if (pop) this._retriggerAnim(el, 'score-pop');
+      }
     }
     let specCount = 0;
     state.players?.forEach?.((p) => {
@@ -1027,6 +1076,7 @@ export class GameScene extends Phaser.Scene {
 
   enterDeath(me) {
     this.deathState = { respawnAt: me.respawnAt };
+    this.camFx?.addTrauma(0.5);
     this.player.playDeathAnim();
     this._playDeathSound(0.6);
     this.player.sprite.body.setVelocityX(0);
@@ -1064,6 +1114,8 @@ export class GameScene extends Phaser.Scene {
       cam.setZoom(1);
       cam.centerOn(this.player.sprite.x, this.player.sprite.y);
     }
+    this.camFx?.reset();
+    this.camFx?.setBaseZoom(cam.zoom);
     this.spawnPulse(me.x, me.y, this.player.color);
     document.getElementById('death-overlay')?.classList.add('hidden');
   }
@@ -1071,8 +1123,10 @@ export class GameScene extends Phaser.Scene {
   updateDeathTimer(respawnAt) {
     const remaining = Math.max(0, Math.ceil((respawnAt - Date.now()) / 1000));
     const el = document.getElementById('death-timer');
-    if (el && el.textContent !== String(remaining))
+    if (el && el.textContent !== String(remaining)) {
       el.textContent = String(remaining);
+      this._retriggerAnim(el, 'death-timer-tick');
+    }
   }
 
   hideDeathOverlay() {
@@ -1291,6 +1345,17 @@ export class GameScene extends Phaser.Scene {
       else if (p.team === 2) team2Rows.push(row);
       else spectatorNames.push(p.name || '?');
     });
+    // Hold-Tab calls this every frame; skip the innerHTML rebuild (full DOM
+    // teardown + reparse) unless the rendered content actually changed.
+    const sig = [
+      team1Rows.join(''),
+      team2Rows.join(''),
+      state.scoreTeam1 ?? 0,
+      state.scoreTeam2 ?? 0,
+      spectatorNames.join(','),
+    ].join('');
+    if (sig === this._scoreboardSig) return;
+    this._scoreboardSig = sig;
     const set = (sel, html) => {
       const el = document.querySelector(sel);
       if (el) el.innerHTML = html;
@@ -1345,6 +1410,8 @@ export class GameScene extends Phaser.Scene {
 
   update(_time, delta) {
     const dt = delta / 1000;
+    this.camFx?.update(dt);
+    this.level?.backdrop?.update();
     this.syncDeath();
     this.syncSpawnShields();
     if (!this.player && this.isSpectator) {
@@ -1371,7 +1438,19 @@ export class GameScene extends Phaser.Scene {
             this.player.chargeBow();
           } else {
             const shot = this.player.releaseBow();
-            if (shot) this.network.sendShoot(shot);
+            if (shot) {
+              this.network.sendShoot(shot);
+              // Local muzzle flash fires at input time with exact coords —
+              // waiting for the server echo would detach it from the bow.
+              const deg = Phaser.Math.RadToDeg(Math.atan2(shot.vy, shot.vx));
+              this.fx?.muzzle(shot.x, shot.y, deg, this.player.color);
+              // Camera nudge opposite the shot; full-charge shots rumble.
+              this.camFx?.kick(-shot.vx, -shot.vy, 3);
+              const speed = Math.hypot(shot.vx, shot.vy);
+              const pull =
+                (speed - ARROW.SPEED_MIN) / (ARROW.SPEED_MAX - ARROW.SPEED_MIN);
+              if (pull >= 0.95) this.camFx?.addTrauma(0.06);
+            }
           }
         } else {
           this.player.sprite.body.setVelocityX(0);

@@ -1950,3 +1950,61 @@ body.is-mobile #tutorial-overlay .overlay__actions .btn { flex: 0 0 auto; }
   .auth-chip { padding: 6px 10px; gap: 8px; }
   .auth-chip__name { max-width: 100px; font-size: 12px; }
 }
+
+/* ---------- HUD / presentation feedback (Phase 1 item 12) ---------- */
+
+/* Score pop: retriggered from GameScene.syncScores on score change. */
+.hud__score { display: inline-block; }
+.score-pop {
+  animation: score-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes score-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Death overlay entrance: replays each time .hidden flips display back on. */
+.death-overlay__inner {
+  animation: overlay-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes overlay-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Respawn countdown tick: retriggered per second from updateDeathTimer. */
+#death-timer {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+.death-timer-tick {
+  animation: timer-tick 200ms ease-out;
+}
+@keyframes timer-tick {
+  from { transform: scale(1.3); }
+  to { transform: scale(1); }
+}
+
+/* Canvas fade-in: kills the hard pop when the Phaser canvas first paints.
+   Interim until the Phase 2 screen-wipe transition ships. */
+#game {
+  animation: game-fade-in 200ms ease-out;
+}
+@keyframes game-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Reduced motion: collapse every CSS animation/transition to a frame.
+   In-canvas motion is handled separately (fx/quality.js -> LOW tier,
+   CameraFx zero-scale). Keep last so it wins the cascade. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

@@ -1,10 +1,9 @@
 import { NetworkManager } from './network/NetworkManager.js';
 
-export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
+export function setupMenu({ onJoin, onCreate, onSolo }) {
   const menu = document.getElementById('menu');
   const findBtn = document.getElementById('btn-find');
   const createBtn = document.getElementById('btn-create');
-  const testBtn = document.getElementById('btn-test');
   const soloBtn = document.getElementById('btn-solo');
 
   const lobby = document.getElementById('lobby-overlay');
@@ -118,10 +117,6 @@ export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
     closeLobby();
     onSolo?.();
   });
-  testBtn?.addEventListener('click', () => {
-    closeLobby();
-    onTest?.();
-  });
   lobbyClose.addEventListener('click', closeLobby);
   lobbyRefresh.addEventListener('click', refreshRooms);
   lobbySearch.addEventListener('input', (e) => {
@@ -138,10 +133,6 @@ export function setupMenu({ onJoin, onCreate, onTest, onSolo }) {
       else if (e.key === 'p' || e.key === 'P') {
         closeLobby();
         onSolo?.();
-      }
-      else if (e.key === 't' || e.key === 'T') {
-        closeLobby();
-        onTest?.();
       }
     } else if (!lobby.classList.contains('hidden') && e.key === 'Escape') {
       closeLobby();

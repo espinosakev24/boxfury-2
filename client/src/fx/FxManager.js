@@ -110,6 +110,28 @@ export class FxManager {
       .setDepth(FX_DEPTH);
   }
 
+  /** Live tier change from the frame governor (demote only, mid-match). */
+  setQuality(quality) {
+    this.quality = quality;
+    const cap = (cat) => CAPS[cat][quality] ?? CAPS[cat].high;
+    this.hitEmitter.maxAliveParticles = cap('hit');
+    this.dustEmitter.maxAliveParticles = cap('dust');
+    this.splashEmitter.maxAliveParticles = cap('splash');
+    this.sparksEmitter.maxAliveParticles = Math.max(1, cap('sparks'));
+    this.debrisEmitter.maxAliveParticles = Math.max(1, cap('debris'));
+  }
+
+  /** Live particle counts per category — consumed by the ?perf=1 HUD. */
+  aliveCounts() {
+    return {
+      hit: this.hitEmitter.getAliveParticleCount(),
+      dust: this.dustEmitter.getAliveParticleCount(),
+      splash: this.splashEmitter.getAliveParticleCount(),
+      sparks: this.sparksEmitter.getAliveParticleCount(),
+      debris: this.debrisEmitter.getAliveParticleCount(),
+    };
+  }
+
   _count(category, n) {
     if (this.quality === 'low' && OFF_ON_LOW.has(category)) return 0;
     const mult = this.quality === 'high' ? 1 : 0.5;

@@ -3,3 +3,4 @@ export * from './events.js';
 export * from './maps.js';
 export * from './rooms.js';
 export * from './skins.js';
+export * from './themes.js';

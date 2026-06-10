@@ -10,7 +10,6 @@ const TRANSLATIONS = {
     'rotate.sub': 'Boxfury is best in landscape.',
     'menu.settings': 'Settings',
     'menu.solo': 'Single player',
-    'menu.test': 'Quick test (jade)',
     'solo.eyebrow': '◣ Single player',
     'solo.title': 'CHOOSE A MODE',
     'solo.story': 'Story',
@@ -87,11 +86,8 @@ const TRANSLATIONS = {
     'mode.dm': 'Deathmatch',
 
     'map.default': 'Classic',
-    'map.open': 'Open arena',
-    'map.stacks': 'Stacks',
     'map.twinRaise': 'Twin Raise',
     'map.tunnels': 'Tunnels',
-    'map.ravine': 'Bridge Ravine',
     'map.islands': 'Sky Islands',
 
     'mapPicker.eyebrow': '◣ Map',
@@ -185,7 +181,6 @@ const TRANSLATIONS = {
     'rotate.sub': 'Boxfury se juega mejor en horizontal.',
     'menu.settings': 'Ajustes',
     'menu.solo': 'Un jugador',
-    'menu.test': 'Prueba rápida (jade)',
     'solo.eyebrow': '◣ Un jugador',
     'solo.title': 'ELIGE UN MODO',
     'solo.story': 'Historia',
@@ -262,11 +257,8 @@ const TRANSLATIONS = {
     'mode.dm': 'Combate a muerte',
 
     'map.default': 'Clásico',
-    'map.open': 'Arena abierta',
-    'map.stacks': 'Plataformas',
     'map.twinRaise': 'Cumbre gemela',
     'map.tunnels': 'Túneles',
-    'map.ravine': 'Puentes',
     'map.islands': 'Islas flotantes',
 
     'mapPicker.eyebrow': '◣ Mapa',

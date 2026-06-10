@@ -112,7 +112,9 @@ function doStartGame(connectOptions) {
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    backgroundColor: COLORS.ARENA,
+    // VOID, not ARENA: Boot/Preload show this color, and the themed camera
+    // background that takes over in GameScene starts from the same shade.
+    backgroundColor: COLORS.DEEP,
     pixelArt: true,
     render: {
       powerPreference: 'high-performance',
@@ -180,16 +182,6 @@ setupMenu({
         },
       });
     }
-  }),
-  onTest: () => startGame({
-    mode: 'create',
-    autoTeam: 1,
-    options: {
-      roomName: 'TEST',
-      mode: 'ctf',
-      maxPlayers: 8,
-      maxPoints: 1,
-    },
   }),
 });
 setupGameMenu({
